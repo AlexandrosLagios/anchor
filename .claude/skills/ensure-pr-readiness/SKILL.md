@@ -39,7 +39,7 @@ Do not reorder the steps. A review on a red gate is wasted effort.
    - The diff changes `app.json` or adds a config plugin: confirm that no file in `ios/` or `android/` is committed.
    - The diff introduces an env var: confirm that the PR description states where each value lives.
    - The diff changes rendered UI: check each changed `Pressable`, `TouchableOpacity`, `Button`, and icon for an `accessibilityLabel` and an `accessibilityRole`. Check that each touch target is at least 44 by 44 points. Report a failure as blocking.
-5. **Tests.** The project has no test runner. Write "no tests" in the report. When a test runner exists, run the affected test files once, after the fixes from steps 2 to 4.
+5. **Tests.** Run `npm run e2e` once, after the fixes from steps 2 to 4. The Maestro flows need the emulator and Metro to run: use the `run-android` skill to start them.
 
 ## Report format
 

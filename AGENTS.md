@@ -1,4 +1,4 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+This is an Expo/React Native mobile application for the OpenConf hackathon. Android is the only target platform. Optimize for iteration speed.
 
 ## Expo has changed — do not trust your training data
 
@@ -13,15 +13,17 @@ Expo ships breaking changes every SDK release. APIs you remember are likely rena
 The project uses npm (`package-lock.json`).
 
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
+npm run android             # boot the emulator, build and install the dev build, start Metro on port 8090
+npm start                   # start Metro only, when the dev build is already installed
+npm run e2e                 # run the Maestro flows in .maestro/ against the running app
 npm run lint                # lint
 npm run typecheck           # typecheck
+npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run lint and typecheck before declaring any task done. To see a change on the emulator, or when the app does not start, use the `run-android` skill.
 
 ## Navigation & Routing
 
@@ -39,7 +41,7 @@ Docs: https://docs.expo.dev/eas/index.md
 ## Rules
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
+- The app runs as a development build (`expo-dev-client`), not in Expo Go. After you add a library with native code or change `app.json`, run `npm run android` again to rebuild. A JavaScript change needs no rebuild, because Fast Refresh applies it.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
 
 ## Notion

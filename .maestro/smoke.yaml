@@ -1,0 +1,6 @@
+appId: com.alexandroslagios.anchor
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Open up App.tsx to start working on your app!"
+    timeout: 30000
