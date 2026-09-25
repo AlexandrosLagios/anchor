@@ -31,6 +31,12 @@ export async function sendOffer(
   }
 }
 
+// a close and a fade can race over one offer, and a splice at index -1 would drop the last offer instead
+function drop(family: Family, offer: Offer) {
+  const index = family.offers.indexOf(offer);
+  if (index >= 0) family.offers.splice(index, 1);
+}
+
 export function findOffer(family: Family, id: string): Offer | undefined {
   return family.offers.find((offer) => offer.id === id);
 }
@@ -54,7 +60,7 @@ export async function closeOffer(family: Family, offer: Offer, ctx: Context, cha
       logger.warn(`Closing the ${offer.kind} offer ${offer.id} failed: ${error}`);
     }
   }
-  family.offers.splice(family.offers.indexOf(offer), 1);
+  drop(family, offer);
   ctx.store.save();
 }
 
@@ -68,7 +74,7 @@ export async function fadeOffers(family: Family, kind: Offer['kind'], now: numbe
     } catch (error) {
       logger.warn(`Fading the ${kind} offer ${offer.id} failed: ${error}`);
     }
-    family.offers.splice(family.offers.indexOf(offer), 1);
+    drop(family, offer);
   }
   ctx.store.save();
   return faded;
