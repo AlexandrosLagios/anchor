@@ -71,11 +71,12 @@ test.each(invalidArguments)('invalid argument %s gets the usage line and no jump
   expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.fastforwardUsage, replyTo: 'msg-1' } }]);
 });
 
-test('a member who is not an admin gets no reply, no jump, and handle returns true', async () => {
+test('a member who is not an admin gets adminOnly, no jump, and handle returns true', async () => {
   const { store, transport, ctx } = setup();
-  const handled = await fastforward.handle?.(command('/fastforward 7'), store.family('-100'), ctx);
+  const event = command('/fastforward 7');
+  const handled = await fastforward.handle?.(event, store.family('-100'), ctx);
   expect(handled).toBe(true);
-  expect(transport.sent).toEqual([]);
+  expect(transport.sent.map(({ chatId, message }) => [chatId, message])).toEqual([[event.chatId, { text: lines.adminOnly, replyTo: event.messageId }]]);
   expect(store.state.clockOffset).toBe(0);
 });
 

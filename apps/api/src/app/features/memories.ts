@@ -51,7 +51,6 @@ async function post(family: Family, moment: Moment, label: string, keys: string[
 }
 
 async function handleMemoryCommand(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
-  if (!(await ctx.transport(family.id).isAdmin(event.chatId, event.sender.id))) return true;
   const shareable = family.moments.filter((moment) => !moment.sensitive);
   if (shareable.length === 0) {
     await ctx.transport(family.id).send(family.chatId, { text: lines.nothingToShare });

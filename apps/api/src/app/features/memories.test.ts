@@ -248,11 +248,12 @@ test('/memory with no moments, or only sensitive ones, sends nothingToShare', as
   expect(transport.sent[1].message.text).toBe(lines.nothingToShare);
 });
 
-test('/memory from a member who is not an admin returns true and sends nothing', async () => {
+test('/memory from a member who is not an admin posts a memory too', async () => {
   family.moments.push(moment({ savedAt: daysBefore(now, 7) }));
   const handled = await memories.handle?.(groupEvent({ text: '/memory' }), family, ctx);
   expect(handled).toBe(true);
-  expect(transport.sent).toEqual([]);
+  expect(transport.sent).toHaveLength(1);
+  expect(transport.sent[0].message.text).toBe(lines.memoryCaption(lines.labels['7'], family.moments[0]));
 });
 
 test('a reply with 3 words to a memory post becomes a story, and the reaction is a heart', async () => {

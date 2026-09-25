@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { Logger } from '@nestjs/common';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { lines } from '../core/lines';
 import { Blocked } from '../core/types';
@@ -223,13 +224,14 @@ const failed = (error_code: number, description: string): HttpResponse => ({
 const sentMessage = (fields: object = {}) => ({ message_id: 77, from: anchorBot, chat: group, date, ...fields });
 
 type BotCall = { url: string; method: string; params: Record<string, unknown> };
-function botApi(answer: (method: string) => HttpResponse = () => ok(sentMessage())) {
+function botApi(answer: (method: string) => HttpResponse = () => ok(sentMessage()), menu: () => HttpResponse = () => ok(true)) {
   const calls: BotCall[] = [];
   fetchMock.mockImplementation(async (url, init) => {
     const method = url.slice(url.lastIndexOf('/') + 1);
     const body = init?.body;
     const params = body instanceof FormData ? Object.fromEntries(body) : JSON.parse(String(body ?? '{}'));
     calls.push({ url, method, params });
+    if (method === 'setMyCommands') return menu();
     return method === 'getMe' ? ok(anchorBot) : answer(method);
   });
   return calls;
@@ -266,7 +268,7 @@ test('connect retries getMe 5 seconds after a failure', { timeout: 15_000 }, asy
     return ok(anchorBot);
   });
   const telegram = await TelegramTransport.connect('TOKEN');
-  expect(attempts).toBe(4); // two getMe calls, then the two menus
+  expect(attempts).toBe(5); // two getMe calls, then the three menus
   expect(telegram.startLink('abc')).toBe(`https://t.me/${BOT}?start=abc`);
 });
 
@@ -274,15 +276,19 @@ test('connect registers the command menu for group admins and for private chats'
   const calls = botApi(() => ok(true));
   await TelegramTransport.connect('TOKEN');
   expect(calls.filter(({ method }) => method === 'setMyCommands').map(({ params }) => params)).toEqual([
+    { commands: lines.commands.group, scope: { type: 'all_group_chats' } },
     { commands: lines.commands.admins, scope: { type: 'all_chat_administrators' } },
     { commands: lines.commands.private, scope: { type: 'all_private_chats' } },
   ]);
 });
 
 test('a failed menu registration only logs, and connect still returns the transport', async () => {
-  botApi((method) => (method === 'setMyCommands' ? failed(400, 'Bad Request') : ok(true)));
+  const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  botApi(() => ok(true), () => failed(400, 'Bad Request'));
   const telegram = await TelegramTransport.connect('TOKEN');
   expect(telegram.username).toBe(BOT);
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining('The command menu failed'));
+  warn.mockRestore();
 });
 
 test('send posts a photo with a caption clipped to 1024 characters, the reply, and the buttons', async () => {

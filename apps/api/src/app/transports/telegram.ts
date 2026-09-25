@@ -119,6 +119,7 @@ async function call<T>(token: string, method: string, params: Record<string, unk
 
 async function registerMenu(token: string) {
   try {
+    await call(token, 'setMyCommands', { commands: lines.commands.group, scope: { type: 'all_group_chats' } });
     await call(token, 'setMyCommands', { commands: lines.commands.admins, scope: { type: 'all_chat_administrators' } });
     await call(token, 'setMyCommands', { commands: lines.commands.private, scope: { type: 'all_private_chats' } });
   } catch (error) {
