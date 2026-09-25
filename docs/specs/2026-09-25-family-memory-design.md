@@ -53,7 +53,7 @@ Step 3 writes the v1 findings into section 11. Read section 11 before a v1.x cha
 ### 4.2 Capture
 
 1. The code rules drop unsupported messages (stickers, GIFs, video notes, documents, polls, service messages), forwarded messages, commands (text that starts with `/`), and texts that hold only links. A video is supported.
-2. The bundler groups the messages of one sender in one family. A message joins the open bundle of its sender when the message arrives within 5 minutes of the previous one.
+2. The bundler groups the messages of one sender in one family. A message joins the newest open bundle of its sender when the message arrives within 5 minutes of the previous one. A photo or a video starts a new bundle when that bundle already holds a picture from outside its Telegram album (`Incoming.albumId`), and the older bundle closes at the next tick. A text or a voice note joins the newest open bundle.
 3. A bundle closes 5 minutes after its last message. A bundle that holds a photo or a video, and words, closes at the next tick. Words are a text, a caption, or a voice note.
 4. The code drops a closed bundle that has no photo, no video, no voice note, and fewer than 3 words. A bundle that has a picture and no words is kept: the classification sees the picture, or the video thumbnail, and gives it a title.
 5. One Gemini call classifies the bundle (section 6.2). The call gets the texts, the first photo or the thumbnail of the first video, and the voice note of the bundle. The code never downloads a video, because a bot downloads at most 20 MB.
@@ -249,6 +249,7 @@ export type Incoming = {
   video?: Media;
   thumbnail?: Media; // the preview frame of the video, for the classification
   voice?: Media;
+  albumId?: string; // Telegram media_group_id: photos of one album share it
   forwarded?: boolean;
   unsupported?: boolean; // sticker, GIF, video note, document, poll, service message
   replyTo?: string;
