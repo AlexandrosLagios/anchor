@@ -1,0 +1,469 @@
+# Design: Anchor, the family's memory keeper
+
+- Date: 2026-09-25.
+- Source spike: `docs/spikes/2026-09-25-family-group-chat-spike.md`, commit `b182cdf` on `main`.
+- Base commit for the first steps: `0c92feb` on `main`.
+- Status: sections 1 to 4 approved in the `/shape` session. The step order follows the v1 direction of the same session.
+- Scope: the Telegram bot in `apps/api`. The website in `apps/web` and the prototype engine that serves the website stay untouched.
+
+## 1. Framing
+
+Anchor is a member of the family group chat. Anchor keeps the family's record of shared moments, brings moments back to the family, and invites the grandparents to add their stories.
+
+The grandparents are the storytellers of the family. The product never presents itself as a memory aid, a test, or a therapy. No line that Anchor sends mentions memory loss, cognitive impairment, recall, hints, or scores.
+
+## 2. Changes to the spike
+
+The spike stays the source for the platform research and for the rejected platforms. This design changes the product decisions of the spike as follows.
+
+- Kept: decisions 1, 2, 5, 6, 8, 9, and 10.
+- Changed in decision 8: a `sensitive` bundle covers illness, death, conflict, money, and the health of any person.
+- Replaced: decisions 3, 4, and 7. Section 4 of this design replaces them.
+- Settled open questions:
+  - Persona: Anchor takes every name from the transport. The team plays the family in a test group.
+  - Language: English. Every fixed line lives in `core/lines.ts`.
+  - Cloud Run: one always-on service, `anchor-bot`, with the JSON file on a Cloud Storage volume. The API of the website deploys to Vercel as `anchor-api` and stays as it is. At list price, 1 vCPU and 512 MiB always on cost about 1.64 USD per day before the free tier.
+  - Archive: the record only. Anchor keeps what the filter saves and drops every other message.
+  - The website: out of scope. A later website simulation becomes one more transport (section 5.1).
+- Removed open question: the clinical review of the ladder. This design has no training ladder.
+- Still open: the hackathon brief, because the `notion-openconf` server returns `401 unauthorized`. The team owns the pitch wording and the website copy.
+
+## 3. Milestones
+
+- **v1**: the team tests Anchor in a Telegram group. One laptop runs the API with long polling, so the first test needs no deploy. Steps 1 to 3 build v1.
+- **v1.x**: Ask Anchor (section 4.6), then the changes that the v1 findings ask for.
+
+Step 3 writes the v1 findings into section 11. Read section 11 before a v1.x change starts.
+
+## 4. Behaviour
+
+### 4.1 Roles
+
+- A family member is any person in the group.
+- A storyteller is a grandparent. A group admin replies `/storyteller` to a message of the grandparent. Anchor then posts a Start button.
+- The grandparent taps the Start button once. Telegram lets a bot write in a private chat only after that tap.
+
+### 4.2 Capture
+
+1. The code rules drop unsupported messages (stickers, GIFs, videos, documents, polls, service messages), forwarded messages, commands (text that starts with `/`), and texts that hold only links.
+2. The bundler groups the messages of one sender in one family. A message joins the open bundle of its sender when the message arrives within 2 minutes of the previous one.
+3. A bundle closes 2 minutes after its last message. A bundle that holds a photo and words closes at the next tick. Words are a text, a caption, or a voice note.
+4. The code drops a closed bundle that has no photo, no voice note, and fewer than 3 words. The code also drops a bundle that has a photo and no words, because a bare photo has nothing to bring back.
+5. One Gemini call classifies the bundle (section 6.2). The call gets the texts, the first photo, and the voice note of the bundle.
+6. The code saves only a `family_moment`. Then Anchor reacts with ❤ on the first message of the bundle.
+7. The code counts each outcome in `family.counters`: `rules`, `family_moment`, `logistics`, `small_talk`, `sensitive`, and `failed`.
+
+The bundler uses real time, because people type in real time. Every other rule in section 4 uses the demo clock (section 4.8).
+
+### 4.3 Group memories
+
+- The 18:00 slot posts at most one group memory per family per day.
+- A moment is due for a lookback when 7, 30, or 365 days have passed since `savedAt`, and the age is not in `moment.lookbacks`.
+- A moment is due for an anniversary when its `eventDate` has the month and the day of today and a year before this year. The key `anniversary-<this year>` must not be in `moment.lookbacks`.
+- When several keys are due for one moment, the code posts one memory. The anniversary wins, and otherwise the highest age wins. The code marks every due key as done.
+- The code skips every moment whose `tone` is `sensitive`.
+- `byPriority` in `core/priority.ts` orders the due moments: anniversary first, then the higher salience, then the older `savedAt`.
+- The post is the photo with the caption `memoryCaption(label, title)`. A moment without a photo posts the caption as text. The code adds the message id of the post to `moment.memoryPostIds`.
+- An admin sends `/memory` in the group to post a memory at once. `/memory` posts the first due moment with its label.
+- When no moment is due, `/memory` posts the moment with the fewest memory posts, with the label `fromRecord`. `byPriority` breaks a tie.
+- `/memory` does not change `lastMemoryDay`. When the family has no moment, `/memory` gets `nothingToShare`.
+
+### 4.4 Group stories
+
+- A group message that replies to a memory post is a story when the message is supported, not forwarded, and holds a voice note or at least 3 words.
+- A voice story gets one Gemini transcription (section 6.3).
+- The code appends the story to the moment. Then Anchor reacts with ❤ on the story message.
+
+### 4.5 Story invitations
+
+- The 11:00 slot sends at most one invitation per started storyteller per day.
+- A moment qualifies when the storyteller did not send the moment, and the moment is at least 3 demo-clock hours old. The storyteller id must not be in `moment.offeredTo`, and the tone must not be `sensitive`.
+- `byPriority` picks the first qualifying moment.
+- Anchor sends the photo first. Then Anchor sends a voice note of `moment.invitation`, with the text as the caption and a "Not now" button. When no voice clip exists, Anchor sends the text with the button.
+- The code makes the TTS clip once per moment. The transport returns a media id for the uploaded clip, and the code stores the id in `moment.invitationVoice`.
+- The code adds the storyteller id to `moment.offeredTo` when the invitation goes out.
+- Each private reply of the storyteller adds to one story. The story joins the texts and the transcripts, and keeps the first voice note.
+- After the first reply, Anchor sends `thanks` with the buttons "Yes, share it" and "No, thanks".
+- "Yes, share it" posts `storyAdded(name)` in the group as a reply to the first message of the moment. The voice note follows by its media id, or the text follows as a quote. Then the code appends the story to the moment and sends `shared` in private.
+- "No, thanks" sends `notShared`. "Not now" sends `notNow`. Both close the invitation, and the code stores no story.
+- An invitation that is still open at the next 11:00 slot closes without a message.
+- An admin sends `/invite` in the group to send an invitation to every started storyteller at once. An open invitation closes first.
+- `/invite` skips the 3-hour rule. When no moment qualifies for a storyteller, Anchor posts `nothingToInvite(name)` in the group.
+
+### 4.6 Ask Anchor (v1.x)
+
+- A group message that matches `/^anchor\b[,:]?\s+/i` is a question. The `forget` feature runs first, so "Anchor, forget this" never reaches `ask`.
+- One Gemini call picks one moment id from an enum of the ids of the family, or `none` (section 6.4).
+- Anchor replies to the question with the photo and the caption `askAnswer(title, date, names)`. The first voice story follows by its media id.
+- `none`, or a failed call, gets `notFound`.
+
+### 4.7 Commands and fixed replies
+
+- When Anchor joins a group, Anchor creates the family and posts `intro`.
+- `/storyteller`, sent by an admin as a reply to the message of a member, registers the member as a storyteller. Anchor posts `storytellerStart(name)` with a URL button to `transport.startLink(family id)`.
+- `/start` in private, from a registered storyteller, sets `started` and gets `welcome(name)`.
+- "Anchor, forget this", sent as a reply, deletes the moment or the story that owns the replied-to message. Anchor reacts with 👌.
+- The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
+- `/memory` and `/invite` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
+- A private message that no feature handles gets `noInvitation` from a storyteller, and `pointer` from any other person.
+
+### 4.8 Clock
+
+- `now()` returns the demo-clock time: `clockStart + (realNow - clockStart) * 86400 / ANCHOR_DAY_SECONDS`.
+- The store sets `State.clockStart` once, at the first boot, so a restart keeps the timeline.
+- The slots use local time. Set `TZ=Europe/Athens` when the host runs in UTC.
+
+### 4.9 Fixed lines (`core/lines.ts`)
+
+| Key | Text |
+| --- | --- |
+| `intro` | Hi, I'm Anchor 👋 I keep this family's record. When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, and the grandparents can add their stories. An admin can reply /storyteller to a grandparent's message. Reply "Anchor, forget this" to any message and I delete it. This is a test build, so please share staged photos only. |
+| `storytellerStart(name)` | {name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment. |
+| `welcome(name)` | Hello {name} 🙂 I'm Anchor. Now and then I'll send you a moment from the family. Tell me what it reminds you of, by voice or by text. I share nothing unless you say yes. |
+| `memoryCaption(label, title)` | {label}: {title} 💛 (new line) Reply with a story or a voice note to add it to the family record. |
+| labels | `7` One week ago · `30` One month ago · `365` One year ago · anniversary On this day in {year} · `fromRecord` From the family record |
+| `thanks` | Thank you for the story 💛 Shall I share it with the family? |
+| `shared` | Done, the family can hear it now 💛 |
+| `notShared` | Of course. I won't share it. |
+| `notNow` | No problem 🙂 Another time. |
+| `storyAdded(name)` | {name} added a story to this moment 🎙️ |
+| `askAnswer(title, date, names)` | {title} · {date} 💛 plus "Stories from {names}" when the moment has stories |
+| `notFound` | I couldn't find that in the family record yet. |
+| `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
+| `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
+| `voiceNote` | 🎤 voice note |
+| `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
+| `nothingToInvite(name)` | {name} has seen every moment so far. |
+
+The buttons read "Start", "Not now", "Yes, share it", and "No, thanks". A step may change the wording of its own lines, but no line may break section 1.
+
+## 5. Architecture
+
+### 5.1 Extension points
+
+- **Transport**: one interface. v1 has the Telegram transport and a fake transport for the tests. Each transport turns its input into one `Incoming` event type. A later WhatsApp route, the `apps/mobile` app, or a website simulation becomes one more implementation.
+- **Feature**: an object with an optional `handle` and an optional `tick`. The router offers each event to the features in a fixed order, and the first feature that returns `true` owns the event. Every 2 seconds, the router gives each feature the demo-clock window since the last tick.
+- **Record**: the server holds the family memory in one `State`. A later feature adds its own typed fields to `Family`, and the JSON file needs no migration.
+
+Not built: a plugin loader, per-family feature flags, an event bus, a message archive, and a second language. Add each one when a family needs it.
+
+### 5.2 Files
+
+All paths are under `apps/api/src/app/`.
+
+| Path | Step | Purpose |
+| --- | --- | --- |
+| `core/types.ts` | 1 | The contract in section 5.3. |
+| `core/store.ts` | 1 | Loads and saves `State` as one JSON file. |
+| `core/clock.ts` | 1 | The demo clock, the local day index, and `slotIn(window, hour)`. `slotIn` returns the latest local `hour:00` inside the window, or `undefined`. |
+| `core/priority.ts` | 1 | `byPriority(now)` and `isAnniversary(eventDate, now)`. |
+| `core/router.ts` | 1 | `route(event)`, `tick(window)`, and the private fallback. |
+| `core/lines.ts` | 1 | Every line of section 4.9. |
+| `core/fake-transport.ts` | 1 | An in-memory `Transport` for the tests. |
+| `features/intro.ts` | 1 | The `joined` event. |
+| `family.service.ts` | 1 | The Nest host: store, context, `FEATURES`, the tick loop, and the poll. |
+| `transports/telegram.ts` | 1 | The Bot API client, `toIncoming`, the poll loop, and `TelegramTransport`. |
+| `transports/voice.ts` | 1 | WAV to OGG Opus through `ffmpeg`. |
+| `gemini.ts` | 1 | The `media` option, `transcribe`, the validators, and the `speak` style. |
+| `features/capture/filter.ts` | 2 | The code rules and the bundler, as pure functions. |
+| `features/capture/classify.ts` | 2 | The classification call. |
+| `features/capture/capture.ts` | 2 | The `forget` and `capture` features. |
+| `features/memories.ts` | 2 | The `memories` feature. |
+| `features/invitations.ts` | 2 | The `invitations` feature. |
+| `features/ask.ts` | v1.x | The `ask` feature. |
+
+### 5.3 The contract
+
+Step 1 writes this file. A later step may add fields. A later step may not rename or remove a field without a note in its PR.
+
+```ts
+// core/types.ts
+export type Media = { id: string; mimeType?: string };
+
+export type Button = { label: string; data?: string; url?: string };
+
+export type Incoming = {
+  familyId?: string; // set for group events; the router resolves private events
+  chat: 'group' | 'private';
+  chatId: string;
+  messageId: string;
+  sender: { id: string; name: string };
+  at: number; // real time in ms
+  text?: string; // text or caption
+  photo?: Media; // the largest size
+  voice?: Media;
+  forwarded?: boolean;
+  unsupported?: boolean; // sticker, GIF, video, document, poll, service message
+  replyTo?: string;
+  button?: string; // the data of a pressed button
+  joined?: boolean; // Anchor joined this group
+};
+
+export type Outgoing = {
+  text?: string; // the caption when photo or voice is set
+  photo?: Media; // set at most one of photo and voice
+  voice?: Media | { wav: Buffer };
+  buttons?: Button[];
+  replyTo?: string;
+};
+
+export class Blocked extends Error {} // send throws Blocked when the person blocked Anchor
+
+export interface Transport {
+  send(chatId: string, message: Outgoing): Promise<{ messageId: string; voice?: Media }>;
+  react(chatId: string, messageId: string, emoji: string): Promise<void>;
+  download(media: Media): Promise<{ data: Buffer; mimeType: string }>;
+  isAdmin(chatId: string, userId: string): Promise<boolean>;
+  startLink(payload: string): string;
+}
+
+export type Person = { id: string; name: string };
+
+export type Story = {
+  id: string;
+  by: Person;
+  at: number; // demo-clock ms
+  text: string; // the typed text or the transcript
+  voice?: Media;
+  messageIds: string[]; // group messages that carry the story
+};
+
+export type Moment = {
+  id: string;
+  by: Person;
+  messageIds: string[]; // the group messages of the bundle
+  savedAt: number; // demo-clock ms
+  text: string;
+  photo?: Media;
+  voice?: Media;
+  salience: number; // 1 to 5
+  tone: 'joyful' | 'neutral' | 'sensitive';
+  people: string[];
+  eventDate?: string; // YYYY-MM-DD
+  title: string;
+  invitation: string;
+  invitationVoice?: Media;
+  stories: Story[];
+  lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'
+  memoryPostIds: string[];
+  offeredTo: string[]; // storyteller ids
+};
+
+export type Invitation = {
+  momentId: string;
+  day: number; // the demo-clock day index of the invitation
+  messageIds: string[]; // the private messages of Anchor for this invitation
+  story?: { text: string; voice?: Media };
+  shareAsked: boolean;
+};
+
+export type Storyteller = Person & {
+  started: boolean;
+  lastInvitationDay?: number;
+  invitation?: Invitation;
+};
+
+export type Family = {
+  id: string; // the group chat id on the transport
+  chatId: string; // the group chat id on the transport
+  storytellers: Storyteller[];
+  moments: Moment[];
+  lastMemoryDay?: number;
+  counters: Record<string, number>;
+};
+
+export type State = { clockStart: number; families: Family[] };
+
+export type Window = { from: number; to: number }; // demo-clock ms
+
+export interface Store {
+  readonly state: State;
+  family(id: string): Family | undefined;
+  addFamily(id: string, chatId: string): Family;
+  familyOfStoryteller(userId: string): Family | undefined;
+  save(): void;
+}
+
+export type Context = {
+  now(): number; // demo-clock ms
+  store: Store;
+  transport(familyId: string): Transport;
+};
+
+export interface Feature {
+  name: string;
+  handle?(event: Incoming, family: Family | undefined, ctx: Context): Promise<boolean>;
+  tick?(family: Family, window: Window, ctx: Context): Promise<void>;
+}
+```
+
+### 5.4 The router and the feature order
+
+- `route(event)` finds the family. For a group event, the router uses `event.familyId`. For a private event without `familyId`, the router uses `store.familyOfStoryteller(sender.id)`.
+- The router offers the event to each feature in `FEATURES` order until a feature returns `true`.
+- An unhandled private event gets `noInvitation` when the sender is a storyteller, and `pointer` otherwise. The router drops an unhandled group event.
+- `tick(window)` calls `feature.tick(family, window, ctx)` for every family and every feature, each call in its own try/catch.
+
+`FEATURES` in `family.service.ts` keeps this order:
+
+| Position | Feature | Step | Handles |
+| --- | --- | --- | --- |
+| 1 | `intro` | 1 | `joined` events |
+| 2 | `forget` | 2 | "Anchor, forget this" |
+| 3 | `invitations` | 2 | `/storyteller`, `/invite`, `/start`, private replies, and invitation buttons |
+| 4 | `memories` | 2 | `/memory`, and replies to memory posts |
+| 5 | `ask` | v1.x | group messages that start with "Anchor," |
+| 6 | `capture` | 2 | every other group message, and the bundle close on each tick |
+
+### 5.5 The host
+
+`FamilyService` in `family.service.ts` is a Nest provider in `AppModule`.
+
+- When `TELEGRAM_BOT_TOKEN` is unset, the host does nothing: no store, no tick, and no poll. The Vercel deploy of `anchor-api` never sets the token, because a serverless function cannot hold a poll or a tick.
+- When the token is set, the host loads the store on application bootstrap and builds the context.
+- The host starts a 2-second interval. Each run computes the demo-clock window since the previous run and calls `tick(window)`.
+- The host starts the Telegram poll. Each update goes through `toIncoming` and then `route`.
+- `ctx.transport(familyId)` returns the Telegram transport. A later transport adds its own family id prefix here.
+- On application shutdown, the host stops the interval and the poll.
+
+### 5.6 Environment variables
+
+Step 1 adds these lines to `apps/api/.env.example`.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `TELEGRAM_BOT_TOKEN` | unset | The token from BotFather. When the variable is unset, the host starts no poll. |
+| `ANCHOR_DAY_SECONDS` | `86400` | The real seconds in one demo-clock day. The team test uses 120 or 600. |
+| `ANCHOR_STATE_FILE` | `tmp/anchor-state.json` | The JSON file of the record. `tmp/` is in `.gitignore`. |
+| `TZ` | the host zone | The zone of the 11:00 and 18:00 slots. |
+
+### 5.7 The prototype and the website
+
+Every file on `main` stays untouched, except `app.module.ts`, `gemini.ts`, `apps/api/.env.example`, `apps/api/Dockerfile`, and `DEPLOY.md`. Those five files change in additive ways only.
+
+The website, the prototype engine, the auth, the file routes, and the Vercel deploy of `anchor-api` keep working. Vercel builds the website from `main`, so no step may break the web build.
+
+## 6. Gemini calls
+
+### 6.1 Shared rules
+
+- `ask` gets a `media` option, a list of `{ data, mimeType }`, next to the `audio` option that the prototype uses. An `image/*` item becomes an image input, and an `audio/*` item becomes an audio input.
+- The input items are `{ type: 'image', data, mime_type }` and `{ type: 'audio', data, mime_type }`, with base64 data (ai.google.dev/api/interactions-api).
+- The disk cache key includes a hash of every media item.
+- UNVERIFIED: the Interactions API docs do not confirm `enum`, `minimum`, or `maximum` in a response schema. The validators enforce every rule in code.
+- Every result passes a validator before the code uses it. Section 8 lists each fallback.
+- The prompts describe Anchor as the keeper of the family's record. No prompt mentions memory loss.
+
+### 6.2 Classify a bundle (step 2)
+
+| Field | Type | Rule |
+| --- | --- | --- |
+| `verdict` | enum | `family_moment`, `logistics`, `small_talk`, or `sensitive`. |
+| `salience` | integer | 1 to 5. An invalid value becomes 3. |
+| `tone` | enum | `joyful`, `neutral`, or `sensitive`. An invalid value becomes `neutral`. |
+| `people` | string array | The names in the moment. An invalid value becomes an empty array. |
+| `eventDate` | string | `YYYY-MM-DD`, or an empty string when the date is unknown. An invalid value becomes unknown. |
+| `title` | string | A short phrase for the record, for example "Maria's first day at school". At most 100 characters. |
+| `invitation` | string | One or two short spoken sentences that show the moment to a grandparent and invite a story. At most 300 characters, because a Telegram caption holds at most 1024. |
+
+- The invitation names the sender, for example "Sofia shared this: Maria's first day at school. What does it remind you of?".
+- The invitation never asks for a fact and never tests the listener.
+- A `family_moment` with an empty `title` or an empty `invitation` counts as `failed`.
+
+### 6.3 Transcribe (step 1)
+
+- `transcribe(media)` returns the transcript of a voice note, or an empty string.
+- The schema is `{ transcript: string }`. The call uses the fast models.
+
+### 6.4 Find a moment (v1.x)
+
+- The prompt holds the question and one line per moment: id, title, date, people, and the first 200 characters of each story.
+- The schema is `{ momentId: enum }`, with the moment ids of the family and `none`.
+- A voice question goes in as audio in the same call.
+
+### 6.5 Speak (existing)
+
+- `speak(text, style?)` keeps its models and its cache, and gets an optional style. The prototype keeps the default style.
+- The bot passes the style "warm, calm and slow, like a kind family friend talking to a grandparent".
+
+## 7. Telegram transport (step 1)
+
+- The client calls the Bot API with `httpFetch` from `http.ts`, as `gemini.ts` does, and adds no dependency.
+- The poll calls `getUpdates` with a long-poll timeout and omits `allowed_updates`. `message`, `callback_query`, and `my_chat_member` arrive by default. The offset advances after each update.
+- A bot that is a group admin gets every group message, whatever the privacy mode.
+- `toIncoming` maps a group message, a private message, a `callback_query`, and a `my_chat_member` update that adds the bot to a group.
+- `send` uses `sendMessage`, `sendPhoto`, or `sendVoice`, with `reply_parameters: { message_id }` for a reply. A caption holds at most 1024 characters.
+- A `{ wav }` voice goes through `voice.ts`, which runs `ffmpeg -f wav -i pipe:0 -c:a libopus -b:a 32k -f ogg pipe:1`. The OGG file uploads as multipart form data, and the result returns the new `file_id` as the voice media id.
+- A `file_id` belongs to the bot, not to a chat. The bot can resend a voice note from the group in a private chat, and the reverse.
+- `react` uses `setMessageReaction` with `{ type: 'emoji', emoji }`. The allowed list holds ❤ as U+2764 without U+FE0F, and it holds 👌.
+- `download` uses `getFile` and `https://api.telegram.org/file/bot<token>/<file_path>`. A bot downloads files of at most 20 MB.
+- `isAdmin` uses `getChatMember`. The statuses `creator` and `administrator` mean an admin.
+- `startLink` returns `https://t.me/<bot username>?start=<payload>`, with the username from `getMe`. The payload holds at most 64 characters from `A-Z`, `a-z`, `0-9`, `_`, and `-`.
+- Button data holds 1 to 64 bytes. A URL button works in a group and in a private chat.
+- A callback query always gets `answerCallbackQuery`, also when no feature acts on the query.
+- Only one process may poll one token. Each developer creates a dev bot in BotFather for local work.
+
+BotFather setup for the team test:
+
+1. Send `/newbot` to BotFather and copy the token into `apps/api/.env.local`.
+2. Send `/setprivacy` to BotFather, choose the bot, and choose Disable.
+3. Add the bot to the test group, and promote the bot to admin.
+
+## 8. Error handling
+
+- **Gemini**: every call has a fixed fallback.
+  - A failed or invalid classification drops the bundle and increments `failed`. Nothing unclassified enters the record, because the sensitive check did not run.
+  - A failed transcription keeps the voice note with the text `voiceNote`.
+  - A failed find, or a `none` answer, gets `notFound`.
+  - A failed TTS call or a failed `ffmpeg` conversion sends the invitation as text.
+- **Transport**: the code logs a failed send or a failed reaction, and the record change stays. When `send` throws `Blocked` for a storyteller, the code sets `started` to false.
+- **Poll loop**: the loop never stops. Each update runs in its own try/catch, and the offset advances. A network error retries after 5 seconds.
+- **Two pollers**: a 409 logs "another process polls this token". UNVERIFIED: the Bot API docs do not document this 409, and they say that error texts can change.
+- **Races**: the tick and a reply of a storyteller can interleave around a Gemini call. After each await, a handler reads the open invitation again and stops when the invitation changed.
+- **Store**: each save writes a temporary file and renames the file. When the file does not parse at boot, the store renames the file to `<name>.corrupt-<time>` and starts empty.
+- **Tick**: each family and each feature runs in its own try/catch.
+
+Known limits:
+
+- A person is a storyteller in one family only.
+- Open bundles live in memory, so a restart loses at most 2 minutes of messages.
+- Cloud Storage FUSE has no concurrency control, and the last write wins. During a rollout, an old and a new instance can run for a short time, so deploy while the family is quiet.
+
+## 9. Tests
+
+All tests run with `pnpm nx test api` (vitest) and make no network call.
+
+- Pure units: the clock and `slotIn`, `byPriority` and `isAnniversary`, the lookback rules, the filter rules, the bundler, the validators, the store round trip, the corrupt-file path, the router order, and `toIncoming` for each update kind.
+- Features: each feature has flow tests through `FakeTransport`, with a fixed clock and `vi.mock` of `gemini.ts`.
+- Voice: one test converts a generated WAV and checks the `OggS` header. The test skips when `ffmpeg` is missing.
+- End to end: the checklist of step 3 in a Telegram test group.
+
+The repository has no CI workflow. Every step runs `pnpm lint`, `pnpm typecheck`, and `pnpm nx test api` before the PR.
+
+## 10. Steps
+
+Each step is one session, one branch, and one PR. Each step uses TDD, then `/code-review`, `/simplify`, and `manage-pr`.
+
+| Step | Branch | Needs | Scope | Done when |
+| --- | --- | --- | --- | --- |
+| 1 Foundation | `feat/family-bot-foundation` | none | `core/*`, `features/intro.ts`, `family.service.ts`, `transports/*`, the `gemini.ts` additions, and `.env.example`. | The bot joins a test group and posts `intro`, and a private message gets `pointer`. |
+| 2 Memory features | `feat/family-memory-features` | 1 | Capture and forget, memories and stories, and invitations: sections 4.1 to 4.5, 4.7, and 6.2. | The flow tests of section 9 pass for every feature. |
+| 3 Team test and deploy | `fix/v1-team-test` | 2 | The team test, the fixes, section 11, `ffmpeg` in the Dockerfile, the `anchor-bot` service, and `DEPLOY.md`. | The team walks the checklist in a Telegram group without a blocker. |
+
+Inside step 2, the three features touch separate files, so subagents can build them in parallel.
+
+The session of step 3 prepares the deploy, and a person runs `gcloud run deploy`, because the deploy costs money.
+
+## 11. v1 findings
+
+Step 3 fills this section.
+
+## 12. Rules for every step
+
+- Confirm that the session does not run inside another worktree before it creates one. Base the branch on `origin/main`.
+- Run `pnpm install --frozen-lockfile` first. A worktree with an old `node_modules` fails `web:typecheck`.
+- Run the baseline before a change: `pnpm nx test api`, `pnpm typecheck`, and `pnpm lint`. All three pass on `0c92feb`.
+- Verify the current branch in the same command as each commit and each push.
+- Never run two processes with the same bot token.
+- Insert each feature into `FEATURES` at its position in section 5.4.
+- Keep `ponytail:` comments for deliberate shortcuts, and name the ceiling in each comment.

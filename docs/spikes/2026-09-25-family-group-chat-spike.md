@@ -1,5 +1,7 @@
 # Spike: Anchor as a member of a family group chat
 
+> The design in `docs/specs/2026-09-25-family-memory-design.md` reframes the product around the family record. That design replaces decisions 3, 4, and 7, and it settles the open questions below.
+
 ## Problem
 
 Anchor must join a family group chat. The pitch names WhatsApp, but any messaging platform that fits the hackathon qualifies. In the group, Anchor must do four things:
