@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anchor · Demo script</title>
+<style>
+  :root { --bg:#fbfaf7; --card:#fff; --ink:#1d1d1f; --muted:#6b6b6b; --line:#e8e4dc; --accent:#b5462f; --soft:#fbeae5; --eleni:#7b3fa0; --nikos:#1f6f8b; --host:#555; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151515; --card:#1f1f1f; --ink:#f1efe9; --muted:#a8a49b; --line:#33312d; --accent:#f08a6c; --soft:#3a241e; --eleni:#d0a2ee; --nikos:#8ccde3; --host:#bbb; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:19px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:40px 22px 72px; }
+  h1 { font-size:2.2rem; line-height:1.15; margin:0 0 6px; }
+  .sub { color:var(--muted); margin:0 0 28px; }
+  h2 { font-size:1.35rem; margin:40px 0 12px; }
+  .cast { display:flex; flex-wrap:wrap; gap:10px; }
+  .who { font-weight:700; border:2px solid currentColor; border-radius:999px; padding:4px 14px; font-size:0.95rem; }
+  .eleni { color:var(--eleni); } .nikos { color:var(--nikos); } .host { color:var(--host); }
+  .cast .who { font-size:1rem; }
+  .cast small { display:block; font-weight:400; color:var(--muted); }
+  ul.plain { padding-left:1.1em; margin:8px 0; }
+  ul.plain li { margin:6px 0; }
+  .beat { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px 20px; margin:14px 0; }
+  .top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .time { font-size:1.35rem; font-weight:800; font-variant-numeric:tabular-nums; min-width:3.2em; }
+  .do { font-size:1.12rem; }
+  .do b { color:var(--accent); }
+  .see { margin-top:10px; background:var(--soft); border-radius:12px; padding:10px 14px; }
+  .see span { font-weight:700; color:var(--accent); }
+  .line { margin-top:8px; font-style:italic; }
+  .fail { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 18px; }
+  .fail p { margin:10px 0; }
+  .fail b { color:var(--accent); }
+  footer { margin-top:40px; color:var(--muted); font-size:0.9rem; }
+  @media print { body { background:#fff; color:#000; } .beat, .fail { break-inside:avoid; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Anchor · Demo script</h1>
+  <p class="sub">About 2½ minutes. A daughter shares a moment, her father says yes himself, the moment comes back to him, he gets gentle help, and he answers by voice.</p>
+
+  <h2>Cast</h2>
+  <div class="cast">
+    <span class="who eleni">Eleni<small>the daughter · family group</small></span>
+    <span class="who nikos">Nikos<small>the grandfather · his private chat</small></span>
+    <span class="who host">Presenter<small>narrates · shows both screens</small></span>
+  </div>
+
+  <h2>Just before you start</h2>
+  <ul class="plain">
+    <li>Eleni's phone shows the family group. Nikos's phone shows his chat with Anchor.</li>
+    <li>Eleni has the first-day-of-school photo ready. Nikos has his 1958 photo ready.</li>
+    <li>The technical checks are done (see <a href="technical-runbook.html">the technical runbook</a>).</li>
+  </ul>
+
+  <h2>The script</h2>
+
+  <div class="beat">
+    <div class="top"><span class="time">0:00</span><span class="who eleni">Eleni</span></div>
+    <div class="do">Post the photo with the caption <b>"Maria's first day of school! She wore her new red backpack."</b></div>
+    <div class="see"><span>They see:</span> Anchor reacts with ❤. It kept the moment in Eleni's own words, with no extra step.</div>
+  </div>
+
+  <div class="beat">
+    <div class="top"><span class="time">0:25</span><span class="who eleni">Eleni</span></div>
+    <div class="do">Reply <b>/private</b> to Nikos's message in the group.</div>
+    <div class="see"><span>They see:</span> "Nikos, the family would love your stories 💛" and a Start button.</div>
+  </div>
+
+  <div class="beat">
+    <div class="top"><span class="time">0:40</span><span class="who nikos">Nikos</span></div>
+    <div class="do">Tap <b>Start</b>. Read the welcome aloud. Tap <b>"Yes, I'd like that"</b>.</div>
+    <div class="see"><span>They see:</span> Anchor says it is not a person, there is no right answer, it shares nothing without a yes, and /stop ends it. He decides himself.</div>
+  </div>
+
+  <div class="beat">
+    <div class="top"><span class="time">1:05</span><span class="who eleni">Eleni</span></div>
+    <div class="do">Send <b>/send</b> in the group.</div>
+    <div class="see"><span>They see:</span> Nikos gets the photo and a voice note: "Eleni shared: «Maria's first day of school!…» What does it remind you of?"</div>
+  </div>
+
+  <div class="beat">
+    <div class="top"><span class="time">1:25</span><span class="who nikos">Nikos</span></div>
+    <div class="do">Reply <b>"a school?"</b></div>
+    <div class="see"><span>They see:</span> "No rush 🙂 … Any memory it brings is welcome." No correction, and nothing shows in the family group.</div>
+    <div class="line">Presenter: "He hesitated, and nobody else saw it."</div>
+  </div>
+
+  <div class="beat">
+    <div class="top"><span class="time">1:45</span><span class="who nikos">Nikos</span></div>
+    <div class="do">Send a voice note: <b>"My first day was in 1958. My mother walked me to the village school, and I cried at the gate."</b></div>
+    <div class="see"><span>They see:</span> "Thank you for the story 💛 Shall I share it with the family?"</div>
+  </div>
+
+  <div class="beat">
+    <div class="top"><span class="time">2:10</span><span class="who nikos">Nikos</span></div>
+    <div class="do">Tap <b>"Yes, share it"</b>.</div>
+    <div class="see"><span>They see:</span> In the family group, "Nikos added a story to Eleni's moment 🎙️" with his words and his voice.</div>
+  </div>
+
+  <div class="beat">
+    <div class="top"><span class="time">2:30</span><span class="who host">Presenter</span></div>
+    <div class="line" style="margin-top:0">"Eleni shared a moment. Her father agreed himself, got help without a correction, and added his story by voice."</div>
+  </div>
+
+  <p class="sub" style="margin-top:18px">Extra, only if you are under 2:30: Nikos posts his 1958 photo in the group with "My first day of school, 1958", and Anchor shows "Then and now".</p>
+
+  <h2>If something goes wrong</h2>
+  <div class="fail">
+    <p><b>No ❤ after 15 seconds:</b> keep talking and go on to the next beat.</p>
+    <p><b>Nothing reaches Nikos after /send:</b> check that he tapped "Yes, I'd like that", then send /send again.</p>
+    <p><b>"a school?" gets a different answer:</b> Eleni sends /send again, and Nikos goes on with the voice note.</p>
+    <p><b>Two beats fail:</b> stop and play the recording of the best rehearsal.</p>
+  </div>
+
+  <footer>Rehearse twice with a stopwatch. Keep the whole script under 3 minutes.</footer>
+</main>
+</body>
+</html>
