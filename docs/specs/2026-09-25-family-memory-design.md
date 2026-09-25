@@ -894,7 +894,27 @@ v2 steps. Step 4 merges first. Steps 5, 6, and 7 then run in parallel, one sessi
 
 ## 11. v1 findings
 
-Step 3 fills this section.
+The v1 team test ran against the live bot `anchor-bot` on 2026-09-25 and 2026-09-26, on revisions `00001` to `00004`. The team walked the deploy, the join, and the capture. The team did not walk the storyteller stories live, because v2 replaced the storyteller role during the test (section 4.11).
+
+| # | Finding | Evidence | Status |
+| --- | --- | --- | --- |
+| 1 | The image on `main` crashed at boot with `Cannot find module 'tslib'`. `importHelpers` emits `require("tslib")`, and the generated `package.json` omits `tslib`. | A local `linux/amd64` boot. | Fixed in PR 2: the Dockerfile adds `tslib`. |
+| 2 | The Gemini cache wrote to `/app/tmp`, which the `node` user cannot write, so each model call failed with `EACCES` after the paid request. | A local boot. | Fixed in `d08fe98`: the cache moved to `os.tmpdir()`. PR 3 removed the workaround. |
+| 3 | `gcloud run deploy` has no `--dockerfile` flag, so the old `--source .` instruction could not build `apps/api/Dockerfile`. | The help of `gcloud` 562. | `DEPLOY.md` builds with Docker (PR 2), and `pnpm deploy:bot` does all steps (PR 20). |
+| 4 | A fast clock on an always-on bot fires the 11:00 and 18:00 slots every 2 minutes, all day. | `ANCHOR_DAY_SECONDS=120` in section 4.8. | The live bot runs the real clock (PR 3), and `/fastforward` moves the clock on cue. |
+| 5 | A bot that is already in a group gets no `joined` event when an admin promotes it, so a fresh record never learns the group. | The record held no family after the promotion. A new add created the family. | Workaround: remove the bot and add it again. Follow-up: create the family on a promotion too. |
+| 6 | The bot logs nothing per handled update, so a silent path leaves no trace in the logs. | Findings 5 and 7. | Follow-up: log one line per handled update. |
+| 7 | `/private` without a reply to a person, and `/send` with no started storyteller, sent no answer. | `features/invitations.ts` on `8c600aa`. | Fixed in PR 24. v2 removed both commands. |
+| 8 | A `/private` reply reached `capture` as an unknown command, because `isCommand` matches only the exact lowercase text. | The counter `rules` went from 1 to 2, and no storyteller was saved. | Follow-up: a case-insensitive, trimmed match in `features/capture/filter.ts`. |
+| 9 | While the `getUpdates` long poll waits, every other Bot API call through global `fetch` waits behind it, for up to about 28 s. | `getMe` took 28.2 s in 3 of 3 rounds on the dev bot. | Fixed in PR 32: the long poll has its own keep-alive agent, and the same calls take 0.06 to 0.23 s. Live since `anchor-bot-00005-fxt`. |
+| 10 | `/fastforward` moves the clock of every family on the bot for good (`State.clockOffset`). A moment without an event date shows its demo-clock date. | `features/fastforward.ts` and `dateOf` in `core/lines.ts`. | Rule: no `/fastforward` on the live bot before the demo. Rehearse on the dev bot. |
+| 11 | Each rollout runs the old and the new revision together for 10 to 16 s, and both poll, so Telegram answers 409. | The logs of revisions `00002` to `00004`. | Expected. Deploy while the family is quiet (section 8). |
+
+Against the journey:
+
+- Step 1: v1 needed an admin to act for the grandfather (`/private`), and the silent paths of findings 7 and 8 blocked the join. v2 lets each member join with one tap (section 4.11). The question of consent that stays valid as his memory changes stays open.
+- Step 2: capture worked on the live bot. The record kept 3 family moments in Greek and in English, and dropped 1 small-talk bundle.
+- Steps 3 to 6: the v1 test did not reach them live. The v2 rehearsal (step 8) covers steps 3 to 5. Step 6 stays a check: a sensitive moment is kept and never comes back.
 
 ## 12. Rules for every step
 
