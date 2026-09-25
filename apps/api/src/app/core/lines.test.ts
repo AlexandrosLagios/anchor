@@ -84,20 +84,36 @@ test('the clip keeps whole emoji and stays inside 600 UTF-16 units', () => {
   expect(lines.memoryCaption('One week ago', moment({ text: '😀'.repeat(700) }))).toContain(`«${'😀'.repeat(299)}…»`);
 });
 
-test('the consent, stop, and just-ask lines read as the design writes them', () => {
+test('the welcome, stop, and just-ask lines read as the design writes them', () => {
   expect(lines.welcome('Nikos')).toBe(
     "Hello Nikos 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. " +
-      "Now and then, and a little more often for you, I'll send you a moment the family shared. " +
-      'Seeing moments again helps them stay with us. You can answer by voice or by text. ' +
-      "There's no right answer, I share nothing unless you say yes, and you can send /stop at any time. Would you like that?",
+      'I can send you family moments now and then, remind you of things, and talk to you by voice. ' +
+      "Seeing moments again helps them stay with us. Tap what you'd like. You can change it at any time: just say \"settings\".",
   );
-  expect(lines.agreed('Nikos')).toBe("Wonderful, Nikos 💛 I'll send you the first moment soon.");
-  expect(lines.stopped).toBe("Of course. I won't send you any more moments. If you'd like them again, send /start.");
+  expect(lines.stopped).toBe('Of course. I won\'t send you anything more. If you\'d like moments again, say "settings".');
   expect(lines.tellDirectly("Maria's first day at school", '25 September 2026', 'Sofia')).toBe(
     "This is Maria's first day at school, from 25 September 2026. Sofia shared it 💛",
   );
-  expect(lines.buttons.agree).toBe("Yes, I'd like that");
   expect(lines.buttons.whatIsThis).toBe('What is this?');
+});
+
+test('intro points to the choices button instead of /private', () => {
+  expect(lines.intro).toContain('Tap the button to choose what I send you in private. ');
+  expect(lines.intro).not.toContain('/private');
+});
+
+test('the v2 step 5 lines read as the design writes them', () => {
+  expect(lines.nudge('Nikos')).toBe('Nikos, I can send you family moments, reminders, and voice notes in private. Tap to choose 🙂');
+  expect(lines.choice(true, 'Talk to me by voice')).toBe('✅ Talk to me by voice');
+  expect(lines.choice(false, 'Talk to me by voice')).toBe('⬜ Talk to me by voice');
+  expect(lines.choicesSaved(['family moments', 'reminders', 'voice notes'])).toBe(
+    'All set 💛 You get: family moments, reminders, and voice notes. Say "settings" to change this.',
+  );
+  expect(lines.choicesSaved([])).toBe('All set. I won\'t send you anything for now. Say "settings" to change this.');
+  expect(lines.shareOffer(['Nikos'])).toBe('Shall I send this to Nikos now?');
+  expect(lines.shareSent(['Nikos', 'Maria'])).toBe('Sent to Nikos and Maria 💛');
+  expect(lines.missed(3)).toBe('The family shared 3 moments since we last talked 💛');
+  expect(lines.buttons.choices.shares).toBe('Offers to send my moments to the family');
 });
 
 test('the v2 reminder and call lines read as the design writes them', () => {

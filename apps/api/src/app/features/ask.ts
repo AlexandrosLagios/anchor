@@ -1,75 +1,29 @@
-import { Logger } from '@nestjs/common';
 import { cut, dateOf, lines } from '../core/lines';
-import type { Feature, Moment } from '../core/types';
-import * as model from '../model/model';
-import { ADDRESS, pictureOf } from './capture/filter';
+import type { Context, Family, Moment } from '../core/types';
+import { pictureOf } from './capture/filter';
 
-const logger = new Logger('Ask');
-
-function choiceLine(moment: Moment) {
+// section 6.4/6.7: the per-moment prompt line, one per non-sensitive moment
+export function choiceLine(moment: Moment) {
   const stories = moment.stories.map((story) => cut(story.text, 200)).join(' | ');
   const people = moment.people.join(', ');
   return `- id ${moment.id}: "${moment.title}", ${dateOf(moment)}, people: ${people}, stories: ${stories}`;
 }
 
-// ponytail: every shareable moment goes into the prompt; shortlist by people or date when a record reaches thousands of moments
-function buildPrompt(question: string, choices: Moment[], hasVoice: boolean) {
-  return (
-    "You are Anchor, the keeper of this family's record. A family member asked a question about a moment from the family record" +
-    `${hasVoice ? ', also attached here as a voice note' : ''}: "${question}"\n` +
-    'Pick the id of the moment that answers the question from this list, or "none" when nothing fits.\n' +
-    choices.map(choiceLine).join('\n')
-  );
+// answers a group question, or the `find` intent, with a moment: the video or the photo with askAnswer as the caption,
+// as a reply, then the first voice story; every post id lands in memoryPostIds
+export async function answerInGroup(family: Family, moment: Moment, replyTo: string, ctx: Context): Promise<void> {
+  const names = [...new Set(moment.stories.map((story) => story.by.name))];
+  const { messageId } = await ctx.transport(family.id).send(family.chatId, {
+    ...pictureOf(moment),
+    text: lines.askAnswer(moment.title, dateOf(moment), names),
+    replyTo,
+  });
+  moment.memoryPostIds.push(messageId);
+
+  const voiceStory = moment.stories.find((story) => story.voice);
+  if (voiceStory) {
+    const voiceSent = await ctx.transport(family.id).send(family.chatId, { voice: voiceStory.voice });
+    moment.memoryPostIds.push(voiceSent.messageId);
+  }
+  ctx.store.save();
 }
-
-export const ask: Feature = {
-  name: 'ask',
-  async handle(event, family, ctx) {
-    if (event.chat !== 'group' || !family || event.forwarded) return false;
-    const text = event.text ?? '';
-    const match = ADDRESS.exec(text);
-    if (!match) return false;
-    const question = text.slice(match[0].length);
-
-    const notFound = async () => {
-      await ctx.transport(family.id).send(event.chatId, { text: lines.notFound, replyTo: event.messageId });
-      return true;
-    };
-
-    const choices = family.moments.filter((moment) => !moment.sensitive);
-    if (!choices.length) return notFound();
-
-    const choiceIds = choices.map((moment) => moment.id);
-    const schema = { type: 'object', properties: { momentId: { type: 'string', enum: [...choiceIds, 'none'] } }, required: ['momentId'] };
-
-    let momentId: string | undefined;
-    try {
-      const clip = event.voice ? await ctx.transport(family.id).download(event.voice) : undefined;
-      const prompt = buildPrompt(question, choices, !!event.voice);
-      const answer = await model.ask<{ momentId: string }>(prompt, schema, clip ? { media: [clip] } : {});
-      momentId = model.valid.oneOf(answer.momentId, choiceIds);
-    } catch (error) {
-      logger.warn(`ask failed: ${error}`);
-    }
-
-    const moment = momentId ? family.moments.find((candidate) => candidate.id === momentId) : undefined;
-    if (!moment || moment.sensitive) return notFound();
-
-    const names = [...new Set(moment.stories.map((story) => story.by.name))];
-    const { messageId } = await ctx.transport(family.id).send(event.chatId, {
-      ...pictureOf(moment),
-      text: lines.askAnswer(moment.title, dateOf(moment), names),
-      replyTo: event.messageId,
-    });
-    moment.memoryPostIds.push(messageId);
-
-    const voiceStory = moment.stories.find((story) => story.voice);
-    if (voiceStory) {
-      const voiceSent = await ctx.transport(family.id).send(event.chatId, { voice: voiceStory.voice });
-      moment.memoryPostIds.push(voiceSent.messageId);
-    }
-    ctx.store.save();
-
-    return true;
-  },
-};

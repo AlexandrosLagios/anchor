@@ -9,6 +9,8 @@ import { toOgg } from './voice';
 const API = 'https://api.telegram.org';
 const GROUP_TYPES = ['group', 'supergroup'];
 const logger = new Logger('Telegram');
+// an edit or a remove runs inside the tick, and the tick loop skips a tick while one runs, so a hung call must not stall every feature
+const TIDY_MS = 5000;
 
 type User = { id: number; is_bot?: boolean; first_name: string; username?: string };
 type Chat = { id: number; type: string };
@@ -245,12 +247,12 @@ export class TelegramTransport implements Transport {
   async edit(chatId: string, messageId: string, { text, buttons, onlyFor }: { text?: string; buttons?: Button[]; onlyFor?: string }) {
     const method = onlyFor ? 'editEphemeralMessage' : 'editMessage';
     const params = { ...target(chatId, messageId, onlyFor), reply_markup: buttons && inline(buttons) };
-    if (text === undefined) await call(this.token, `${method}ReplyMarkup`, params);
-    else await call(this.token, `${method}Text`, { ...params, text: cut(text, 4096) });
+    if (text === undefined) await call(this.token, `${method}ReplyMarkup`, params, AbortSignal.timeout(TIDY_MS));
+    else await call(this.token, `${method}Text`, { ...params, text: cut(text, 4096) }, AbortSignal.timeout(TIDY_MS));
   }
 
   async remove(chatId: string, messageId: string, onlyFor?: string) {
-    await call(this.token, onlyFor ? 'deleteEphemeralMessage' : 'deleteMessage', target(chatId, messageId, onlyFor));
+    await call(this.token, onlyFor ? 'deleteEphemeralMessage' : 'deleteMessage', target(chatId, messageId, onlyFor), AbortSignal.timeout(TIDY_MS));
   }
 
   async react(chatId: string, messageId: string, emoji: string, big?: boolean) {
