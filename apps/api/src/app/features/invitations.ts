@@ -31,6 +31,7 @@ const REPLY_SCHEMA = {
 };
 const BUTTON = /^inv:(later|never|share|keep|what):(.+)$/;
 const STOP = /^stop[.!]?$/i;
+const QUESTION_WORD = /^(who|what|where|when|which|why)\b/i;
 const logger = new Logger('Invitations');
 
 type Reading = { kind: (typeof KINDS)[number]; transcript: string };
@@ -300,7 +301,9 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
 async function reply(event: Incoming, invitation: Invitation, moment: Moment, family: Family, storyteller: Storyteller, ctx: Context) {
   markReplied(invitation, ctx);
   const reading: Reading =
-    event.unsupported || event.forwarded ? { kind: 'other', transcript: '' } : await readReply(event, moment, ctx.transport(family.id));
+    event.unsupported || event.forwarded
+      ? { kind: 'other', transcript: '' }
+      : (readShortQuestion(event) ?? (await readReply(event, moment, ctx.transport(family.id))));
   if (!isOpen(family, storyteller, invitation, moment)) return;
   if (reading.kind === 'story') {
     const text = event.voice ? reading.transcript || lines.voiceNote : (event.text ?? '');
@@ -343,6 +346,13 @@ async function helpIfSilent(family: Family, storyteller: Storyteller, now: numbe
   invitation.helped = true;
   ctx.store.save();
   await explain(gentleHelp(moment), invitation, moment, family, storyteller, ctx);
+}
+
+// a short text that ends with "?" is a hesitation or a question, so code decides it and the model cannot turn it into a story
+function readShortQuestion(event: Incoming): Reading | undefined {
+  const text = event.text?.trim() ?? '';
+  if (event.voice || !text.endsWith('?') || wordCount(text) > 4) return undefined;
+  return { kind: QUESTION_WORD.test(text) ? 'question' : 'unsure', transcript: '' };
 }
 
 async function readReply(event: Incoming, moment: Moment, transport: Transport): Promise<Reading> {

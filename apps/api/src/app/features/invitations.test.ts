@@ -493,9 +493,28 @@ test('a first unsure reply gets gentleHelp and the voice note of the moment, and
     replied: true,
   });
 
-  await receive(fromNikos({ text: 'which one?' }));
+  await receive(fromNikos({ text: 'a park?' }));
   expect(transport.sent[2].message).toEqual({ text: lines.warmClose });
   expect(saved()?.storytellers[0].invitation).toBeUndefined();
+  expect(ask).not.toHaveBeenCalled();
+});
+
+test('a short reply that ends with "?" is decided in code: "school?" is unsure, and "who is that?" is a question', async () => {
+  invite(add({ eventDate: '1958-06-01' }));
+  await receive(fromNikos({ text: 'school?' }));
+  expect(messages()).toEqual([['7', { text: lines.gentleHelp('1 June 1958', "Maria's first day at school") }]]);
+
+  await receive(fromNikos({ text: 'Who is that?' }));
+  expect(transport.sent[1].message).toEqual({ text: lines.tellDirectly("Maria's first day at school", '1 June 1958', 'Sofia') });
+  expect(ask).not.toHaveBeenCalled();
+});
+
+test('a longer reply that ends with "?" still goes to the model', async () => {
+  invite(add());
+  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'story' });
+  await receive(fromNikos({ text: "It was her first day, wasn't it?" }));
+  expect(ask).toHaveBeenCalledTimes(1);
+  expect(transport.sent[0].message).toMatchObject({ text: lines.thanks });
 });
 
 test('an invitation with no reply for 3 hours gets gentleHelp and the voice note of the moment once', async () => {
@@ -665,8 +684,7 @@ test('a reply marks the invitation replied before its call returns, so the silen
 
 test('gentleHelp dates the moment by its event date when it has one', async () => {
   invite(add({ eventDate: '1958-06-01' }));
-  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'unsure' });
-  await receive(fromNikos({ text: 'when was that?' }));
+  await receive(fromNikos({ text: 'the old school?' }));
   expect(messages()).toEqual([['7', { text: lines.gentleHelp('1 June 1958', "Maria's first day at school") }]]);
 });
 
