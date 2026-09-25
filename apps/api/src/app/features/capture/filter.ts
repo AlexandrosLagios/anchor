@@ -36,7 +36,7 @@ export function worthClassifying(bundle: Bundle): boolean {
   const hasVoice = bundle.events.some((event) => event.voice);
   const words = bundle.events.reduce((total, event) => total + wordCount(event.text), 0);
   if (!hasMedia && !hasVoice && words < 3) return false;
-  if (hasMedia && words === 0) return false;
+  if (hasMedia && words === 0 && !hasVoice) return false;
   return true;
 }
 

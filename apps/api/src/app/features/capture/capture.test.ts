@@ -3,6 +3,7 @@ process.env.TZ = 'Europe/Athens';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Logger } from '@nestjs/common';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { FakeTransport } from '../../core/fake-transport';
@@ -201,6 +202,26 @@ test('a captioned video is classified from its thumbnail, and the moment keeps t
   expect(options.media).toEqual([{ data: Buffer.from('t'), mimeType: 'image/jpeg' }]);
 });
 
+test('a bare photo, then a voice note from the same sender: one moment with the photo, the voice, and the transcript', async () => {
+  (ask as Mock).mockResolvedValue({ ...classification, transcript: 'She was so happy that day' });
+  transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });
+  transport.files.set('voice-1', { data: Buffer.from('v'), mimeType: 'audio/ogg' });
+  const photoEvent = event({ photo: { id: 'photo-1' } });
+  await capture.handle(photoEvent, family, ctx);
+
+  advance(30_000);
+  const voiceEvent = event({ voice: { id: 'voice-1' } });
+  await capture.handle(voiceEvent, family, ctx);
+
+  expect(bundles).toHaveLength(1);
+  await tick();
+
+  expect(family.moments).toHaveLength(1);
+  expect(family.moments[0].photo).toEqual({ id: 'photo-1' });
+  expect(family.moments[0].voice).toEqual({ id: 'voice-1' });
+  expect(family.moments[0].text).toBe('She was so happy that day');
+});
+
 test('a text bundle is not classified at 1:59 after its last message, and is classified at 2:00', async () => {
   (ask as Mock).mockResolvedValue(classification);
   await capture.handle(event({ text: 'Maria on her first day' }), family, ctx);
@@ -258,6 +279,7 @@ test('a voice note alone uses the transcript, or the title when the transcript i
 });
 
 test('ask rejecting, or an invalid verdict, counts as failed with no moment', async () => {
+  const warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
   (ask as Mock).mockRejectedValueOnce(new Error('boom'));
   await capture.handle(event({ text: 'Maria on her first day' }), family, ctx);
   advance(BUNDLE_GAP_MS);
@@ -270,6 +292,8 @@ test('ask rejecting, or an invalid verdict, counts as failed with no moment', as
 
   expect(family.moments).toEqual([]);
   expect(family.counters.failed).toBe(2);
+  expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('classification failed'));
+  warnSpy.mockRestore();
 });
 
 test('two concurrent ticks classify a pending bundle once', async () => {
@@ -322,11 +346,13 @@ test('a forget deletes the moment it replies to, the moment of a memory post, or
   ]);
 });
 
-test('a forget removes an open bundle before its tick, so the tick calls no ask', async () => {
+test('a forget removes an open bundle before its tick, so the tick calls no ask, and the drop alone does not save', async () => {
+  const saveSpy = vi.spyOn(ctx.store, 'save');
   const bundleEvent = event({ text: 'Maria on her first day' });
   await capture.handle(bundleEvent, family, ctx);
   await forget.handle(event({ text: 'Anchor, forget this', replyTo: bundleEvent.messageId }), family, ctx);
   expect(bundles).toEqual([]);
+  expect(saveSpy).not.toHaveBeenCalled();
 
   advance(BUNDLE_GAP_MS);
   await tick();
@@ -353,15 +379,18 @@ test('a forget while ask is pending leaves no moment saved', async () => {
   expect(family.moments).toEqual([]);
 });
 
-test('a forget that owns nothing still reacts, and a forget with no reply changes nothing silently', async () => {
+test('a forget that owns nothing still reacts but does not save, and a forget with no reply changes nothing silently', async () => {
+  const saveSpy = vi.spyOn(ctx.store, 'save');
   const stray = event({ text: 'Anchor, forget this', replyTo: 'does-not-exist' });
   expect(await forget.handle(stray, family, ctx)).toBe(true);
   expect(family.moments).toEqual([]);
   expect(transport.reactions).toEqual([{ chatId: '-100', messageId: stray.messageId, emoji: '👌' }]);
+  expect(saveSpy).not.toHaveBeenCalled();
 
   const noReply = event({ text: 'Anchor, forget this' });
   expect(await forget.handle(noReply, family, ctx)).toBe(true);
   expect(transport.reactions).toHaveLength(1);
+  expect(saveSpy).not.toHaveBeenCalled();
 });
 
 test('a keep-quiet marks the moment sensitive and keeps it in place', async () => {

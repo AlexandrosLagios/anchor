@@ -59,6 +59,11 @@ test('worthClassifying keeps 3 typed words, a voice note alone, and a photo with
   expect(worthClassifying(bundle([event({ text: 'Maria', photo: { id: 'p1' } })]))).toBe(true);
 });
 
+test('worthClassifying keeps a bare photo or a bare video that also carries a voice note', () => {
+  expect(worthClassifying(bundle([event({ photo: { id: 'p1' } }), event({ messageId: '2', voice: { id: 'v1' } })]))).toBe(true);
+  expect(worthClassifying(bundle([event({ video: { id: 'v1' } }), event({ messageId: '2', voice: { id: 'v2' } })]))).toBe(true);
+});
+
 test('typedText joins the texts and the captions of the bundle in message order', () => {
   const events = [event({ messageId: '1', text: 'Maria on her first day' }), event({ messageId: '2', text: 'so proud of her' })];
   expect(typedText(bundle(events))).toBe('Maria on her first day\nso proud of her');

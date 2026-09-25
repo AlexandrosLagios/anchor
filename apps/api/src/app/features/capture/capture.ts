@@ -50,26 +50,32 @@ export const forget: Feature = {
 
     const replyTo = event.replyTo;
     const openBundle = bundles.find((bundle) => bundle.familyId === family.id && bundle.events.some((e) => e.messageId === replyTo));
+    let changed = false; // a bundle removal is in-memory only and never needs a save
 
     if (isForget) {
       if (openBundle) removeBundle(openBundle);
       const moment = findMoment(family, replyTo);
       if (moment) {
         family.moments.splice(family.moments.indexOf(moment), 1);
+        changed = true;
       } else {
         const momentOfStory = findMomentOfStory(family, replyTo);
         if (momentOfStory) {
           const storyIndex = momentOfStory.stories.findIndex((story) => story.messageIds.includes(replyTo));
           momentOfStory.stories.splice(storyIndex, 1);
+          changed = true;
         }
       }
     } else {
       if (openBundle) openBundle.sensitive = true;
       const moment = findMoment(family, replyTo) ?? findMomentOfStory(family, replyTo);
-      if (moment) moment.sensitive = true;
+      if (moment && !moment.sensitive) {
+        moment.sensitive = true;
+        changed = true;
+      }
     }
 
-    ctx.store.save();
+    if (changed) ctx.store.save();
     await react(ctx, family, event.chatId, event.messageId, '👌');
     return true;
   },
@@ -88,7 +94,8 @@ async function close(bundle: Bundle, family: Family, ctx: Context) {
   let classification: Classification | undefined;
   try {
     classification = await classify(bundle, ctx.transport(family.id));
-  } catch {
+  } catch (error) {
+    logger.warn(`classification failed for family ${family.id}: ${error}`);
     classification = undefined;
   }
 
