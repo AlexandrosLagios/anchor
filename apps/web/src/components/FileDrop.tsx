@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
-import { getIdToken } from '../lib/auth';
+import { getIdToken, parseApiError } from '../lib/auth';
+import { apiUrl } from '../lib/config';
 
 export type DroppedFile = {
   id: string;
@@ -14,24 +15,14 @@ export type DroppedFile = {
 async function filesApi<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getIdToken();
   if (!token) throw new Error('Sign in required');
-  const response = await fetch(`/api/files${path}`, {
+  const response = await fetch(apiUrl(`/api/files${path}`), {
     ...init,
     headers: {
       authorization: `Bearer ${token}`,
       ...(init?.headers ?? {}),
     },
   });
-  if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      const body = (await response.json()) as { message?: string | string[] };
-      if (Array.isArray(body.message)) message = body.message.join(', ');
-      else if (typeof body.message === 'string') message = body.message;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(message);
-  }
+  if (!response.ok) throw new Error(await parseApiError(response));
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
@@ -66,6 +57,9 @@ export function FileDrop() {
     setStatus('');
     setBusy(true);
     try {
+      if (file.size > Math.floor(4.5 * 1024 * 1024)) {
+        throw new Error('File must be under 4.5 MB');
+      }
       const body = new FormData();
       body.append('file', file);
       await filesApi<DroppedFile>('', { method: 'POST', body });
@@ -90,10 +84,10 @@ export function FileDrop() {
     try {
       const token = await getIdToken();
       if (!token) throw new Error('Sign in required');
-      const response = await fetch(`/api/files/${file.id}/content`, {
+      const response = await fetch(apiUrl(`/api/files/${file.id}/content`), {
         headers: { authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error(`Could not open file (${response.status})`);
+      if (!response.ok) throw new Error(await parseApiError(response));
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
       window.open(objectUrl, '_blank', 'noopener,noreferrer');

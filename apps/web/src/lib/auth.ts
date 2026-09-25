@@ -1,3 +1,5 @@
+import { apiUrl } from './config';
+
 const TOKEN_KEY = 'anchor_auth_token';
 const USER_KEY = 'anchor_auth_user';
 
@@ -40,15 +42,29 @@ function persistSession(user: AuthUser | null, token: string | null) {
   for (const listener of listeners) listener(user);
 }
 
-async function parseError(response: Response): Promise<string> {
+export async function parseApiError(response: Response): Promise<string> {
+  const fallback = `Request failed (${response.status})`;
+  const raw = await response.text();
+  if (!raw) return fallback;
   try {
-    const body = (await response.json()) as { message?: string | string[] };
+    const body = JSON.parse(raw) as {
+      message?: string | string[];
+      error?: string | { message?: string; code?: string };
+      code?: string;
+    };
     if (Array.isArray(body.message)) return body.message.join(', ');
-    if (typeof body.message === 'string') return body.message;
+    if (typeof body.message === 'string' && body.message.trim()) return body.message;
+    if (typeof body.error === 'string' && body.error.trim()) return body.error;
+    if (body.error && typeof body.error === 'object') {
+      const nested = [body.error.code, body.error.message].filter(Boolean).join(': ');
+      if (nested) return nested;
+    }
+    if (typeof body.code === 'string' && body.code.trim()) return body.code;
   } catch {
-    /* ignore */
+    const trimmed = raw.trim().replace(/\s+/g, ' ');
+    if (trimmed) return trimmed.slice(0, 240);
   }
-  return `Request failed (${response.status})`;
+  return fallback;
 }
 
 export async function getIdToken(): Promise<string | null> {
@@ -73,24 +89,24 @@ export async function signUp(input: {
   if (!input.consents.terms || !input.consents.privacy) {
     throw new Error('You must accept the Terms and Privacy Policy.');
   }
-  const response = await fetch('/api/auth/signup', {
+  const response = await fetch(apiUrl('/api/auth/signup'), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(input),
   });
-  if (!response.ok) throw new Error(await parseError(response));
+  if (!response.ok) throw new Error(await parseApiError(response));
   const data = (await response.json()) as AuthResponse;
   persistSession(data.user, data.token);
   return data.user;
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
-  const response = await fetch('/api/auth/login', {
+  const response = await fetch(apiUrl('/api/auth/login'), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
-  if (!response.ok) throw new Error(await parseError(response));
+  if (!response.ok) throw new Error(await parseApiError(response));
   const data = (await response.json()) as AuthResponse;
   persistSession(data.user, data.token);
   return data.user;
@@ -106,7 +122,7 @@ export async function refreshMe(): Promise<AuthUser | null> {
     persistSession(null, null);
     return null;
   }
-  const response = await fetch('/api/auth/me', {
+  const response = await fetch(apiUrl('/api/auth/me'), {
     headers: { authorization: `Bearer ${token}` },
   });
   if (!response.ok) {

@@ -10,19 +10,35 @@ import { wav } from './song';
 vi.mock('./http', () => ({ httpFetch: vi.fn() }));
 const fetchMock = vi.mocked(httpFetch);
 
-const answer = (content: object[]): HttpResponse => ({
+const chat = (value: unknown): HttpResponse => ({
   ok: true,
   status: 200,
-  json: async () => ({ steps: [{ type: 'model_output', content }] }),
+  json: async () => ({ choices: [{ message: { content: JSON.stringify(value) } }] }),
   text: async () => '',
   arrayBuffer: async () => new ArrayBuffer(0),
 });
-const json = (value: unknown) => answer([{ type: 'text', text: JSON.stringify(value) }]);
-const failure: HttpResponse = { ...answer([]), ok: false, status: 500, text: async () => 'internal' };
-const request = (call: number) => JSON.parse(String(fetchMock.mock.calls[call][1]?.body));
+const transcript = (text: string): HttpResponse => ({
+  ok: true,
+  status: 200,
+  json: async () => ({ text }),
+  text: async () => '',
+  arrayBuffer: async () => new ArrayBuffer(0),
+});
+const speech = (audio: Buffer): HttpResponse => ({
+  ok: true,
+  status: 200,
+  json: async () => ({}),
+  text: async () => '',
+  arrayBuffer: async () => Uint8Array.from(audio).buffer,
+});
+const failure: HttpResponse = { ...chat({}), ok: false, status: 500, text: async () => 'internal' };
+const body = (call: number) => fetchMock.mock.calls[call][1]?.body;
+const jsonBody = (call: number) => JSON.parse(String(body(call)));
 
 beforeEach(() => {
   fetchMock.mockReset();
+  vi.stubEnv('OPENAI_API_KEY', 'test-key');
+  vi.stubEnv('OPENAI_VOICE', 'coral');
 });
 
 test('valid.oneOf keeps an allowed value only', () => {
@@ -64,83 +80,106 @@ test('valid.date keeps a real YYYY-MM-DD date only', () => {
   expect(valid.date('')).toBeUndefined();
 });
 
-test('ask sends each media item as an image or audio input after the prompt', async () => {
-  fetchMock.mockResolvedValue(json({ ok: true }));
+test('ask transcribes OGG first and sends photos to the chat model', async () => {
+  fetchMock.mockResolvedValueOnce(transcript('we went to Nafplio')).mockResolvedValueOnce(chat({ ok: true }));
   const prompt = `Describe the moment ${randomUUID()}`;
-  await ask(prompt, { type: 'object' }, {
+  await ask(prompt, { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] }, {
     media: [
       { data: Buffer.from('jpeg bytes'), mimeType: 'image/jpeg' },
       { data: Buffer.from('ogg bytes'), mimeType: 'audio/ogg' },
     ],
   });
-  expect(request(0).input).toEqual([
-    { type: 'text', text: prompt },
-    { type: 'image', data: Buffer.from('jpeg bytes').toString('base64'), mime_type: 'image/jpeg' },
-    { type: 'audio', data: Buffer.from('ogg bytes').toString('base64'), mime_type: 'audio/ogg' },
-  ]);
+  expect(String(fetchMock.mock.calls[0][0])).toContain('/audio/transcriptions');
+  expect(body(0)).toBeInstanceOf(FormData);
+  const sent = jsonBody(1);
+  expect(sent.messages[0].content[0].text).toContain('Spoken transcript: «we went to Nafplio»');
+  expect(sent.messages[0].content[1].type).toBe('image_url');
+  expect(JSON.stringify(sent.messages[0].content)).not.toContain('ogg bytes');
 });
 
-test('ask keeps the audio option an audio input whatever its mime type', async () => {
-  fetchMock.mockResolvedValue(json({ ok: true }));
-  await ask(`Describe the voice note ${randomUUID()}`, { type: 'object' }, { audio: { data: Buffer.from('voice'), mimeType: '' } });
-  expect(request(0).input[1].type).toBe('audio');
+test('ask treats the audio option as a voice note whatever its mime type', async () => {
+  fetchMock.mockResolvedValueOnce(transcript('hello')).mockResolvedValueOnce(chat({ ok: true }));
+  await ask(`Describe the voice note ${randomUUID()}`, { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] }, {
+    audio: { data: Buffer.from('voice'), mimeType: '' },
+  });
+  expect(String(fetchMock.mock.calls[0][0])).toContain('/audio/transcriptions');
+  expect(jsonBody(1).messages[0].content).toContain('Spoken transcript: «hello»');
+});
+
+test('ask marks every property required and keeps enums for strict JSON schema', async () => {
+  fetchMock.mockResolvedValue(chat({ verdict: 'family_moment', ids: ['m1'] }));
+  const schema = {
+    type: 'object',
+    properties: {
+      verdict: { type: 'string', enum: ['family_moment', 'sensitive'] },
+      ids: { type: 'array', items: { type: 'string' } },
+    },
+    required: ['verdict'],
+  };
+  await ask(`Judge ${randomUUID()}`, schema);
+  const sent = jsonBody(0).response_format.json_schema.schema;
+  expect(sent.additionalProperties).toBe(false);
+  expect(sent.required).toEqual(['verdict', 'ids']);
+  expect(sent.properties.verdict.enum).toEqual(['family_moment', 'sensitive']);
 });
 
 test('ask caches no answer that does not parse, so the next call asks again', async () => {
-  fetchMock.mockResolvedValueOnce(answer([])).mockResolvedValueOnce(json({ title: 'Nafplio' }));
+  fetchMock
+    .mockResolvedValueOnce({ ...chat({}), json: async () => ({ choices: [{ message: { content: 'not-json' } }] }) })
+    .mockResolvedValueOnce(chat({ title: 'Nafplio' }));
   const prompt = `Title the moment ${randomUUID()}`;
-  await expect(ask(prompt, { type: 'object' })).rejects.toThrow();
-  expect(await ask(prompt, { type: 'object' })).toEqual({ title: 'Nafplio' });
+  const schema = { type: 'object', properties: { title: { type: 'string' } }, required: ['title'] };
+  await expect(ask(prompt, schema)).rejects.toThrow();
+  expect(await ask(prompt, schema)).toEqual({ title: 'Nafplio' });
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 
 test('ask caches per media item, so another photo with the same prompt gets its own answer', async () => {
-  fetchMock.mockResolvedValueOnce(json({ title: 'first' })).mockResolvedValueOnce(json({ title: 'second' }));
+  fetchMock.mockResolvedValueOnce(chat({ title: 'first' })).mockResolvedValueOnce(chat({ title: 'second' }));
   const prompt = `Title the moment ${randomUUID()}`;
+  const schema = { type: 'object', properties: { title: { type: 'string' } }, required: ['title'] };
   const photo = (bytes: string) => ({ media: [{ data: Buffer.from(bytes), mimeType: 'image/jpeg' }] });
-  expect(await ask(prompt, { type: 'object' }, photo('photo one'))).toEqual({ title: 'first' });
-  expect(await ask(prompt, { type: 'object' }, photo('photo two'))).toEqual({ title: 'second' });
-  expect(await ask(prompt, { type: 'object' }, photo('photo one'))).toEqual({ title: 'first' });
+  expect(await ask(prompt, schema, photo('photo one'))).toEqual({ title: 'first' });
+  expect(await ask(prompt, schema, photo('photo two'))).toEqual({ title: 'second' });
+  expect(await ask(prompt, schema, photo('photo one'))).toEqual({ title: 'first' });
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 
-test('transcribe returns the trimmed transcript from a fast model', async () => {
-  fetchMock.mockResolvedValue(json({ transcript: '  We went to Nafplio that summer  ' }));
+test('transcribe returns the trimmed transcript and sends OGG to the transcription endpoint', async () => {
+  fetchMock.mockResolvedValue(transcript('  We went to Nafplio that summer  '));
   const clip = { data: Buffer.from(randomUUID()), mimeType: 'audio/ogg' };
   expect(await transcribe(clip)).toBe('We went to Nafplio that summer');
-  expect(request(0).model).toBe('gemini-3.5-flash-lite');
-  expect(request(0).input[1]).toEqual({ type: 'audio', data: clip.data.toString('base64'), mime_type: 'audio/ogg' });
+  expect(String(fetchMock.mock.calls[0][0])).toContain('/audio/transcriptions');
+  const form = body(0) as FormData;
+  expect(form.get('model')).toBe('gpt-4o-mini-transcribe');
+  expect((form.get('file') as File).name).toBe('clip.ogg');
 });
 
-test('transcribe returns an empty string for an invalid answer or a failed call', async () => {
-  fetchMock.mockResolvedValueOnce(json({ transcript: 5 }));
-  expect(await transcribe({ data: Buffer.from(randomUUID()), mimeType: 'audio/ogg' })).toBe('');
+test('transcribe returns an empty string for a failed call', async () => {
   fetchMock.mockResolvedValue(failure);
   expect(await transcribe({ data: Buffer.from(randomUUID()), mimeType: 'audio/ogg' })).toBe('');
 });
 
-const cacheDir = join(tmpdir(), 'anchor-gemini');
+const cacheDir = join(tmpdir(), 'anchor-openai');
 const cacheFile = (key: string) => join(cacheDir, createHash('sha1').update(key).digest('hex'));
-const cacheDefaultClip = (text: string) => {
+
+test('speak without a style returns WAV and reuses the cached clip', async () => {
+  const text = `Maria's first day at school ${randomUUID()}`;
   const clip = wav(Buffer.alloc(8), 24000);
   mkdirSync(cacheDir, { recursive: true });
-  writeFileSync(cacheFile(`speak:Sulafat:${text}`), clip);
-  return clip;
-};
-
-test('speak without a style reuses the clip that the prototype cached', async () => {
-  const text = `Maria's first day at school ${randomUUID()}`;
-  const clip = cacheDefaultClip(text);
+  writeFileSync(cacheFile(`speak:coral:${text}`), clip);
   expect(await speak(text)).toEqual(clip);
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-test('speak with a style asks for that style and caches it apart from the default', async () => {
+test('speak with a style asks for that style and returns WAV', async () => {
   const text = `Maria's first day at school ${randomUUID()}`;
-  cacheDefaultClip(text);
-  fetchMock.mockResolvedValue(answer([{ type: 'audio', data: Buffer.alloc(8).toString('base64') }]));
+  const clip = wav(Buffer.alloc(8), 24000);
+  fetchMock.mockResolvedValue(speech(clip));
   const style = 'warm, calm and slow, like a kind family friend talking to a grandparent';
   const audio = await speak(text, style);
   expect(audio.subarray(0, 4).toString()).toBe('RIFF');
-  expect(request(0).input[0].content[0]).toEqual({ type: 'text', text, annotations: [{ type: 'speech_metadata', style }] });
+  expect(jsonBody(0).response_format).toBe('wav');
+  expect(jsonBody(0).instructions).toBe(style);
+  expect(String(fetchMock.mock.calls[0][0])).toContain('/audio/speech');
 });

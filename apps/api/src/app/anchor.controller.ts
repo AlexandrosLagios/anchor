@@ -12,6 +12,7 @@ import {
   Post,
   Req,
   StreamableFile,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
@@ -19,6 +20,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { AnchorService, Role } from './anchor.service';
 import { AuthGuard, CurrentUser, type AuthUser } from './auth.guard';
+import { ChatService } from './chat.service';
 import { download, sendWhatsApp, twiml, validTwilioRequest } from './twilio';
 import { UserStoreService } from './user-store.service';
 
@@ -43,7 +45,8 @@ export class RootController {
     return {
       ok: true,
       service: 'anchor-api',
-      geminiDataRegionNote: process.env.GEMINI_DATA_REGION_NOTE ?? 'developer-api-global',
+      aiProvider: 'openai',
+      aiDataRegionNote: process.env.OPENAI_DATA_REGION_NOTE ?? 'openai-api-global',
       requireAuth: process.env.REQUIRE_AUTH === 'true' || process.env.REQUIRE_AUTH === '1',
     };
   }
@@ -106,6 +109,7 @@ export class AnchorController {
   constructor(
     private readonly anchor: AnchorService,
     private readonly userStore: UserStoreService,
+    private readonly chatService: ChatService,
   ) {}
 
   @Get('state')
@@ -136,6 +140,12 @@ export class AnchorController {
     if (!result.ok) throw new BadRequestException(result.reason);
     await this.persist(owner);
     return result;
+  }
+
+  @Post('chat')
+  async chat(@Body() body: { messages?: unknown }, @CurrentUser() user: AuthUser | null) {
+    if (!user) throw new UnauthorizedException('Sign in required');
+    return this.chatService.reply(user.uid, body.messages);
   }
 
   @Post('reply')

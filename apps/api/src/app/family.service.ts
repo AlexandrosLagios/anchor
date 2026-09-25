@@ -3,10 +3,13 @@ import { demoNow } from './core/clock';
 import { createRouter } from './core/router';
 import { openStore } from './core/store';
 import type { Feature } from './core/types';
+import { ask } from './features/ask';
+import { echoes } from './features/echoes';
+import { fastforward } from './features/fastforward';
 import { intro } from './features/intro';
 import { TelegramTransport } from './transports/telegram';
 
-const FEATURES: Feature[] = [intro];
+const FEATURES: Feature[] = [intro, fastforward, ask, echoes];
 
 @Injectable()
 export class FamilyService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -32,7 +35,7 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
     const configured = Number(process.env.ANCHOR_DAY_SECONDS);
     const daySeconds = configured > 0 ? configured : 86400;
     const telegram = await TelegramTransport.connect(token, this.stop.signal);
-    const now = () => demoNow(store.state.clockStart, daySeconds);
+    const now = () => demoNow(store.state, daySeconds);
     const router = createRouter(FEATURES, { now, store, transport: () => telegram });
 
     // ponytail: the first window starts at boot, so a slot that falls while the host is down is skipped; persist the last tick when that matters

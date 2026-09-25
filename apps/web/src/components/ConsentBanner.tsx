@@ -25,7 +25,7 @@ export function ConsentBanner() {
         <h2 id="consent-title">Cookies &amp; privacy</h2>
         <p id="consent-body">
           We use essential cookies for sign-in and security. Analytics cookies are off by default. Account data stays in
-          the EU; AI processing via Gemini may leave the EU — see <a href="/privacy">Privacy</a> and{' '}
+          the EU; AI processing via OpenAI may leave the EU — see <a href="/privacy">Privacy</a> and{' '}
           <a href="/cookies">Cookies</a>.
         </p>
         <div className="consent-actions">

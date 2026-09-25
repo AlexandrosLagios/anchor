@@ -6,7 +6,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
 <BaseLayout
   title="Privacy"
-  description="How Anchor processes personal data under GDPR, where EU data is stored, and how Gemini AI is used."
+  description="How Anchor processes personal data under GDPR, where EU data is stored, and how OpenAI is used."
   currentPath="/privacy"
 >
   <article class="prose">
@@ -25,6 +25,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <h2>What we collect</h2>
     <ul>
       <li>Account data: email, display name, account UUID.</li>
+      <li>Family membership: the family name, who belongs to it, and email addresses invited to join.</li>
       <li>Consent records: acceptance of Terms and Privacy, optional marketing preference, timestamps (Neon).</li>
       <li>Family moments: text, photos, or voice notes you submit in the demo or via WhatsApp.</li>
       <li>Uploaded files: Blob objects plus Neon metadata keyed by account id.</li>
@@ -44,26 +45,27 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
       (<code>eu-central-1</code>)</strong>. Optional media assets use <strong>Vercel Blob in Frankfurt (<code>fra1</code>)</strong>.
     </p>
 
-    <h2>Artificial intelligence (Gemini)</h2>
+    <h2>Artificial intelligence (OpenAI)</h2>
     <p>
-      To extract recallable moments and synthesise speech we send relevant text/media to <strong>Google’s Gemini Developer
-      API</strong> (<code>generativelanguage.googleapis.com</code>). This is <strong>not</strong> Vertex AI with EU
-      residency guarantees. Prompts and media may be processed <strong>outside the European Union</strong> under Google’s
-      Gemini API terms. Do not submit special-category health data you are not prepared to share with that processor.
+      To extract recallable moments, answer website chat questions about those moments and file names, transcribe voice
+      notes, and synthesise speech we send relevant text and audio to
+      <strong>OpenAI’s API</strong> (<code>api.openai.com</code>). Prompts and media may be processed
+      <strong>outside the European Union</strong> under OpenAI’s API terms. Do not submit special-category health data you
+      are not prepared to share with that processor.
     </p>
 
     <h2>Processors</h2>
     <ul>
       <li>Neon (Vercel Marketplace) — Postgres in EU <code>eu-central-1</code> (accounts, consents, file metadata, snapshots).</li>
       <li>Vercel — website, Nest API (Frankfurt), and Blob storage (<code>fra1</code>).</li>
-      <li>Google Gemini API — AI extraction and TTS (may process outside the EU).</li>
+      <li>OpenAI API — moment extraction, website chat answers, transcription, and speech (may process outside the EU). Website chat text is sent with the request and is not stored as a transcript.</li>
       <li>Twilio — WhatsApp delivery when connected.</li>
     </ul>
 
     <h2>Retention</h2>
     <p>
       Account and Neon data are kept while your account exists, or until you request deletion. Blob objects follow the same
-      account lifetime. Anonymous in-memory demo state on the API may reset when the server restarts. Cached Gemini answers
+      account lifetime. Anonymous in-memory demo state on the API may reset when the server restarts. Cached OpenAI answers
       on the API filesystem are ephemeral operational caches.
     </p>
 

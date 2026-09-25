@@ -159,7 +159,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 
 The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks".
 
-`invitation`, `memoryCaption`, `storyAdded`, and `echoCaption` clip each quoted text to 600 characters and end the clip with "…". The caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. The step 1 session writes every line. A feature step asks that session for a wording change, and no line may break section 1.
+`invitation`, `memoryCaption`, and `storyAdded` clip the quoted text to 600 characters, and `echoCaption` clips each of its two quotes to 450 characters. Each clip ends with "…". Every caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. The step 1 session writes every line. A feature step asks that session for a wording change, and no line may break section 1.
 
 ### 4.10 Demo additions
 
@@ -400,6 +400,8 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 
 ### 6.1 Shared rules
 
+- The model seam: every feature calls only the exports of `gemini.ts`, which are `ask`, `transcribe`, `speak`, and `valid`. Every test mocks that module. A teammate is moving the provider from Gemini to OpenAI, and the seam lets that change land without an edit to a feature.
+- The seam contract: `ask<T>(prompt, schema, { audio?, media?, fast?, timeoutMs? })` returns JSON that matches the schema, and `media` holds images and audio clips. `transcribe(clip)` returns a transcript or an empty string. `speak(text, style?)` returns WAV, which `transports/voice.ts` converts for Telegram.
 - `ask` gets a `media` option, a list of `{ data, mimeType }`, next to the `audio` option that the prototype uses. An `image/*` item becomes an image input, and an `audio/*` item becomes an audio input.
 - The input items are `{ type: 'image', data, mime_type }` and `{ type: 'audio', data, mime_type }`, with base64 data (ai.google.dev/api/interactions-api).
 - The disk cache key includes a hash of every media item.

@@ -3,26 +3,29 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { httpFetch } from './http';
 import { cut } from './core/lines';
+import { httpFetch } from './http';
 import { wav } from './song';
 
-const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
-const TEXT_MODELS = [process.env.GEMINI_MODEL ?? 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.5-flash-lite'];
-const FAST_MODELS = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash'];
-const TTS_MODELS = [
-  process.env.GEMINI_TTS_MODEL ?? 'gemini-3.8-flash-tts',
-  'gemini-3.8-flash-lite-tts',
-  'gemini-3.1-flash-tts-preview',
-  'gemini-2.5-flash-preview-tts',
-];
-const VOICE = process.env.GEMINI_VOICE ?? 'Sulafat';
-const CACHE = join(tmpdir(), 'anchor-gemini');
+const CHAT = 'https://api.openai.com/v1/chat/completions';
+const TRANSCRIPTIONS = 'https://api.openai.com/v1/audio/transcriptions';
+const SPEECH = 'https://api.openai.com/v1/audio/speech';
+const TEXT_MODELS = [process.env.OPENAI_MODEL ?? 'gpt-4.1-mini', 'gpt-4o-mini'];
+const TRANSCRIBE_MODEL = process.env.OPENAI_TRANSCRIBE_MODEL ?? 'gpt-4o-mini-transcribe';
+const TTS_MODEL = process.env.OPENAI_TTS_MODEL ?? 'gpt-4o-mini-tts';
+const VOICE = process.env.OPENAI_VOICE ?? 'coral';
+const CACHE = join(tmpdir(), 'anchor-openai');
 const PROTOTYPE_STYLE = 'warm, calm and slow, like a kind family friend talking to an older woman';
-const logger = new Logger('Gemini');
+const logger = new Logger('OpenAI');
 
-type Content = { type: string; text?: string; data?: string };
 type Clip = { data: Buffer; mimeType: string };
+type Schema = {
+  type?: string;
+  properties?: Record<string, Schema>;
+  required?: string[];
+  items?: Schema;
+  additionalProperties?: boolean;
+};
 
 /** Checks every answer field in code, because the response schema may ignore enum, minimum, and maximum. */
 export const valid = {
@@ -38,7 +41,6 @@ export const valid = {
   },
 };
 
-// ponytail: every answer is cached on disk, because the free tier allows about 10 TTS requests per model per day
 async function cached(key: string, produce: () => Promise<Buffer>): Promise<Buffer> {
   const file = join(CACHE, createHash('sha1').update(key).digest('hex'));
   try {
@@ -56,22 +58,82 @@ async function cached(key: string, produce: () => Promise<Buffer>): Promise<Buff
   return data;
 }
 
-// ponytail: an overloaded or rate-limited model (429 or 503) falls through to the next one, no backoff
-async function interact(models: string[], body: object | ((model: string) => object), timeoutMs: number): Promise<Content[]> {
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  const key = process.env.OPENAI_API_KEY ?? '';
+  if (!key) throw new Error('OPENAI_API_KEY is not set');
+  return { authorization: `Bearer ${key}`, ...extra };
+}
+
+function extension(mimeType: string): string {
+  if (mimeType.includes('mpeg')) return 'mp3';
+  if (mimeType.includes('ogg')) return 'ogg';
+  if (mimeType.includes('mp4') || mimeType.includes('m4a')) return 'm4a';
+  if (mimeType.includes('webm')) return 'webm';
+  return 'wav';
+}
+
+/** OpenAI transcription accepts OGG Opus. Chat audio input does not, so voice notes are transcribed first. */
+async function transcribeClip(clip: Clip): Promise<string> {
+  const form = new FormData();
+  form.append('file', new Blob([new Uint8Array(clip.data)], { type: clip.mimeType || 'audio/ogg' }), `clip.${extension(clip.mimeType)}`);
+  form.append('model', TRANSCRIBE_MODEL);
+  const response = await httpFetch(TRANSCRIPTIONS, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: form,
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!response.ok) throw new Error(`OpenAI transcribe ${response.status}: ${await response.text()}`);
+  const body = (await response.json()) as { text?: string };
+  return (body.text ?? '').trim();
+}
+
+/** Strict JSON schema requires every property to be required and additionalProperties: false. */
+function strictSchema(schema: Schema): Schema {
+  const copy: Schema = { ...schema };
+  if (copy.type === 'object' && copy.properties) {
+    copy.additionalProperties = false;
+    copy.properties = Object.fromEntries(Object.entries(copy.properties).map(([key, value]) => [key, strictSchema(value)]));
+    copy.required = Object.keys(copy.properties);
+  }
+  if (copy.type === 'array' && copy.items) copy.items = strictSchema(copy.items);
+  return copy;
+}
+
+async function complete(prompt: string, schema: object, images: Clip[], timeoutMs: number): Promise<string> {
+  const content = images.length
+    ? [
+        { type: 'text', text: prompt },
+        ...images.map((item) => ({
+          type: 'image_url',
+          image_url: { url: `data:${item.mimeType};base64,${item.data.toString('base64')}` },
+        })),
+      ]
+    : prompt;
   const deadline = AbortSignal.timeout(timeoutMs);
-  for (const [index, model] of models.entries()) {
-    const response = await httpFetch(ENDPOINT, {
+  for (const [index, model] of TEXT_MODELS.entries()) {
+    const response = await httpFetch(CHAT, {
       method: 'POST',
-      headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY ?? '', 'content-type': 'application/json' },
-      body: JSON.stringify({ model, ...(typeof body === 'function' ? body(model) : body) }),
+      headers: authHeaders({ 'content-type': 'application/json' }),
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content }],
+        response_format: {
+          type: 'json_schema',
+          json_schema: { name: 'anchor_result', strict: true, schema: strictSchema(schema as Schema) },
+        },
+      }),
       signal: deadline,
     });
-    if ((response.status === 429 || response.status === 503) && index < models.length - 1) continue;
-    if (!response.ok) throw new Error(`Gemini ${model} ${response.status}: ${await response.text()}`);
-    const interaction = (await response.json()) as { steps: { type: string; content?: Content[] }[] };
-    return interaction.steps.filter((step) => step.type === 'model_output').flatMap((step) => step.content ?? []);
+    if ((response.status === 429 || response.status === 503) && index < TEXT_MODELS.length - 1) continue;
+    if (!response.ok) throw new Error(`OpenAI ${model} ${response.status}: ${await response.text()}`);
+    const body = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+    const text = body.choices?.[0]?.message?.content;
+    if (!text) throw new Error(`OpenAI ${model} returned no content`);
+    JSON.parse(text);
+    return text;
   }
-  throw new Error('Gemini: no model left');
+  throw new Error('OpenAI: no model left');
 }
 
 export async function ask<T>(
@@ -81,29 +143,19 @@ export async function ask<T>(
 ): Promise<T> {
   const { audio, fast, timeoutMs } = options;
   const media = [...(options.media ?? []), ...(audio ? [audio] : [])];
-  const input = media.length
-    ? [
-        { type: 'text', text: prompt },
-        ...media.map((item) => ({
-          type: item.mimeType.startsWith('image/') ? 'image' : 'audio',
-          data: item.data.toString('base64'),
-          mime_type: item.mimeType,
-        })),
-      ]
-    : prompt;
-  const produce = async () => {
-    const content = await interact(
-      fast ? FAST_MODELS : TEXT_MODELS,
-      { input, response_format: { type: 'text', mime_type: 'application/json', schema } },
-      timeoutMs ?? (fast ? 9000 : 45000),
-    );
-    const text = content.filter((item) => item.type === 'text').map((item) => item.text).join('');
-    JSON.parse(text); // throws before the cache stores an answer that does not parse
-    return Buffer.from(text);
-  };
+  const audioClips = media.filter((item) => !item.mimeType.startsWith('image/'));
+  const images = media.filter((item) => item.mimeType.startsWith('image/'));
+  const transcripts = await Promise.all(audioClips.map((clip) => transcribeClip(clip)));
+  const spoken = transcripts.filter(Boolean);
+  const text = spoken.length ? `${prompt}\n\nSpoken transcript: «${spoken.join('\n')}»` : prompt;
+  const properties = (schema as Schema).properties ?? {};
+  if (audioClips.length && !images.length && Object.keys(properties).length === 1 && 'transcript' in properties) {
+    return { transcript: transcripts[0] ?? '' } as T;
+  }
   const hashes = media.map((item) => createHash('sha1').update(item.data).digest('hex'));
-  const key = `ask:${prompt}:${JSON.stringify(schema)}:${hashes.join(',')}`;
-  return JSON.parse((await cached(key, produce)).toString());
+  const key = `ask:${text}:${JSON.stringify(schema)}:${hashes.join(',')}`;
+  const raw = await cached(key, async () => Buffer.from(await complete(text, schema, images, timeoutMs ?? (fast ? 9000 : 45000))));
+  return JSON.parse(raw.toString()) as T;
 }
 
 export async function transcribe(clip: Clip): Promise<string> {
@@ -115,36 +167,28 @@ export async function transcribe(clip: Clip): Promise<string> {
     );
     return valid.text(result.transcript);
   } catch (error) {
-    logger.warn(`Gemini transcription failed: ${error}`);
+    logger.warn(`OpenAI transcription failed: ${error}`);
     return '';
   }
 }
 
 export async function speak(text: string, style = PROTOTYPE_STYLE): Promise<Buffer> {
-  // ponytail: the default key predates the style, so the prototype keeps its cached clips; drop the branch with the prototype
   const key = style === PROTOTYPE_STYLE ? `speak:${VOICE}:${text}` : `speak:${VOICE}:${style}:${text}`;
   const audio = await cached(key, async () => {
-    const content = await interact(
-      TTS_MODELS,
-      (model) => ({
-        input: [
-          {
-            type: 'user_input',
-            content: [
-              model.startsWith('gemini-3.8')
-                ? { type: 'text', text, annotations: [{ type: 'speech_metadata', style }] }
-                : { type: 'text', text: `Say in a ${style} voice: ${text}` },
-            ],
-          },
-        ],
-        response_format: { type: 'audio' },
-        generation_config: { speech_config: [{ voice: VOICE }] },
+    const response = await httpFetch(SPEECH, {
+      method: 'POST',
+      headers: authHeaders({ 'content-type': 'application/json' }),
+      body: JSON.stringify({
+        model: TTS_MODEL,
+        voice: VOICE,
+        input: text,
+        instructions: style,
+        response_format: 'wav',
       }),
-      30000,
-    );
-    const audio = content.filter((item) => item.type === 'audio').at(-1);
-    if (!audio?.data) throw new Error('Gemini returned no audio');
-    return Buffer.from(audio.data, 'base64');
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok) throw new Error(`OpenAI speech ${response.status}: ${await response.text()}`);
+    return Buffer.from(await response.arrayBuffer());
   });
   return audio.subarray(0, 4).toString() === 'RIFF' ? audio : wav(audio, 24000);
 }

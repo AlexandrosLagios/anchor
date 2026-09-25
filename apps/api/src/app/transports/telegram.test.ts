@@ -309,6 +309,58 @@ test('send never cuts a caption inside an emoji', async () => {
   expect(calls.at(-1)?.params.caption).toBe('x'.repeat(1023));
 });
 
+test('send posts an album with the caption on the first item and returns the first message id', async () => {
+  const calls = botApi(() => ok([sentMessage({ message_id: 80 }), sentMessage({ message_id: 81 })]));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  const sent = await telegram.send('-1001234567890', {
+    album: [{ video: { id: 'video-1' } }, { photo: { id: 'large' } }],
+    text: 'y'.repeat(1100),
+    buttons: [{ label: 'Not now', data: 'not-now' }],
+  });
+  expect(sent).toEqual({ messageId: '80' });
+  expect(calls.at(-1)).toEqual({
+    url: 'https://api.telegram.org/botTOKEN/sendMediaGroup',
+    method: 'sendMediaGroup',
+    params: {
+      chat_id: '-1001234567890',
+      media: [
+        { type: 'video', media: 'video-1', caption: 'y'.repeat(1024) },
+        { type: 'photo', media: 'large' },
+      ],
+    },
+  });
+});
+
+test('send mentions the first occurrence of the name, with offsets in UTF-16 units', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  const sofiaPerson = { id: '111', name: 'Sofia' };
+  await telegram.send('-1001234567890', { text: '🎙️ Nikos added a story to Sofia\'s moment', mention: sofiaPerson });
+  expect(calls.at(-1)?.params.entities).toEqual([
+    { type: 'text_mention', offset: 27, length: 5, user: { id: 111, is_bot: false, first_name: 'Sofia' } },
+  ]);
+  await telegram.send('-1001234567890', { photo: { id: 'large' }, text: 'Sofia shared this', mention: sofiaPerson });
+  expect(calls.at(-1)?.params.caption_entities).toEqual([
+    { type: 'text_mention', offset: 0, length: 5, user: { id: 111, is_bot: false, first_name: 'Sofia' } },
+  ]);
+});
+
+test('send mentions the name as a whole word, not inside a longer name', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.send('-1001234567890', { text: "Marianna added a story to Maria's moment 🎙️", mention: { id: '111', name: 'Maria' } });
+  expect(calls.at(-1)?.params.entities).toEqual([
+    { type: 'text_mention', offset: 26, length: 5, user: { id: 111, is_bot: false, first_name: 'Maria' } },
+  ]);
+});
+
+test('send adds no mention when the text does not hold the name', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.send('-1001234567890', { text: 'Nikos added a story', mention: { id: '111', name: 'Sofia' } });
+  expect(calls.at(-1)?.params.entities).toBeUndefined();
+});
+
 test('send posts text with sendMessage', async () => {
   const calls = botApi();
   const telegram = await TelegramTransport.connect('TOKEN');
@@ -355,6 +407,13 @@ test('react sets ❤ without the emoji variation selector', async () => {
     method: 'setMessageReaction',
     params: { chat_id: '-1001234567890', message_id: 42, reaction: [{ type: 'emoji', emoji: '❤' }] },
   });
+});
+
+test('react with big sets the big animation', async () => {
+  const calls = botApi(() => ok(true));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.react('-1001234567890', '42', '\u2764', true);
+  expect(calls.at(-1)?.params).toMatchObject({ reaction: [{ type: 'emoji', emoji: '\u2764' }], is_big: true });
 });
 
 test('download fetches the file by the path that getFile returns', async () => {

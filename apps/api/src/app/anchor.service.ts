@@ -348,7 +348,7 @@ export class AnchorService {
       const id = randomUUID();
       this.audio.set(id, { data: await speak(text), mimeType: 'audio/wav' });
     } catch (error) {
-      this.logger.warn(`Gemini TTS failed: ${error}`);
+      this.logger.warn(`OpenAI TTS failed: ${error}`);
     }
   }
 }

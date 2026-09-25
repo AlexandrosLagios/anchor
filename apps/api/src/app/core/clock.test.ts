@@ -6,8 +6,14 @@ import { dayIndex, demoNow, slotIn } from './clock';
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 8, day, hour, minute).getTime();
 
 test('demoNow runs one demo day per ANCHOR_DAY_SECONDS real seconds', () => {
-  expect(demoNow(1_000_000, 120, 1_000_000 + 60_000)).toBe(1_000_000 + 43_200_000);
-  expect(demoNow(1_000_000, 86400, 1_000_000 + 60_000)).toBe(1_000_000 + 60_000);
+  const state = { clockStart: 1_000_000, clockOffset: 0 };
+  expect(demoNow(state, 120, 1_000_000 + 60_000)).toBe(1_000_000 + 43_200_000);
+  expect(demoNow(state, 86400, 1_000_000 + 60_000)).toBe(1_000_000 + 60_000);
+});
+
+test('demoNow adds the fast-forward offset', () => {
+  const week = 7 * 86_400_000;
+  expect(demoNow({ clockStart: 1_000_000, clockOffset: week }, 120, 1_000_000 + 60_000)).toBe(1_000_000 + 43_200_000 + week);
 });
 
 test('dayIndex counts local days', () => {
