@@ -9,6 +9,7 @@
 | Accounts | Firebase Auth + Firestore (`eur3`) — project `a11y-hack26ath-267` |
 | File metadata | Neon Postgres `eu-central-1` (`user_files.user_id` is TEXT for Firebase UIDs) |
 | Media | Vercel Blob `anchor-media` in `fra1` |
+| Telegram bot (NestJS) | Cloud Run service `anchor-bot` in `europe-west1`, record on a Cloud Storage volume |
 
 ## Environment
 
@@ -66,4 +67,126 @@ Current code uses the **Gemini Developer API** (`GEMINI_API_KEY`). Prompts may l
 
 ```bash
 GEMINI_DATA_REGION_NOTE=developer-api-global
+```
+
+## Telegram bot (`anchor-bot` on Cloud Run)
+
+The Cloud Run service `anchor-bot` runs the API image as one instance that is always on. The instance polls Telegram, so the service needs no public URL. The record (`ANCHOR_STATE_FILE`) is a file in a Cloud Storage bucket that the service mounts as a volume. `anchor-api` on Vercel never sets `TELEGRAM_BOT_TOKEN`, so `anchor-api` starts no poll.
+
+At list price, 1 vCPU and 512 MiB always on cost about 1.64 USD per day before the free tier. A person runs these commands, because the deploy costs money.
+
+You need a billing account on the project, `gcloud` signed in as a project owner, and Docker. Set these variables once per shell. Run every command from the repository root.
+
+```bash
+PROJECT=a11y-hack26ath-267
+REGION=europe-west1
+BUCKET=$PROJECT-anchor-state
+SA=anchor-bot@$PROJECT.iam.gserviceaccount.com
+IMAGE=$REGION-docker.pkg.dev/$PROJECT/anchor/anchor-bot
+```
+
+### Create the resources once
+
+1. Enable the APIs.
+
+   ```bash
+   gcloud services enable run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com storage.googleapis.com iam.googleapis.com --project=$PROJECT
+   ```
+
+2. Create the image repository and the bucket.
+
+   ```bash
+   gcloud artifacts repositories create anchor --repository-format=docker --location=$REGION --project=$PROJECT
+   gcloud storage buckets create gs://$BUCKET --location=$REGION --uniform-bucket-level-access --public-access-prevention --project=$PROJECT
+   ```
+
+3. Create the service account of the bot.
+
+   ```bash
+   gcloud iam service-accounts create anchor-bot --project=$PROJECT
+   ```
+
+4. Give the service account read and write access to the bucket.
+
+   ```bash
+   gcloud storage buckets add-iam-policy-binding gs://$BUCKET --member=serviceAccount:$SA --role=roles/storage.objectUser
+   ```
+
+5. Store the bot token and the Gemini key as secrets. The commands read the values from `apps/api/.env.local`, so the values stay out of the shell history.
+
+   ```bash
+   grep '^TELEGRAM_BOT_TOKEN=' apps/api/.env.local | cut -d= -f2- | tr -d '\r\n' | gcloud secrets create anchor-telegram-bot-token --data-file=- --project=$PROJECT
+   grep '^GEMINI_API_KEY=' apps/api/.env.local | cut -d= -f2- | tr -d '\r\n' | gcloud secrets create anchor-gemini-api-key --data-file=- --project=$PROJECT
+   ```
+
+6. Give the service account read access to the two secrets.
+
+   ```bash
+   for secret in anchor-telegram-bot-token anchor-gemini-api-key; do
+     gcloud secrets add-iam-policy-binding $secret --member=serviceAccount:$SA --role=roles/secretmanager.secretAccessor --project=$PROJECT
+   done
+   ```
+
+### Deploy
+
+Only one process can poll a bot token. Before you deploy, stop `pnpm dev:api` and every other process that uses the token. A second poller gets a 409 from Telegram.
+
+1. Build the image for `linux/amd64`. Cloud Run runs only Linux x86_64 images.
+
+   ```bash
+   docker build --platform=linux/amd64 -f apps/api/Dockerfile -t $IMAGE .
+   ```
+
+2. Push the image to Artifact Registry.
+
+   ```bash
+   gcloud auth configure-docker $REGION-docker.pkg.dev
+   docker push $IMAGE
+   ```
+
+3. To keep the record of the laptop test, copy the record into the bucket.
+
+   ```bash
+   gcloud storage cp tmp/anchor-state.json gs://$BUCKET/anchor-state.json
+   ```
+
+4. Deploy the service.
+
+   ```bash
+   gcloud run deploy anchor-bot --project=$PROJECT --region=$REGION --image=$IMAGE \
+     --service-account=$SA --no-allow-unauthenticated \
+     --min-instances=1 --max-instances=1 --no-cpu-throttling --cpu=1 --memory=512Mi \
+     --add-volume=name=state,type=cloud-storage,bucket=$BUCKET,mount-options="uid=1000;gid=1000" \
+     --add-volume-mount=volume=state,mount-path=/data \
+     --set-env-vars=ANCHOR_STATE_FILE=/data/anchor-state.json,ANCHOR_DAY_SECONDS=120,TZ=Europe/Athens \
+     --set-secrets=TELEGRAM_BOT_TOKEN=anchor-telegram-bot-token:latest,GEMINI_API_KEY=anchor-gemini-api-key:latest
+   ```
+
+5. Send a photo with a caption in the group. Anchor reacts with ❤. If Anchor does not react, read the log.
+
+   ```bash
+   gcloud run services logs read anchor-bot --project=$PROJECT --region=$REGION --limit=50
+   ```
+
+The deploy flags do these things:
+
+- `--min-instances=1` and `--max-instances=1` keep one instance, so one process polls the token.
+- `--no-cpu-throttling` keeps the CPU on between requests, so the poll and the 2-second tick keep running.
+- `--no-allow-unauthenticated` rejects every request without IAM, because the bot needs no inbound request.
+- The image runs as the `node` user, uid 1000. A volume belongs to root by default, so `uid=1000;gid=1000` lets `node` write the record.
+- A volume mount needs the second generation execution environment. Cloud Run selects that environment when the service sets no execution environment.
+- `TZ=Europe/Athens` puts the 11:00 and 18:00 slots on Athens time.
+- `ANCHOR_DAY_SECONDS=120` matches the laptop test. The demo clock counts from `State.clockStart`, so a different value makes the clock of a copied record jump.
+
+To use a different `ANCHOR_DAY_SECONDS`, delete `gs://$BUCKET/anchor-state.json` before you deploy. Then remove the bot from the group and add the bot again as an admin.
+
+### Update or stop the bot
+
+Deploy while the family is quiet. During a rollout, the old and the new instance run together for a short time, and the last write to the record wins.
+
+- To deploy a new version, repeat steps 1, 2, and 4 of the deploy.
+- To stop the bot and the cost, delete the service. The bucket keeps the record.
+
+```bash
+gcloud run services delete anchor-bot --project=$PROJECT --region=$REGION
 ```
