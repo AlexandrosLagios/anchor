@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anchor · live prototype</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; background: #f3efe8; color: #1f2328; }
+  header { display: flex; align-items: baseline; gap: 12px; padding: 20px 32px 8px; }
+  header h1 { margin: 0; font-size: 22px; }
+  header span { color: #6b6257; }
+  main { display: grid; grid-template-columns: 340px 340px 1fr; gap: 28px; padding: 16px 32px 32px; align-items: start; }
+  @media (max-width: 1100px) { main { grid-template-columns: 340px 340px; } .hood { grid-column: 1 / -1; } }
+  @media (max-width: 760px) { main { grid-template-columns: minmax(0, 340px); } }
+  .label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #6b6257; margin: 0 0 8px 4px; }
+  .phone { height: 620px; border-radius: 36px; border: 10px solid #1f2328; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 12px 30px rgba(0,0,0,.15); }
+  .wa-top { background: #075e54; color: #fff; padding: 14px 16px; font-weight: 600; }
+  .wa-top small { display: block; font-weight: 400; opacity: .8; }
+  .chat { flex: 1; overflow-y: auto; padding: 12px; background: #ece5dd; display: flex; flex-direction: column; gap: 8px; }
+  .bubble { max-width: 85%; padding: 8px 10px; border-radius: 10px; box-shadow: 0 1px 1px rgba(0,0,0,.1); white-space: pre-wrap; }
+  .sofia { align-self: flex-end; background: #dcf8c6; }
+  .anchor { align-self: flex-start; background: #fff; }
+  .compose { display: flex; gap: 6px; padding: 8px; background: #f0f0f0; }
+  .compose input { flex: 1; border: 0; border-radius: 20px; padding: 10px 14px; font: inherit; }
+  .compose button { border: 0; border-radius: 50%; width: 42px; background: #128c7e; color: #fff; font-size: 18px; cursor: pointer; }
+  .maria { background: linear-gradient(#2b3a55, #121826); color: #fff; }
+  .maria .screen { flex: 1; display: flex; flex-direction: column; padding: 24px 16px; overflow-y: auto; }
+  .clock { font-size: 64px; font-weight: 200; text-align: center; margin-top: 40px; }
+  .status { text-align: center; font-size: 18px; margin: 12px 0; }
+  .ringing { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .call-button { margin: auto auto 24px; border: 0; border-radius: 40px; padding: 16px 28px; background: #34c759; color: #fff; font: 600 16px inherit; cursor: pointer; }
+  .call-button:disabled { background: #5b6475; cursor: not-allowed; }
+  .call-button.recording { background: #ff3b30; }
+  .real-call { margin: -12px auto 8px; border: 0; background: none; color: #aab3c5; font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; }
+  .line { padding: 8px 10px; border-radius: 12px; margin: 4px 0; max-width: 90%; }
+  .line.anchor { background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
+  .line.maria { align-self: flex-end; background: #34c759; }
+  .hood { background: #fff; border-radius: 16px; padding: 20px 24px; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+  .hood h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #6b6257; margin: 18px 0 6px; }
+  .hood h2:first-child { margin-top: 0; }
+  .muted { color: #8b8176; }
+  .elements { list-style: none; padding: 0; margin: 0; }
+  .elements li::before { content: "○ "; color: #b8aea2; }
+  .elements li.hit::before { content: "✓ "; color: #1a7f37; }
+  .chip { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: 600; }
+  .free { background: #dafbe1; color: #1a7f37; }
+  .cued { background: #fff4d4; color: #9a6700; }
+  .struggled { background: #eef1f6; color: #57606a; }
+  .next { font-size: 20px; font-weight: 600; }
+</style>
+</head>
+<body>
+<header><h1>⚓ Anchor</h1><span>A phone number, not an app. Live prototype.</span></header>
+<main>
+  <section>
+    <p class="label">Sofia's WhatsApp</p>
+    <div class="phone">
+      <div class="wa-top">Anchor<small id="wa-note">send news here, or on WhatsApp</small></div>
+      <div class="chat" id="family"></div>
+      <form class="compose" id="compose">
+        <input id="news" placeholder="Η Άννα παντρεύεται τον Ιούνιο, στην εκκλησία στην Αίγινα" autocomplete="off">
+        <button aria-label="Send">➤</button>
+      </form>
+    </div>
+  </section>
+  <section>
+    <p class="label">Maria's phone</p>
+    <div class="phone maria"><div class="screen" id="maria"></div></div>
+  </section>
+  <section class="hood" id="hood"></section>
+</main>
+<script>
+  const escape = (text) => String(text ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const ratings = { free: 'Remembered on her own', cued: 'Remembered with a hint', struggled: 'Struggled, the answer was told gently' };
+  const statuses = { calling: 'Καλεί…', ringing: '📞 Εισερχόμενη κλήση · Anchor', 'in-call': 'Σε κλήση με Anchor', ended: 'Η κλήση ολοκληρώθηκε', busy: 'Κατειλημμένο', 'no-answer': 'Δεν απάντησε', failed: 'Η κλήση απέτυχε' };
+  let last = '';
+
+  async function refresh() {
+    const state = await (await fetch('state')).json();
+    const snapshot = JSON.stringify(state);
+    if (snapshot === last) return;
+    last = snapshot;
+    render(state);
+  }
+
+  function render({ news, family, call, schedule, story, whatsapp }) {
+
+    const chat = document.getElementById('family');
+    chat.innerHTML = family.map((line) => `<div class="bubble ${line.from}">${escape(line.text)}</div>`).join('');
+    chat.scrollTop = chat.scrollHeight;
+    document.getElementById('wa-note').textContent = window.DEMO ? 'Sofia, Maria\'s daughter' : whatsapp ? 'connected to Sofia\'s WhatsApp' : 'send news here, or on WhatsApp';
+
+    const idle = call.status === 'idle' || call.status === 'ended' || !statuses[call.status] || ['busy', 'no-answer', 'failed'].includes(call.status);
+    const screen = document.getElementById('maria');
+    screen.innerHTML = call.status === 'idle'
+      ? `<div class="clock">11:00</div><div class="status muted">Maria's chosen time</div>`
+      : `<div class="status ${call.status === 'ringing' || call.status === 'calling' ? 'ringing' : ''}">${escape(statuses[call.status] ?? call.status)}</div>` +
+        call.lines.map((line) => `<div class="line ${line.from}">${escape(line.text)}</div>`).join('');
+    const noNews = news ? '' : 'disabled title="Send family news first"';
+    if (window.DEMO) { if (!demoPlaying) screen.insertAdjacentHTML('beforeend', `<button class="call-button" onclick="playDemo()">▶ Play the recorded call</button>`); }
+    else if (phone?.phase === 'ringing') screen.insertAdjacentHTML('beforeend', `<button class="call-button ringing" onclick="answer()">📞 Απάντηση</button>`);
+    else if (phone?.phase === 'listening') screen.insertAdjacentHTML('beforeend', `<button class="call-button recording" onclick="stopRecording()">🎙 Μιλάει η Μαρία… Τέλος</button>`);
+    else if (phone) screen.insertAdjacentHTML('beforeend', `<div class="status muted">${phone.phase === 'thinking' ? 'Anchor ακούει…' : '🔊'}</div>`);
+    else if (idle) screen.insertAdjacentHTML('beforeend', `<button class="call-button" ${noNews} onclick="ring()">📞 Anchor calls Maria</button><button class="real-call" ${noNews} onclick="startCall(this)">or ring the real phone (Twilio, billed)</button>`);
+    screen.scrollTop = screen.scrollHeight;
+
+    document.getElementById('hood').innerHTML = `
+      <h2>Family news, extracted by Gemini</h2>
+      ${news ? `<div><b>${escape(news.who)}</b> · ${escape(news.what)} · ${escape(news.when)}</div>` : '<div class="muted">Waiting for Sofia…</div>'}
+      <h2>Linked to her story</h2>
+      <div>${escape(story.title)}</div>
+      ${news ? `<h2>Today's question</h2><div>«${escape(news.question)}»</div><div class="muted">Answer: ${escape(news.answer)}</div><h2>One hint, at most</h2><div>«${escape(news.hint)}»</div>` : ''}
+      <h2>Story elements that came back</h2>
+      <ul class="elements">${story.elements.map((element) => `<li class="${call.storyElements.includes(element) ? 'hit' : ''}">${escape(element)}</li>`).join('')}</ul>
+      <h2>Today's item</h2>
+      ${call.rating ? `<span class="chip ${call.rating}">${ratings[call.rating]}</span>` : '<span class="muted">Not practised yet</span>'}
+      <h2>Next call</h2>
+      ${schedule.nextCall
+        ? `<div class="next">in ${schedule.gapDays} day${schedule.gapDays > 1 ? 's' : ''}</div><div class="muted">${new Date(schedule.nextCall).toLocaleString('el-GR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</div>`
+        : `<div class="muted">Every ${schedule.gapDays} day. Remembered easily, the wait doubles. A hint, same wait. A struggle, tomorrow.</div>`}
+      ${call.rating && !window.DEMO ? `<h2>Share</h2><a href="demo.html" download>⬇ Download this call as one HTML file</a><div class="muted">It replays offline, with no Gemini or Twilio requests.</div>` : ''}`;
+  }
+
+  let demoPlaying = false;
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function demoState(done) {
+    const { news, family, moment, lines, storyElements, rating, schedule, story } = window.DEMO;
+    return {
+      news: done ? news : null,
+      family: done ? [...family, ...(moment ? [moment] : [])] : [],
+      call: done ? { status: 'ended', lines, storyElements, rating } : { status: 'idle', lines: [], storyElements: [] },
+      schedule: done ? schedule : { gapDays: rating === 'free' ? schedule.gapDays / 2 : schedule.gapDays },
+      story,
+    };
+  }
+
+  async function playDemo() {
+    const demo = window.DEMO;
+    const state = demoState(false);
+    demoPlaying = true;
+    render(state);
+    await wait(800);
+    state.family.push(demo.family[0]);
+    render(state);
+    await wait(1800);
+    state.news = demo.news;
+    state.family.push(demo.family[1]);
+    render(state);
+    await wait(2500);
+    state.call.status = 'ringing';
+    render(state);
+    await wait(2500);
+    state.call.status = 'in-call';
+    for (const line of demo.lines) {
+      state.call.lines.push(line);
+      render(state);
+      if (line.audio) await playAudio(line.audio);
+      else if (line.from === 'anchor' && !line.text.startsWith('♪')) await speakText(line.text);
+      else await wait(1500 + line.text.length * 40);
+      await wait(500);
+    }
+    demoPlaying = false;
+    render(demoState(true));
+  }
+
+  let phone = null;
+  let recorder = null;
+  const rerender = () => { last = ''; refresh(); };
+  const playAudio = (url) => new Promise((resolve) => { const audio = new Audio(url); audio.onended = resolve; audio.onerror = resolve; audio.play().catch(resolve); });
+  const speakText = (text) => new Promise((resolve) => { const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'el-GR'; utterance.onend = resolve; utterance.onerror = resolve; speechSynthesis.speak(utterance); });
+
+  async function ring() {
+    phone = { phase: 'ringing' };
+    await fetch('phone/ring', { method: 'POST' });
+    rerender();
+  }
+
+  async function answer() {
+    phone = { phase: 'speaking' };
+    rerender();
+    await run(await (await fetch('phone/start', { method: 'POST' })).json());
+  }
+
+  async function run(turn) {
+    if (!turn?.lines) { phone = null; alert(`The call dropped: ${turn?.message ?? 'no answer from the server'}`); return rerender(); }
+    phone = { phase: 'speaking' };
+    rerender();
+    if (turn.song) await playAudio(turn.song);
+    for (const line of turn.lines) await (line.audio ? playAudio(line.audio) : speakText(line.text));
+    if (!turn.next) { phone = null; return rerender(); }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const chunks = [];
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (event) => chunks.push(event.data);
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((track) => track.stop());
+      phone = { phase: 'thinking' };
+      rerender();
+      const blob = new Blob(chunks, { type: recorder.mimeType });
+      const response = await fetch(`phone/${turn.next}`, { method: 'POST', headers: { 'content-type': blob.type.split(';')[0] }, body: blob });
+      await run(await response.json());
+    };
+    recorder.start();
+    phone = { phase: 'listening' };
+    rerender();
+  }
+
+  function stopRecording() {
+    recorder?.stop();
+  }
+
+  async function startCall(button) {
+    button.disabled = true;
+    const response = await fetch('call', { method: 'POST' });
+    if (!response.ok) alert(`The call failed: ${(await response.json()).message}`);
+  }
+
+  document.getElementById('compose').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const input = document.getElementById('news');
+    const text = input.value.trim() || input.placeholder;
+    input.value = '';
+    await fetch('news', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) });
+    refresh();
+  });
+
+  if (window.DEMO) {
+    document.querySelector('header span').textContent = 'A phone number, not an app. Recorded demo, press play.';
+    document.getElementById('compose').style.display = 'none';
+    render(demoState(true));
+  } else {
+    refresh();
+    setInterval(refresh, 1000);
+  }
+</script>
+</body>
+</html>

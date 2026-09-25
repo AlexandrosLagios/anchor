@@ -37,8 +37,16 @@ yarn-error.*
 *.tsbuildinfo
 
 # generated native folders
-/ios
-/android
+/apps/mobile/ios
+/apps/mobile/android
+
+# Gemini answer and voice cache
+tmp/
+
+# nx
+.nx/cache
+.nx/workspace-data
+out-tsc
 
 # claude code
 .claude/settings.local.json
