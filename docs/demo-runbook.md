@@ -26,7 +26,7 @@ Check the bot and the group:
    - `anchor-bot` is open for calls: steps 1 to 4 of "Phone calls" in `DEPLOY.md`, each with the user's go. `ANCHOR_BOT_ONLY=true` must be set before the service opens.
    - Nikos turned on "Call me on the phone" and shared his phone number with the one-tap button. He saved the "Anchor" contact card, because Anchor calls from a US number.
    - Greece is on in the Twilio voice geo permissions, for low-risk numbers. It is on since 2026-09-25.
-   - After the last deploy, "Anchor, call me" rang his phone once.
+   - After the last deploy, "Anchor, call me" rang his phone once. The first call through the live bot worked on 2026-09-26, on the user's phone. Repeat it with the phone of the teammate who plays Nikos.
 
 Reset and prepare, before the demo and before each rehearsal:
 
