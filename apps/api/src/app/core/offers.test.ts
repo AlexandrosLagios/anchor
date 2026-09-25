@@ -116,3 +116,23 @@ test('fadeOffers does nothing, and saves nothing extra, when no offer of the kin
   expect(faded).toEqual([]);
   expect(family.offers).toHaveLength(1);
 });
+
+test('closing an offer that already faded leaves every other offer alone', async () => {
+  const { family, member, ctx, at } = setup();
+  const faded = await send(family, 'share', member, 'm1', () => ({ text: 'Shall I send this?' }), ctx);
+  at(1_000_000 + FADE_MS);
+  const reminder = await send(family, 'reminder', member, 'r1', () => ({ text: 'Shall I remind you?' }), ctx);
+  await fadeOffers(family, 'share', 1_000_000 + FADE_MS, ctx);
+  await closeOffer(family, faded, ctx, { text: 'Sent' });
+  expect(family.offers).toEqual([reminder]);
+});
+
+test('an offer that closes while its fade awaits the transport leaves every other offer alone', async () => {
+  const { transport, family, member, ctx, at } = setup();
+  const faded = await send(family, 'share', member, 'm1', () => ({ text: 'Shall I send this?' }), ctx);
+  at(1_000_000 + FADE_MS);
+  const reminder = await send(family, 'reminder', member, 'r1', () => ({ text: 'Shall I remind you?' }), ctx);
+  vi.spyOn(transport, 'remove').mockImplementationOnce(() => closeOffer(family, faded, ctx, { text: 'Sent' }));
+  await fadeOffers(family, 'share', 1_000_000 + FADE_MS, ctx);
+  expect(family.offers).toEqual([reminder]);
+});
