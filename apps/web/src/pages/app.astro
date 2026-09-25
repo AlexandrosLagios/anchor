@@ -1,15 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { Dashboard } from '../components/Dashboard';
+import { MvpDemo } from '../components/MvpDemo';
 ---
 
 <BaseLayout
   title="Demo"
-  description="Interactive Anchor demo — share a family moment, practise spaced retrieval, see the chat."
+  description="Sofia shares Maria’s first day. Nikos agrees himself, meets the moment again, and answers by voice."
   currentPath="/app"
 >
   <div class="app-wrap">
-    <Dashboard client:load />
+    <MvpDemo client:load />
   </div>
 </BaseLayout>
 
