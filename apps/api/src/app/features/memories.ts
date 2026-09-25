@@ -50,20 +50,25 @@ async function post(family: Family, moment: Moment, label: string, keys: string[
   ctx.store.save();
 }
 
-async function handleMemoryCommand(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
+// section 4.3: posts a group memory now, as /memory and the `memory` intent both do
+export async function postMemoryNow(family: Family, ctx: Context): Promise<void> {
   const shareable = family.moments.filter((moment) => !moment.sensitive);
   if (shareable.length === 0) {
     await ctx.transport(family.id).send(family.chatId, { text: lines.nothingToShare });
-    return true;
+    return;
   }
   const now = ctx.now();
   const due = firstDue(shareable, now);
   if (due) {
     await post(family, due.moment, labelFor(due.moment, due.keys), due.keys, ctx);
-    return true;
+    return;
   }
   const fewest = [...shareable].sort((a, b) => a.memoryPostIds.length - b.memoryPostIds.length || byPriority(now)(a, b))[0];
   await post(family, fewest, lines.labels.fromRecord, [], ctx);
+}
+
+async function handleMemoryCommand(family: Family, ctx: Context): Promise<boolean> {
+  await postMemoryNow(family, ctx);
   return true;
 }
 
@@ -113,7 +118,7 @@ export const memories: Feature = {
 
   async handle(event, family, ctx) {
     if (event.chat !== 'group' || !family) return false;
-    if (isCommand(event.text, '/memory')) return handleMemoryCommand(event, family, ctx);
+    if (isCommand(event.text, '/memory')) return handleMemoryCommand(family, ctx);
     return handleStory(event, family, ctx);
   },
 };

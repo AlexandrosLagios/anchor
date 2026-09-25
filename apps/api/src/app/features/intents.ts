@@ -1,5 +1,250 @@
-import type { Feature } from '../core/types';
-import { ask } from './ask';
+import { Logger } from '@nestjs/common';
+import { dateOf, lines } from '../core/lines';
+import { tell } from '../core/tell';
+import type { Context, Family, Feature, Incoming, Member, Moment } from '../core/types';
+import * as model from '../model/model';
+import { answerInGroup, choiceLine } from './ask';
+import { actOnReply } from './capture/capture';
+import { ADDRESS, pictureOf } from './capture/filter';
+import { callMember } from './calls';
+import { sendMe } from './invitations';
+import { postMemoryNow } from './memories';
+import { groupNextSteps, nextSteps, nudge, showChoices, stopMember } from './members';
 
-// ponytail: step 5 lands the intent router of section 4.6; the stub keeps Ask Anchor working from this position
-export const intents: Feature = { name: 'intents', handle: ask.handle };
+const logger = new Logger('Intents');
+const SEVEN_DAYS_MS = 7 * 86_400_000;
+
+const INTENTS = ['memory', 'find', 'sendMe', 'missed', 'settings', 'stop', 'callMe', 'forget', 'quiet', 'unclear'] as const;
+type Intent = (typeof INTENTS)[number];
+
+// section 6.7: one line per intent, with one example each; the demo phrases carry the wording
+const INTENT_EXAMPLES: Partial<Record<Intent, string>> = {
+  memory: '"Anchor, show us a memory" asks Anchor to post a family memory now.',
+  find: '"Anchor, when did Maria start school?" asks Anchor to find a moment and answer with it.',
+  sendMe: '"Anchor, can you send me the family photos?" or "Send me a moment" asks Anchor to send a moment in private. Never memory.',
+  missed: '"What did I miss?" asks for the moments the family shared since the person last talked to Anchor.',
+  settings: '"Anchor, settings" asks to see or change what Anchor sends.',
+  stop: '"stop" asks Anchor to stop sending anything.',
+  callMe: '"Call me" asks Anchor to ring the person on the phone.',
+  forget: '"Anchor, delete that" or "Anchor, forget that one" asks Anchor to delete a moment.',
+  quiet: "\"Anchor, don't show me that one again\" asks Anchor to keep a moment without bringing it back.",
+};
+
+function schemaFor(momentIds: string[]) {
+  return {
+    type: 'object',
+    properties: {
+      intent: { type: 'string', enum: [...INTENTS] },
+      momentId: { type: 'string', enum: [...momentIds, 'none'] },
+    },
+    required: ['intent', 'momentId'],
+  };
+}
+
+function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean, moments: Moment[]): string {
+  const where = chat === 'group' ? 'the family group' : 'a private chat with one family member';
+  return [
+    `You are Anchor, the keeper of this family's record. This message came from ${where}${hasVoice ? ', as a voice note' : ''}: "${text}"`,
+    'Pick the intent that best matches the message:',
+    ...Object.entries(INTENT_EXAMPLES).map(([intent, example]) => `- ${intent}: ${example}`),
+    'Pick the id of the moment the message names or asks about, or "none" when it names none.',
+    ...moments.map(choiceLine),
+  ].join('\n');
+}
+
+async function readIntent(
+  family: Family,
+  event: Incoming,
+  chat: 'group' | 'private',
+  text: string,
+  moments: Moment[],
+  ctx: Context,
+): Promise<{ intent: Intent; momentId?: string }> {
+  const momentIds = moments.map((moment) => moment.id);
+  const schema = schemaFor(momentIds);
+  try {
+    const clip = event.voice ? await ctx.transport(family.id).download(event.voice) : undefined;
+    const prompt = buildPrompt(chat, text, !!event.voice, moments);
+    const answer = await model.ask<{ intent?: unknown; momentId?: unknown }>(prompt, schema, clip ? { media: [clip] } : {});
+    const intent = model.valid.oneOf(answer.intent, INTENTS) ?? 'unclear';
+    const momentId = model.valid.oneOf(answer.momentId, [...momentIds, 'none']);
+    return { intent, momentId };
+  } catch (error) {
+    logger.warn(`intent call failed: ${error}`);
+    return { intent: 'unclear' };
+  }
+}
+
+async function unclearGroup(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
+  await ctx.transport(family.id).send(event.chatId, { text: lines.unclear, replyTo: event.messageId, buttons: groupNextSteps(family, ctx) });
+  return true;
+}
+
+async function doCallMe(family: Family, member: Member, ctx: Context): Promise<void> {
+  const ok = await callMember(family, member, ctx);
+  if (!ok) await tell(family, member, { text: lines.callFailed, buttons: nextSteps(member, 'callMe') }, ctx);
+}
+
+async function groupAction(
+  intent: Intent,
+  momentId: string | undefined,
+  event: Incoming,
+  family: Family,
+  member: Member,
+  ctx: Context,
+): Promise<boolean> {
+  switch (intent) {
+    case 'memory':
+      await postMemoryNow(family, ctx);
+      return true;
+    case 'find': {
+      const moment = momentId && momentId !== 'none' ? family.moments.find((item) => item.id === momentId && !item.sensitive) : undefined;
+      if (!moment) {
+        await ctx.transport(family.id).send(event.chatId, { text: lines.notFound, replyTo: event.messageId });
+        return true;
+      }
+      await answerInGroup(family, moment, event.messageId, ctx);
+      return true;
+    }
+    case 'sendMe':
+    case 'missed':
+      if (member.started) await sendMe(family, member, ctx);
+      else await nudge(family, member, ctx);
+      return true;
+    case 'settings':
+    case 'stop':
+      await nudge(family, member, ctx);
+      return true;
+    case 'callMe':
+      if (member.started) await doCallMe(family, member, ctx);
+      else await nudge(family, member, ctx);
+      return true;
+    case 'forget':
+    case 'quiet':
+      if (!event.replyTo) return unclearGroup(event, family, ctx);
+      await actOnReply(event, family, ctx, intent === 'forget');
+      return true;
+    default:
+      return unclearGroup(event, family, ctx);
+  }
+}
+
+async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
+  if (event.button === 'nxt:memory') {
+    await postMemoryNow(family, ctx);
+    return true;
+  }
+
+  const text = event.text ?? '';
+  if (event.forwarded || !ADDRESS.test(text)) return false;
+  const question = text.replace(ADDRESS, '');
+
+  const isNew = !family.members.some((candidate) => candidate.id === event.sender.id);
+  const member = ctx.store.joinMember(family, event.sender);
+  if (isNew) ctx.store.save();
+
+  const moments = family.moments.filter((moment) => !moment.sensitive);
+  const { intent, momentId } = await readIntent(family, event, 'group', question, moments, ctx);
+  return groupAction(intent, momentId, event, family, member, ctx);
+}
+
+async function unclearPrivate(family: Family, member: Member, ctx: Context): Promise<boolean> {
+  await tell(family, member, { text: lines.unclear, buttons: nextSteps(member) }, ctx);
+  return true;
+}
+
+async function privateFind(momentId: string | undefined, family: Family, member: Member, ctx: Context): Promise<void> {
+  const moment = momentId && momentId !== 'none' ? family.moments.find((item) => item.id === momentId && !item.sensitive) : undefined;
+  if (!moment) {
+    await tell(family, member, { text: lines.notFound, buttons: nextSteps(member, 'find') }, ctx);
+    return;
+  }
+  const names = [...new Set(moment.stories.map((story) => story.by.name))];
+  await tell(
+    family,
+    member,
+    { ...pictureOf(moment), text: lines.askAnswer(moment.title, dateOf(moment), names), buttons: nextSteps(member, 'find') },
+    ctx,
+  );
+  const voiceStory = moment.stories.find((story) => story.voice);
+  if (voiceStory) await tell(family, member, { voice: voiceStory.voice }, ctx);
+  if (moment.savedAt > (member.seenAt ?? 0)) member.seenAt = moment.savedAt;
+  ctx.store.save();
+}
+
+async function privateMissed(family: Family, member: Member, ctx: Context): Promise<void> {
+  const since = member.seenAt ?? ctx.now() - SEVEN_DAYS_MS;
+  const candidates = family.moments
+    .filter((moment) => !moment.sensitive && moment.by.id !== member.id && moment.savedAt > since)
+    .sort((a, b) => a.savedAt - b.savedAt);
+  if (!candidates.length) {
+    await tell(family, member, { text: lines.nothingNew, buttons: nextSteps(member, 'missed') }, ctx);
+    return;
+  }
+  await tell(family, member, { text: lines.missed(candidates.length) }, ctx);
+  const toSend = candidates.slice(0, 3);
+  for (const [index, moment] of toSend.entries()) {
+    const last = index === toSend.length - 1;
+    await tell(family, member, { ...pictureOf(moment), text: lines.sharedBy(moment), ...(last ? { buttons: nextSteps(member, 'missed') } : {}) }, ctx);
+  }
+  member.seenAt = toSend[toSend.length - 1].savedAt;
+  ctx.store.save();
+}
+
+async function privateAction(
+  intent: Intent,
+  momentId: string | undefined,
+  family: Family,
+  member: Member,
+  ctx: Context,
+): Promise<boolean> {
+  switch (intent) {
+    case 'memory':
+    case 'sendMe':
+      await sendMe(family, member, ctx);
+      return true;
+    case 'find':
+      await privateFind(momentId, family, member, ctx);
+      return true;
+    case 'missed':
+      await privateMissed(family, member, ctx);
+      return true;
+    case 'settings':
+      await showChoices(family, member, lines.choicesScreen, ctx);
+      return true;
+    case 'stop':
+      await stopMember(family, member, ctx);
+      return true;
+    case 'callMe':
+      await doCallMe(family, member, ctx);
+      return true;
+    default:
+      return unclearPrivate(family, member, ctx);
+  }
+}
+
+async function inPrivate(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
+  const member = family.members.find((candidate) => candidate.id === event.sender.id);
+  if (!member) return false;
+
+  const nxt = event.button?.match(/^nxt:(.+)$/);
+  if (nxt) {
+    const intent = model.valid.oneOf(nxt[1], INTENTS);
+    if (!intent) return unclearPrivate(family, member, ctx);
+    return privateAction(intent, undefined, family, member, ctx);
+  }
+  if (event.button) return unclearPrivate(family, member, ctx);
+  if (!event.text && !event.voice) return unclearPrivate(family, member, ctx);
+
+  const moments = family.moments.filter((moment) => !moment.sensitive);
+  const { intent, momentId } = await readIntent(family, event, 'private', event.text ?? '', moments, ctx);
+  return privateAction(intent, momentId, family, member, ctx);
+}
+
+export const intents: Feature = {
+  name: 'intents',
+  async handle(event, family, ctx) {
+    if (!family) return false;
+    return event.chat === 'group' ? inGroup(event, family, ctx) : inPrivate(event, family, ctx);
+  },
+};

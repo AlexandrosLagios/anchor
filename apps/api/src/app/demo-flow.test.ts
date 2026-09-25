@@ -76,6 +76,7 @@ vi.mocked(model.ask).mockImplementation(async (prompt: string, schema: object) =
     };
   }
   if (properties.earlier) return { momentId, earlier: 'new' };
+  if (properties.intent) return { intent: 'find', momentId };
   return { momentId };
 });
 

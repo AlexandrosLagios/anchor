@@ -40,6 +40,55 @@ function findMomentOfStory(family: Family, messageId: string): Moment | undefine
   return family.moments.find((moment) => moment.stories.some((story) => story.messageIds.includes(messageId)));
 }
 
+// v2, section 4.6: intents runs the looser forget/quiet wordings through this export; the forget feature still owns the exact patterns
+export async function actOnReply(event: Incoming, family: Family, ctx: Context, isForget: boolean): Promise<void> {
+  const replyTo = event.replyTo;
+  if (!replyTo) return;
+
+  const echoed = family.moments.find((moment) => moment.echoPostIds?.includes(replyTo));
+  if (echoed) {
+    // one reply never guesses between the two moments of a then-and-now post, so each gets a button
+    const pair = [family.moments.find((moment) => moment.id === echoed.echo), echoed].filter(Boolean);
+    const prefix = isForget ? 'fgt' : 'qt';
+    const buttons = pair.map((moment) => ({ label: lines.whichMoment(moment), data: `${prefix}:${moment.id}` }));
+    try {
+      await ctx.transport(family.id).send(event.chatId, { text: isForget ? lines.forgetWhich : lines.quietWhich, replyTo: event.messageId, buttons });
+    } catch (error) {
+      logger.warn(`echo-post reply on ${event.chatId}/${event.messageId} failed: ${error}`);
+    }
+    return;
+  }
+
+  const openBundle = bundles.find((bundle) => bundle.family === family && bundle.events.some((e) => e.messageId === replyTo));
+  let changed = false; // a bundle removal is in-memory only and never needs a save
+
+  if (isForget) {
+    if (openBundle) removeBundle(openBundle);
+    const moment = findMoment(family, replyTo);
+    if (moment) {
+      family.moments.splice(family.moments.indexOf(moment), 1);
+      changed = true;
+    } else {
+      const momentOfStory = findMomentOfStory(family, replyTo);
+      if (momentOfStory) {
+        const storyIndex = momentOfStory.stories.findIndex((story) => story.messageIds.includes(replyTo));
+        momentOfStory.stories.splice(storyIndex, 1);
+        changed = true;
+      }
+    }
+  } else {
+    if (openBundle) openBundle.sensitive = true;
+    const moment = findMoment(family, replyTo) ?? findMomentOfStory(family, replyTo);
+    if (moment && !moment.sensitive) {
+      moment.sensitive = true;
+      changed = true;
+    }
+  }
+
+  if (changed) ctx.store.save();
+  await react(ctx, family, event.chatId, event.messageId, '👌');
+}
+
 export const forget: Feature = {
   name: 'forget',
   async handle(event, family, ctx) {
@@ -65,50 +114,7 @@ export const forget: Feature = {
     if (!isForget && !isKeepQuiet) return false;
     if (!event.replyTo) return true;
 
-    const replyTo = event.replyTo;
-
-    const echoed = family.moments.find((moment) => moment.echoPostIds?.includes(replyTo));
-    if (echoed) {
-      // one reply never guesses between the two moments of a then-and-now post, so each gets a button
-      const pair = [family.moments.find((moment) => moment.id === echoed.echo), echoed].filter(Boolean);
-      const prefix = isForget ? 'fgt' : 'qt';
-      const buttons = pair.map((moment) => ({ label: lines.whichMoment(moment), data: `${prefix}:${moment.id}` }));
-      try {
-        await ctx.transport(family.id).send(event.chatId, { text: isForget ? lines.forgetWhich : lines.quietWhich, replyTo: event.messageId, buttons });
-      } catch (error) {
-        logger.warn(`echo-post reply on ${event.chatId}/${event.messageId} failed: ${error}`);
-      }
-      return true;
-    }
-
-    const openBundle = bundles.find((bundle) => bundle.family === family && bundle.events.some((e) => e.messageId === replyTo));
-    let changed = false; // a bundle removal is in-memory only and never needs a save
-
-    if (isForget) {
-      if (openBundle) removeBundle(openBundle);
-      const moment = findMoment(family, replyTo);
-      if (moment) {
-        family.moments.splice(family.moments.indexOf(moment), 1);
-        changed = true;
-      } else {
-        const momentOfStory = findMomentOfStory(family, replyTo);
-        if (momentOfStory) {
-          const storyIndex = momentOfStory.stories.findIndex((story) => story.messageIds.includes(replyTo));
-          momentOfStory.stories.splice(storyIndex, 1);
-          changed = true;
-        }
-      }
-    } else {
-      if (openBundle) openBundle.sensitive = true;
-      const moment = findMoment(family, replyTo) ?? findMomentOfStory(family, replyTo);
-      if (moment && !moment.sensitive) {
-        moment.sensitive = true;
-        changed = true;
-      }
-    }
-
-    if (changed) ctx.store.save();
-    await react(ctx, family, event.chatId, event.messageId, '👌');
+    await actOnReply(event, family, ctx, isForget);
     return true;
   },
 };
