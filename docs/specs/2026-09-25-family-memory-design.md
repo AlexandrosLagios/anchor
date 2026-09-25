@@ -351,10 +351,11 @@ Twilio places the call, and OpenAI Realtime is the voice. The call runs through 
 - The bridge ignores the member until the opener has played, so a "Hello?" at pickup never cancels the opener.
 - The call asks `call.askShare` before the end. Without a yes, Anchor keeps no audio and no transcript of the call.
 - The member answers the share question in one of three ways: the words and the voice, the words only, or no. A yes to the words only posts the words without the voice note. The voice note keeps only the member's turns before the share question.
+- A yes to the voice sends the member's side to the member in private first, as `{ wav }` through `tell`, with the caption `shared`. `shareStory` then posts the returned voice media id in the group. A `file_id` belongs to the bot, so the group post needs no second upload.
 - The call code strips emoji from a line before the voice speaks the line.
 - The call ends with a way to reach a person: `call.reachPerson(sender)`. A yes posts `wouldLoveCall(name, sender)` in the group, with a mention of the sender. Then `call.goodbye(name)`, and Anchor hangs up.
 - A goodbye from the member also ends the call. A call lasts at most 10 minutes.
-- Ingress: the Nest HTTP server upgrades `/call/stream` to a WebSocket. The inline TwiML passes a random token per call as a stream `<Parameter>`. The bridge drops a stream whose token Anchor did not issue. A webhook for calls to Anchor's number checks the Twilio signature.
+- Ingress: `anchor-bot` runs with `ANCHOR_BOT_ONLY=true` before the service becomes public, so the public service exposes no prototype route. The Nest HTTP server upgrades `/call/stream` to a WebSocket. Cloud Run closes a WebSocket at the request timeout, so the service runs with `--timeout=900`. The inline TwiML passes a random token per call as a stream `<Parameter>`. The bridge drops a stream whose token Anchor did not issue. A webhook for calls to Anchor's number checks the Twilio signature.
 - The demo gate: the call joins the demo script only when the call rings a demo phone by Saturday night, through the deployed bot.
 
 ## 5. Architecture
@@ -679,7 +680,8 @@ Step 1 adds these lines to `apps/api/.env.example`.
 | `TZ` | the host zone | The zone of the 11:00 and 18:00 slots. |
 | `TWILIO_FROM` | unset | v2: the Twilio number that Anchor calls from, in E.164. When the variable is unset, the choices screen hides "Call me". |
 | `ANCHOR_PUBLIC_URL` | unset | v2: the `https://` base URL of `anchor-bot`. The call stream connects to `wss://` on the same host. |
-| `ANCHOR_REALTIME_MODEL` | `gpt-realtime-2.1-mini` | v2: the OpenAI Realtime model of the call. The call proof ran live on `gpt-realtime-2.1`. UNVERIFIED: the mini model on a call. Step 7 tries the mini model first, and falls back to `gpt-realtime-2.1`. |
+| `ANCHOR_REALTIME_MODEL` | `gpt-realtime-2.1` | v2: the OpenAI Realtime model of the call. On a test call, `gpt-realtime-2.1-mini` paraphrased `call.askShare` and skipped the goodbye, so the full model is the default. |
+| `ANCHOR_BOT_ONLY` | unset | v2: `true` on `anchor-bot`. The process then answers only `GET /` over HTTP, and the `/call/stream` upgrade. `/whatsapp` and `/api/*` return 404, because the public service must never run the prototype routes. |
 
 The call also uses `OPENAI_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY_SID`, and `TWILIO_API_KEY_SECRET`, which `apps/api/.env.example` already holds.
 
