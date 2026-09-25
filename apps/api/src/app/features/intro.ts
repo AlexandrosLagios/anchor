@@ -10,6 +10,12 @@ export const intro: Feature = {
       // Telegram announces the new supergroup with a join before the migration, and that join made an empty family
       if (shell && !shell.moments.length && !shell.storytellers.length) ctx.store.state.families.splice(ctx.store.state.families.indexOf(shell), 1);
       family.id = family.chatId = event.migratedTo;
+      // a supergroup numbers its messages from 1 again, so the old ids would point at other messages
+      for (const moment of family.moments) {
+        moment.messageIds = [];
+        moment.memoryPostIds = [];
+        for (const story of moment.stories) story.messageIds = [];
+      }
       ctx.store.save();
       return true;
     }

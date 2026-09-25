@@ -42,7 +42,7 @@ test('joining the same group again posts intro again and keeps one family', asyn
   expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.intro, lines.intro]);
 });
 
-test('a group that became a supergroup keeps its family under the new chat id and gets no message', async () => {
+test('a group that became a supergroup keeps its family under the new chat id, and the migration sends nothing', async () => {
   const { file, transport, store, router } = setup();
   await router.route(joined);
   store.family('-100')?.storytellers.push({ id: '42', name: 'Nikos', started: true });
@@ -54,6 +54,32 @@ test('a group that became a supergroup keeps its family under the new chat id an
     { id: '-1009', chatId: '-1009', storytellers: [{ id: '42', name: 'Nikos', started: true }], moments: [], counters: {} },
   ]);
   expect(transport.sent.map(({ chatId }) => chatId)).toEqual(['-100', '-1009']);
+});
+
+test('a migration clears the message ids of the old group, because a supergroup numbers its messages from 1 again', async () => {
+  const { store, router } = setup();
+  await router.route(joined);
+  const moment = {
+    id: 'm1',
+    by: { id: '1', name: 'Sofia' },
+    messageIds: ['57'],
+    savedAt: 0,
+    text: 'Maria on her first day at school',
+    salience: 3,
+    sensitive: false,
+    people: [],
+    title: "Maria's first day at school",
+    stories: [{ id: 's1', by: { id: '42', name: 'Nikos' }, at: 0, text: 'She would not let go', messageIds: ['60'] }],
+    lookbacks: [],
+    memoryPostIds: ['58'],
+    returns: {},
+  };
+  store.family('-100')?.moments.push(moment);
+  await router.route({ ...joined, joined: undefined, messageId: '61', migratedTo: '-1009' });
+
+  const moved = store.family('-1009')?.moments[0];
+  expect([moved?.messageIds, moved?.memoryPostIds, moved?.stories[0].messageIds]).toEqual([[], [], []]);
+  expect(moved?.text).toBe('Maria on her first day at school');
 });
 
 test('intro leaves every other event to the next feature', async () => {
