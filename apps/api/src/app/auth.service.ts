@@ -7,6 +7,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { databaseConfigured, getPool } from './db';
+import { FamiliesService } from './families.service';
 
 export type AuthUser = { uid: string; email?: string; displayName?: string };
 
@@ -22,6 +23,8 @@ const TOKEN_TTL = '7d';
 
 @Injectable()
 export class AuthService {
+  constructor(private readonly families: FamiliesService) {}
+
   configured(): boolean {
     return databaseConfigured() && Boolean(process.env.AUTH_JWT_SECRET?.trim());
   }
@@ -91,6 +94,7 @@ export class AuthService {
         [row.id, Boolean(input.consents.marketing)],
       );
       await pool.query(`INSERT INTO user_states (user_id) VALUES ($1)`, [row.id]);
+      await this.families.claimInvites(row.id, row.email);
 
       const user: AuthUser = {
         uid: row.id,

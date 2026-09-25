@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { FamilyPanel } from '../components/FamilyPanel';
+---
+
+<BaseLayout
+  title="Family"
+  description="Create a family and add people who already have an Anchor account, or people who are new."
+  currentPath="/family"
+>
+  <FamilyPanel client:load />
+</BaseLayout>

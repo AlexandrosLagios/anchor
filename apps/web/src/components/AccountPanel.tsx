@@ -65,7 +65,10 @@ export function AccountPanel() {
         To exercise GDPR rights (access, erasure, portability), email {privacyEmail} from this address.
       </p>
       <div className="actions">
-        <a className="btn btn-primary" href="/chat">
+        <a className="btn btn-primary" href="/family">
+          Your family
+        </a>
+        <a className="btn btn-secondary" href="/chat">
           Chat with Anchor
         </a>
         <a className="btn btn-secondary" href="/app">
