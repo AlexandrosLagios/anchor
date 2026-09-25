@@ -91,7 +91,7 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, ask
                 share: {
                   type: 'string',
                   enum: SHARE,
-                  description: 'What the person agreed to share with the family: voice for their words in their own voice, words for their words only, no for nothing or no clear answer.',
+                  description: 'What the person agreed to share with the family. A plain yes is voice: their words in their own voice. words only when they ask for the text or for no voice. no for a no, or no clear answer.',
                 },
                 tell_sender: { type: 'boolean', description: 'True when the person said yes to telling the sender that they would love a call.' },
               },

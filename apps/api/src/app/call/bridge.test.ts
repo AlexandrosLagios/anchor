@@ -52,6 +52,14 @@ test('the call starts in μ-law with the opener once Twilio and Realtime are bot
   expect(toRealtime).toHaveLength(2);
 });
 
+test('a plain yes to the share question means the words and the voice', () => {
+  const { call, toRealtime } = setup();
+  call.twilio({ event: 'start', start: { streamSid: 'MZ1', callSid: 'CA1' } });
+  call.open();
+  const update = toRealtime[0] as { session: { tools: { parameters: { properties: { share: { description: string } } } }[] } };
+  expect(update.session.tools[0].parameters.properties.share.description).toMatch(/a plain yes is voice/i);
+});
+
 test('the caller audio goes to Realtime unchanged once the opener has played, and the bridge keeps it', () => {
   const { call, toTwilio, toRealtime } = setup();
   call.twilio({ event: 'media', media: { payload: payload(160, 1), timestamp: '0' } });
