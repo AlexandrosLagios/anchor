@@ -2,11 +2,18 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, test, vi } from 'vitest';
+import { FakeTransport } from './core/fake-transport';
 import { lines } from './core/lines';
-import { FamilyService } from './family.service';
+import { createRouter } from './core/router';
+import { openStore } from './core/store';
+import type { Incoming } from './core/types';
+import { FamilyService, FEATURES } from './family.service';
+import { bundles } from './features/capture/capture';
 import { httpFetch, type HttpResponse } from './http';
+import { ask } from './model/model';
 
 vi.mock('./http', () => ({ httpFetch: vi.fn() }));
+vi.mock('./model/model', async (importOriginal) => ({ ...(await importOriginal<typeof import('./model/model')>()), ask: vi.fn() }));
 const fetchMock = vi.mocked(httpFetch);
 
 const ok = (result: unknown): HttpResponse => ({
@@ -85,4 +92,44 @@ test('with a token the host polls Telegram, introduces Anchor to a new group, an
   expect(JSON.parse(readFileSync(file, 'utf8')).families).toEqual([
     { id: '-1001234567890', chatId: '-1001234567890', storytellers: [], moments: [], counters: {} },
   ]);
+});
+
+test('FEATURES keeps the order of spec 5.4', () => {
+  expect(FEATURES.map((feature) => feature.name)).toEqual(['intro', 'fastforward', 'forget', 'invitations', 'memories', 'ask', 'capture', 'echoes']);
+});
+
+test('through FEATURES, a captioned photo gets a heart and "Anchor, forget this" reaches forget before ask and capture', async () => {
+  const now = new Date(2026, 8, 25, 12).getTime();
+  const transport = new FakeTransport();
+  const store = openStore(stateFile(), now);
+  const router = createRouter(FEATURES, { now: () => now, store, transport: () => transport });
+  const family = store.addFamily('-100', '-100');
+  const message = (fields: Partial<Incoming>): Incoming => ({
+    familyId: '-100',
+    chat: 'group',
+    chatId: '-100',
+    messageId: 'm1',
+    sender: { id: '1', name: 'Sofia' },
+    at: Date.now(),
+    ...fields,
+  });
+  transport.files.set('p1', { data: Buffer.from('photo'), mimeType: 'image/jpeg' });
+  vi.mocked(ask).mockResolvedValue({
+    verdict: 'family_moment',
+    salience: 4,
+    people: ['Maria'],
+    eventDate: '',
+    title: "Maria's first day at school",
+    transcript: '',
+  });
+
+  await router.route(message({ photo: { id: 'p1' }, text: 'Maria on her first day at school' }));
+  await router.tick({ from: now, to: now + 2000 });
+  expect(family.moments.map((moment) => moment.title)).toEqual(["Maria's first day at school"]);
+  expect(transport.reactions).toEqual([{ chatId: '-100', messageId: 'm1', emoji: '\u2764', big: undefined }]);
+
+  await router.route(message({ messageId: 'm2', text: 'Anchor, forget this', replyTo: 'm1' }));
+  expect(family.moments).toEqual([]);
+  expect(bundles).toEqual([]);
+  expect(transport.reactions.at(-1)).toEqual({ chatId: '-100', messageId: 'm2', emoji: '👌', big: undefined });
 });
