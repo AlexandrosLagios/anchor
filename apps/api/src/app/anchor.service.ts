@@ -1,12 +1,47 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { ask, speak } from './gemini';
-import { familyMessage, LINES, MARIA, nextGap, rate, Rating } from './protocol';
-import { song } from './song';
-import { callMaria, listen, play, say, sendWhatsApp, twiml } from './twilio';
+import { ATHINA, familyNote, nextGap, rate, Rating, scheduleNext } from './protocol';
+import { sendWhatsApp } from './twilio';
 
-type News = {
-  transcript: string;
+export type Role = 'sofia' | 'maria' | 'athina' | 'anchor';
+
+export type ChatLine = {
+  id: string;
+  from: Role;
+  text: string;
+  mediaUrl?: string;
+  at: string;
+};
+
+export type Moment = {
+  id: string;
+  caption: string;
+  sender: Role;
+  who: string;
+  what: string;
+  when: string;
+  question: string;
+  answer: string;
+  hint: string;
+  praise: string;
+  reveal: string;
+  memory: string;
+  ack: string;
+  mediaUrl?: string;
+  mediaType?: string;
+  createdAt: string;
+  gapDays: number;
+  nextDue: string;
+  rating?: Rating;
+  cued: boolean;
+  phase: 'idle' | 'awaiting' | 'hinted';
+};
+
+type Clip = { data: Buffer; mimeType: string };
+
+type Extracted = {
+  caption: string;
   who: string;
   what: string;
   when: string;
@@ -18,189 +53,239 @@ type News = {
   memory: string;
   ack: string;
 };
-type Line = { from: 'sofia' | 'anchor' | 'maria'; text: string; audio?: string };
-type Clip = { data: Buffer; mimeType: string };
-type Turn = { song: boolean; lines: string[]; next?: 'story' | 'today' };
 
 const text = { type: 'string' };
-const NEWS_SCHEMA = {
+const MOMENT_SCHEMA = {
   type: 'object',
   properties: {
-    transcript: { ...text, description: 'What the family member said, verbatim, in Greek' },
-    who: { ...text, description: 'Who the news is about, in Greek' },
-    what: { ...text, description: 'What happens, in Greek' },
-    when: { ...text, description: 'When it happens, in Greek' },
+    caption: { ...text, description: 'A short English caption for the moment, verbatim if text was given' },
+    who: { ...text, description: 'Who the moment is about, in English' },
+    what: { ...text, description: 'What happens, in English' },
+    when: { ...text, description: 'When it happens or happened, in English' },
     question: {
       ...text,
       description:
-        'One short spoken question in Greek that links the news to Maria\'s wedding story and asks her to recall the key fact without revealing it. Example: «Τον Ιούνιο παντρεύεται κάποια άλλη σε εκείνη την εκκλησία. Ποια είναι;»',
+        'One short spoken question in English that brings the moment back without revealing the key fact. Example: "Do you remember whose first day of school this was?"',
     },
-    answer: { ...text, description: 'The fact Maria should recall, in Greek. Example: «Η Άννα, η εγγονή της»' },
-    hint: { ...text, description: 'One gentle spoken cue in Greek that does not say the answer, then the question again' },
-    praise: { ...text, description: 'A warm spoken reply in Greek for when she remembers, naming the answer. Example: «Ναι, η Άννα! Θα χαρεί που το θυμάσαι.»' },
-    reveal: { ...text, description: 'A warm spoken reply in Greek that tells her the answer without any sense of correction or failure' },
-    memory: { ...text, description: 'The accusative Greek phrase for the family message «…και θυμήθηκε X». Example: «τον γάμο της Άννας»' },
-    ack: { ...text, description: 'A short WhatsApp reply in Greek to the family member confirming Anchor will talk about it with Maria this week' },
+    answer: { ...text, description: 'The fact Athina should recall, in English. Example: "Maria, Sofia\'s daughter"' },
+    hint: {
+      ...text,
+      description: 'One gentle cue in English that does not say the answer, then the question again',
+    },
+    praise: {
+      ...text,
+      description: 'A warm reply in English when she remembers, naming the answer',
+    },
+    reveal: {
+      ...text,
+      description: 'A warm reply in English that tells her the answer with no sense of correction or failure',
+    },
+    memory: {
+      ...text,
+      description: 'A short English phrase for the family note "Athina remembered X". Example: "Maria\'s first day of school"',
+    },
+    ack: {
+      ...text,
+      description: 'A short WhatsApp reply in English confirming Anchor saved the moment and will bring it back to Athina',
+    },
   },
-  required: ['transcript', 'who', 'what', 'when', 'question', 'answer', 'hint', 'praise', 'reveal', 'memory', 'ack'],
+  required: ['caption', 'who', 'what', 'when', 'question', 'answer', 'hint', 'praise', 'reveal', 'memory', 'ack'],
 };
 
 @Injectable()
-export class AnchorService implements OnModuleInit {
+export class AnchorService {
   private readonly logger = new Logger(AnchorService.name);
-  private readonly audio = new Map<string, Clip>([['song', { data: song(), mimeType: 'audio/wav' }]]);
-  private readonly spoken = new Map<string, string>();
+  private readonly audio = new Map<string, Clip>();
+  private readonly media = new Map<string, Clip>();
   private familyNumber?: string;
-  private news?: News;
-  private family: Line[] = [];
-  private call = { status: 'idle', lines: [] as Line[], hinted: false, storyTold: false, storyElements: [] as string[], rating: undefined as Rating | undefined };
-  private schedule = { gapDays: 1, nextCall: undefined as string | undefined };
-
-  onModuleInit() {
-    Object.values(LINES).forEach((line) => void this.prepare(line));
-  }
+  private chat: ChatLine[] = [];
+  private moments: Moment[] = [];
+  private activeId?: string;
 
   state() {
-    return { news: this.news, family: this.family, call: this.call, schedule: this.schedule, story: MARIA.story, whatsapp: Boolean(this.familyNumber) };
+    return {
+      chat: this.chat,
+      moments: this.moments,
+      activeId: this.activeId,
+      due: this.dueMoments(),
+      whatsapp: Boolean(this.familyNumber),
+      person: ATHINA,
+    };
   }
 
   audioFile(id: string) {
-    return this.audio.get(id);
+    return this.audio.get(id) ?? this.media.get(id);
   }
 
-  // ponytail: WAV embedded as base64, a few MB per call; transcode to AAC if the file gets too big to share
   demo() {
-    const embed = (id?: string) => {
-      const clip = id ? this.audio.get(id) : undefined;
+    const embed = (url?: string) => {
+      if (!url?.startsWith('media/') && !url?.startsWith('audio/')) return url;
+      const id = url.replace(/\.(wav|bin)$/, '').replace(/^(media|audio)\//, '');
+      const clip = this.audio.get(id) ?? this.media.get(id);
       return clip ? `data:${clip.mimeType};base64,${clip.data.toString('base64')}` : undefined;
     };
-    const sofia = this.family.map((line) => line.from).lastIndexOf('sofia');
     return {
-      news: this.news,
-      story: MARIA.story,
-      schedule: this.schedule,
-      rating: this.call.rating,
-      storyElements: this.call.storyElements,
-      family: this.family.slice(sofia, sofia + 2),
-      moment: this.call.rating ? this.family.at(-1) : undefined,
-      lines: this.call.lines.map((line) => ({ ...line, audio: embed(line.audio ?? this.spoken.get(line.text)) })),
+      chat: this.chat.map((line) => ({ ...line, mediaUrl: embed(line.mediaUrl) })),
+      moments: this.moments,
+      person: ATHINA,
     };
   }
 
-  async addNews(input: { text?: string; audio?: { data: Buffer; mimeType: string } }, from?: string) {
-    if (from) this.familyNumber = from;
-    const line: Line = { from: 'sofia', text: input.text ?? '🎤 …' };
-    this.family.push(line);
-    const news = await ask<News>(
-      `You write for Anchor, an automated phone companion that practises present-day memories with Maria through her own life stories.\n` +
-        `${MARIA.context}\nHer story anchor: ${MARIA.story.summary}\n` +
-        `A family member sent this news${input.audio ? ' as the attached voice note' : `: «${input.text}»`}. ` +
-        `Extract the item and write the lines Anchor speaks to Maria. Use simple, warm, spoken Greek, one short sentence each.`,
-      NEWS_SCHEMA,
+  async addMoment(
+    input: { text?: string; audio?: { data: Buffer; mimeType: string }; image?: { data: Buffer; mimeType: string }; from?: Role },
+    whatsappFrom?: string,
+  ) {
+    if (whatsappFrom) this.familyNumber = whatsappFrom;
+    const sender = input.from ?? 'sofia';
+    let mediaUrl: string | undefined;
+    let mediaType: string | undefined;
+
+    if (input.image) {
+      const id = randomUUID();
+      this.media.set(id, input.image);
+      mediaUrl = `media/${id}.bin`;
+      mediaType = input.image.mimeType;
+    } else if (input.audio) {
+      const id = randomUUID();
+      this.media.set(id, input.audio);
+      mediaUrl = `media/${id}.bin`;
+      mediaType = input.audio.mimeType;
+    }
+
+    const placeholder = input.text?.trim() || (input.audio ? '🎤 voice note' : input.image ? '📷 photo' : '…');
+    this.push(sender, placeholder, mediaUrl);
+
+    const extracted = await ask<Extracted>(
+      `You write for Anchor, an AI member of a family WhatsApp group that practises present-day memories with Athina through spaced retrieval.\n` +
+        `${ATHINA.context}\n` +
+        `A family member just shared this moment${input.audio ? ' as a voice note' : input.image ? ' as a photo' : ''}` +
+        `${input.text ? `: «${input.text}»` : '.'} ` +
+        `Extract the moment and write the lines Anchor will use later. Use simple, warm, spoken English. One short sentence each.`,
+      MOMENT_SCHEMA,
       { audio: input.audio },
     );
-    if (input.audio) line.text = `🎤 ${news.transcript}`;
-    this.news = news;
-    this.family.push({ from: 'anchor', text: news.ack });
-    [news.question, news.hint, news.praise, news.reveal].forEach((spoken) => void this.prepare(spoken));
-    return news.ack;
+
+    const moment: Moment = {
+      id: randomUUID(),
+      caption: extracted.caption || placeholder,
+      sender,
+      who: extracted.who,
+      what: extracted.what,
+      when: extracted.when,
+      question: extracted.question,
+      answer: extracted.answer,
+      hint: extracted.hint,
+      praise: extracted.praise,
+      reveal: extracted.reveal,
+      memory: extracted.memory,
+      ack: extracted.ack,
+      mediaUrl,
+      mediaType,
+      createdAt: new Date().toISOString(),
+      gapDays: 1,
+      nextDue: scheduleNext(1),
+      cued: false,
+      phase: 'idle',
+    };
+    this.moments.unshift(moment);
+    this.push('anchor', moment.ack);
+    void this.prepare(moment.question);
+    void this.prepare(moment.hint);
+    void this.prepare(moment.praise);
+    void this.prepare(moment.reveal);
+    return moment.ack;
   }
 
-  async startCall(baseUrl: string) {
-    this.resetCall('calling');
-    await callMaria(baseUrl);
+  /** Starts a re-encounter for the next due moment (or a chosen id). */
+  async bringBack(momentId?: string) {
+    const moment =
+      (momentId ? this.moments.find((item) => item.id === momentId) : undefined) ??
+      this.dueMoments()[0] ??
+      this.moments.find((item) => item.phase === 'idle');
+    if (!moment) return { ok: false as const, reason: 'No moment ready to bring back' };
+    if (moment.phase === 'awaiting' || moment.phase === 'hinted') {
+      return { ok: false as const, reason: "Already waiting for Athina's reply" };
+    }
+
+    this.activeId = moment.id;
+    moment.phase = 'awaiting';
+    moment.cued = false;
+    this.push('anchor', moment.question, moment.mediaUrl);
+
+    if (this.familyNumber) {
+      await sendWhatsApp(this.familyNumber, moment.question).catch((error) => this.logger.error(error));
+    }
+    return { ok: true as const, momentId: moment.id, question: moment.question };
   }
 
-  ring() {
-    this.resetCall('ringing');
-  }
+  async replyAsAthina(input: { text?: string; audio?: { data: Buffer; mimeType: string } }) {
+    const moment = this.moments.find((item) => item.id === this.activeId);
+    if (!moment || (moment.phase !== 'awaiting' && moment.phase !== 'hinted')) {
+      return { ok: false as const, reason: 'Nothing is waiting for a reply' };
+    }
 
-  callStatus(status: string) {
-    this.call.status = { queued: 'calling', initiated: 'calling', 'in-progress': 'in-call', completed: 'ended' }[status] ?? status;
+    let speech = input.text?.trim() ?? '';
+    let mediaUrl: string | undefined;
+    if (input.audio) {
+      const id = randomUUID();
+      this.media.set(id, input.audio);
+      mediaUrl = `media/${id}.bin`;
+      speech = await this.transcribe(input.audio.data, input.audio.mimeType);
+    }
+    this.push('athina', speech || '…', mediaUrl);
+
+    const recalled = await this.recalled(moment, speech);
+    if (!recalled && moment.phase === 'awaiting') {
+      moment.phase = 'hinted';
+      moment.cued = true;
+      this.push('anchor', moment.hint);
+      if (this.familyNumber) sendWhatsApp(this.familyNumber, moment.hint).catch((error) => this.logger.error(error));
+      return { ok: true as const, outcome: 'cued' as const };
+    }
+
+    const rating = rate(recalled ? 1 : 0, 1, moment.cued);
+    const closing = recalled ? moment.praise : moment.reveal;
+    this.push('anchor', closing);
+    this.finish(moment, rating);
+    if (this.familyNumber) sendWhatsApp(this.familyNumber, closing).catch((error) => this.logger.error(error));
+    return { ok: true as const, outcome: rating };
   }
 
   async transcribe(audio: Buffer, mimeType: string) {
     const result = await ask<{ transcript: string }>(
-      'Transcribe this Greek spoken answer verbatim, in Greek. Return an empty string when nobody speaks.',
+      'Transcribe this spoken English answer verbatim. Return an empty string when nobody speaks.',
       { type: 'object', properties: { transcript: { type: 'string' } }, required: ['transcript'] },
       { audio: { data: audio, mimeType }, fast: true, timeoutMs: 30000 },
     );
     return result.transcript.trim();
   }
 
-  async step(step: string, speech: string, recording?: Clip): Promise<Turn> {
-    const news = this.news;
-    if (speech) {
-      const id = recording ? randomUUID() : undefined;
-      if (id && recording) this.audio.set(id, recording);
-      this.call.lines.push({ from: 'maria', text: speech, audio: id });
+  private dueMoments() {
+    const now = Date.now();
+    return this.moments.filter(
+      (moment) => moment.phase === 'idle' && new Date(moment.nextDue).getTime() <= now,
+    );
+  }
+
+  private finish(moment: Moment, rating: Rating) {
+    moment.rating = rating;
+    moment.gapDays = nextGap(moment.gapDays, rating);
+    moment.nextDue = scheduleNext(moment.gapDays);
+    moment.phase = 'idle';
+    this.activeId = undefined;
+    const note = familyNote(rating, moment.memory);
+    if (note) {
+      this.push('anchor', note);
+      if (this.familyNumber) sendWhatsApp(this.familyNumber, note).catch((error) => this.logger.error(error));
     }
-
-    if (step === 'start') {
-      this.call.status = 'in-call';
-      this.call.lines.push({ from: 'anchor', text: `♪ Συννεφιασμένη Κυριακή`, audio: 'song' });
-      return this.turn([LINES.greeting], 'story', true);
-    }
-
-    if (step === 'story') {
-      this.call.storyTold = speech.length > 0;
-      void this.scoreStory(speech);
-      if (!news) return this.goodbye();
-      return this.turn([LINES.bridge, news.question], 'today');
-    }
-
-    if (!news) return this.goodbye();
-    const recalled = await this.recalled(news, speech);
-    if (!recalled && !this.call.hinted) {
-      this.call.hinted = true;
-      return this.turn([news.hint], 'today');
-    }
-    this.finish(news, rate(recalled ? 1 : 0, 1, this.call.hinted));
-    return this.goodbye(recalled ? news.praise : news.reveal);
   }
 
-  toTwiml({ song, lines, next }: Turn) {
-    const spoken = lines.map((line) => this.voice(line)).join('');
-    return twiml(song ? play('/audio/song.wav') : '', next ? listen(`/voice/${next}`, spoken) : `${spoken}<Hangup/>`);
-  }
-
-  browserTurn({ song, lines, next }: Turn) {
-    const audio = (line: string) => (this.spoken.has(line) ? `audio/${this.spoken.get(line)}.wav` : undefined);
-    return { song: song ? 'audio/song.wav' : undefined, lines: lines.map((line) => ({ text: line, audio: audio(line) })), next };
-  }
-
-  private resetCall(status: string) {
-    this.call = { status, lines: [], hinted: false, storyTold: false, storyElements: [], rating: undefined };
-  }
-
-  private turn(lines: string[], next?: Turn['next'], song = false): Turn {
-    lines.forEach((text) => this.call.lines.push({ from: 'anchor', text }));
-    if (!next) this.call.status = 'ended';
-    return { song, lines, next };
-  }
-
-  private goodbye(closing?: string) {
-    return this.turn(closing ? [closing, LINES.goodbye] : [LINES.goodbye]);
-  }
-
-  private finish(news: News, rating: Rating) {
-    this.call.rating = rating;
-    this.schedule.gapDays = nextGap(this.schedule.gapDays, rating);
-    const next = new Date();
-    next.setDate(next.getDate() + this.schedule.gapDays);
-    next.setHours(11, 0, 0, 0);
-    this.schedule.nextCall = next.toISOString();
-    const message = familyMessage(this.call.storyTold, rating, news.memory);
-    this.family.push({ from: 'anchor', text: message });
-    if (this.familyNumber) sendWhatsApp(this.familyNumber, message).catch((error) => this.logger.error(error));
-  }
-
-  private async recalled(news: News, speech: string) {
+  private async recalled(moment: Moment, speech: string) {
     if (!speech) return false;
     try {
       const result = await ask<{ recalled: boolean }>(
-        `Anchor asked Maria: «${news.question}». The fact to recall: «${news.answer}». ` +
-          `Phone speech recognition heard her answer: «${speech}». It may contain recognition errors. Did she recall the fact?`,
+        `Anchor asked Athina: «${moment.question}». The fact to recall: «${moment.answer}». ` +
+          `She answered: «${speech}». Speech may contain recognition errors. Did she recall the fact?`,
         { type: 'object', properties: { recalled: { type: 'boolean' } }, required: ['recalled'] },
         { fast: true },
       );
@@ -211,33 +296,16 @@ export class AnchorService implements OnModuleInit {
     }
   }
 
-  private async scoreStory(speech: string) {
-    if (!speech) return;
-    try {
-      const result = await ask<{ recalled: string[] }>(
-        `Maria told her wedding story on the phone. Speech recognition heard: «${speech}». ` +
-          `Which of these story elements did she mention, even in other words? ${JSON.stringify(MARIA.story.elements)}. Return the exact labels.`,
-        { type: 'object', properties: { recalled: { type: 'array', items: { type: 'string', enum: MARIA.story.elements } } }, required: ['recalled'] },
-      );
-      this.call.storyElements = result.recalled;
-    } catch (error) {
-      this.logger.error(error);
-    }
-  }
-
-  private voice(text: string) {
-    const id = this.spoken.get(text);
-    return id ? play(`/audio/${id}.wav`) : say(text);
+  private push(from: Role, text: string, mediaUrl?: string) {
+    this.chat.push({ id: randomUUID(), from, text, mediaUrl, at: new Date().toISOString() });
   }
 
   private async prepare(text: string) {
-    if (this.spoken.has(text)) return;
     try {
       const id = randomUUID();
       this.audio.set(id, { data: await speak(text), mimeType: 'audio/wav' });
-      this.spoken.set(text, id);
     } catch (error) {
-      this.logger.warn(`Gemini TTS failed, the call falls back to <Say>: ${error}`);
+      this.logger.warn(`Gemini TTS failed: ${error}`);
     }
   }
 }

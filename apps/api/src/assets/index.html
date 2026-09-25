@@ -3,234 +3,631 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Anchor · live prototype</title>
+<meta name="description" content="Anchor brings family memories back to Athina in the group chat — spaced retrieval, gentle cues, no new app to learn.">
+<meta name="theme-color" content="#0f3d3a">
+<title>Anchor · family memories, returning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 15px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; background: #f3efe8; color: #1f2328; }
-  header { display: flex; align-items: baseline; gap: 12px; padding: 20px 32px 8px; }
-  header h1 { margin: 0; font-size: 22px; }
-  header span { color: #6b6257; }
-  main { display: grid; grid-template-columns: 340px 340px 1fr; gap: 28px; padding: 16px 32px 32px; align-items: start; }
-  @media (max-width: 1100px) { main { grid-template-columns: 340px 340px; } .hood { grid-column: 1 / -1; } }
-  @media (max-width: 760px) { main { grid-template-columns: minmax(0, 340px); } }
-  .label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #6b6257; margin: 0 0 8px 4px; }
-  .phone { height: 620px; border-radius: 36px; border: 10px solid #1f2328; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 12px 30px rgba(0,0,0,.15); }
-  .wa-top { background: #075e54; color: #fff; padding: 14px 16px; font-weight: 600; }
-  .wa-top small { display: block; font-weight: 400; opacity: .8; }
-  .chat { flex: 1; overflow-y: auto; padding: 12px; background: #ece5dd; display: flex; flex-direction: column; gap: 8px; }
-  .bubble { max-width: 85%; padding: 8px 10px; border-radius: 10px; box-shadow: 0 1px 1px rgba(0,0,0,.1); white-space: pre-wrap; }
-  .sofia { align-self: flex-end; background: #dcf8c6; }
-  .anchor { align-self: flex-start; background: #fff; }
-  .compose { display: flex; gap: 6px; padding: 8px; background: #f0f0f0; }
-  .compose input { flex: 1; border: 0; border-radius: 20px; padding: 10px 14px; font: inherit; }
-  .compose button { border: 0; border-radius: 50%; width: 42px; background: #128c7e; color: #fff; font-size: 18px; cursor: pointer; }
-  .maria { background: linear-gradient(#2b3a55, #121826); color: #fff; }
-  .maria .screen { flex: 1; display: flex; flex-direction: column; padding: 24px 16px; overflow-y: auto; }
-  .clock { font-size: 64px; font-weight: 200; text-align: center; margin-top: 40px; }
-  .status { text-align: center; font-size: 18px; margin: 12px 0; }
-  .ringing { animation: pulse 1s infinite; }
-  @keyframes pulse { 50% { opacity: .35; } }
-  .call-button { margin: auto auto 24px; border: 0; border-radius: 40px; padding: 16px 28px; background: #34c759; color: #fff; font: 600 16px inherit; cursor: pointer; }
-  .call-button:disabled { background: #5b6475; cursor: not-allowed; }
-  .call-button.recording { background: #ff3b30; }
-  .real-call { margin: -12px auto 8px; border: 0; background: none; color: #aab3c5; font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; }
-  .line { padding: 8px 10px; border-radius: 12px; margin: 4px 0; max-width: 90%; }
-  .line.anchor { background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
-  .line.maria { align-self: flex-end; background: #34c759; }
-  .hood { background: #fff; border-radius: 16px; padding: 20px 24px; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
-  .hood h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #6b6257; margin: 18px 0 6px; }
+  :root {
+    --bg: #f2f0eb;
+    --bg-elevated: #fffcf7;
+    --ink: #14201f;
+    --ink-muted: #4a5553;
+    --brand: #0f3d3a;
+    --brand-soft: #d7ebe7;
+    --accent: #c45c26;
+    --line: #d6d1c7;
+    --focus: #0b5fff;
+    --chat-bg: #e8efe9;
+    --bubble-family: #dff3d4;
+    --bubble-athina: #fff1e4;
+    --bubble-anchor: #ffffff;
+    --ok-bg: #d8f3df;
+    --ok-ink: #14532d;
+    --cue-bg: #fdecc8;
+    --cue-ink: #7a4b00;
+    --soft-bg: #ebe8e2;
+    --soft-ink: #3f4745;
+    --radius: 1rem;
+    --space: clamp(1rem, 2.5vw, 1.75rem);
+    --font: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --display: "Fraunces", Georgia, serif;
+    --tap: 2.75rem; /* 44px */
+    color-scheme: light;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font: 400 1.0625rem/1.5 var(--font);
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #d9ebe6 0%, transparent 55%),
+      radial-gradient(900px 500px at 100% 0%, #f3e2d4 0%, transparent 50%),
+      var(--bg);
+  }
+
+  a { color: var(--brand); }
+  a:hover { text-decoration-thickness: 2px; }
+
+  :focus { outline: none; }
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: var(--space);
+    top: 0;
+    transform: translateY(-120%);
+    z-index: 1000;
+    padding: 0.65rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--ink);
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    transform: translateY(0.75rem);
+  }
+
+  .site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+    padding: calc(var(--space) + env(safe-area-inset-top, 0)) var(--space) 0.5rem;
+    max-width: 72rem;
+    margin-inline: auto;
+  }
+  .brand {
+    margin: 0;
+    font-family: var(--display);
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--brand);
+    line-height: 1.1;
+  }
+  .tagline {
+    margin: 0;
+    color: var(--ink-muted);
+    max-width: 36rem;
+  }
+
+  .layout {
+    display: grid;
+    gap: var(--space);
+    padding: var(--space);
+    padding-bottom: calc(var(--space) + env(safe-area-inset-bottom, 0));
+    max-width: 72rem;
+    margin-inline: auto;
+    align-items: start;
+  }
+  @media (min-width: 56rem) {
+    .layout {
+      grid-template-columns: minmax(18rem, 26rem) minmax(0, 1fr);
+    }
+  }
+
+  .panel {
+    background: var(--bg-elevated);
+    border: 1px solid var(--line);
+    border-radius: calc(var(--radius) + 0.25rem);
+    box-shadow: 0 10px 30px rgba(20, 32, 31, 0.06);
+    min-width: 0;
+  }
+
+  .panel-heading {
+    margin: 0;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .chat-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: min(70dvh, 40rem);
+    max-height: min(78dvh, 44rem);
+  }
+  @media (min-width: 56rem) {
+    .chat-shell { position: sticky; top: var(--space); }
+  }
+
+  .chat-meta {
+    padding: 1rem 1.1rem;
+    background: var(--brand);
+    color: #f4fffc;
+  }
+  .chat-meta h3 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  .chat-meta p {
+    margin: 0.2rem 0 0;
+    color: #c7e4de;
+    font-size: 0.95rem;
+  }
+
+  .chat-log {
+    flex: 1;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    background: var(--chat-bg);
+    list-style: none;
+    margin: 0;
+  }
+
+  .bubble {
+    max-width: min(85%, 22rem);
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.85rem;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 1px rgba(20, 32, 31, 0.06);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .bubble .who {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+  }
+  .bubble time {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+  }
+  .sofia .who, .maria .who { color: #8a3d00; }
+  .athina .who { color: #00507a; }
+  .anchor .who { color: #0b5a52; }
+  .sofia, .maria {
+    align-self: flex-end;
+    background: var(--bubble-family);
+    border-color: #b7d9a8;
+  }
+  .athina {
+    align-self: flex-start;
+    background: var(--bubble-athina);
+    border-color: #ecc9a8;
+  }
+  .anchor {
+    align-self: flex-start;
+    background: var(--bubble-anchor);
+    border-color: var(--line);
+  }
+  .bubble img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin-top: 0.45rem;
+  }
+
+  .compose {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.5rem;
+    align-items: end;
+    padding: 0.75rem;
+    border-top: 1px solid var(--line);
+    background: #f7f4ee;
+  }
+  @media (max-width: 28rem) {
+    .compose { grid-template-columns: 1fr auto; }
+    .compose .field-from { grid-column: 1 / -1; }
+  }
+
+  .field { display: grid; gap: 0.25rem; min-width: 0; }
+  .field label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink-muted);
+  }
+  .field input,
+  .field select,
+  .reply-form input {
+    width: 100%;
+    min-height: var(--tap);
+    padding: 0.55rem 0.85rem;
+    border: 1px solid #8d958f;
+    border-radius: 0.7rem;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1rem; /* avoid iOS zoom on focus */
+  }
+  .field input::placeholder,
+  .reply-form input::placeholder { color: #6b7471; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: var(--tap);
+    min-width: var(--tap);
+    padding: 0.55rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.7rem;
+    font: 700 0.95rem/1.2 var(--font);
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--brand);
+    color: #f4fffc;
+  }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn-secondary {
+    background: var(--soft-bg);
+    color: var(--ink);
+    border-color: #b9b3a8;
+  }
+  .btn-secondary:hover:not(:disabled) { background: #e1ddd5; }
+  .btn-send { padding-inline: 1rem; }
+
+  .hood { padding: 1.1rem 1.15rem 1.35rem; }
+  .hood h2 {
+    margin: 1.35rem 0 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
   .hood h2:first-child { margin-top: 0; }
-  .muted { color: #8b8176; }
-  .elements { list-style: none; padding: 0; margin: 0; }
-  .elements li::before { content: "○ "; color: #b8aea2; }
-  .elements li.hit::before { content: "✓ "; color: #1a7f37; }
-  .chip { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: 600; }
-  .free { background: #dafbe1; color: #1a7f37; }
-  .cued { background: #fff4d4; color: #9a6700; }
-  .struggled { background: #eef1f6; color: #57606a; }
-  .next { font-size: 20px; font-weight: 600; }
+  .lede {
+    margin: 0;
+    color: var(--ink-muted);
+    max-width: 42rem;
+  }
+  .stat {
+    margin: 0;
+    font-family: var(--display);
+    font-size: clamp(1.5rem, 3vw, 1.85rem);
+    font-weight: 700;
+    color: var(--brand);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+  }
+
+  .reply-form {
+    display: grid;
+    gap: 0.65rem;
+    margin-top: 0.75rem;
+    padding: 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fbf8f2;
+  }
+  .reply-form .prompt {
+    margin: 0;
+    font-weight: 600;
+  }
+  .reply-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .moments {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .moment {
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .moment:first-child { border-top: 0; padding-top: 0.25rem; }
+  .moment h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1.05rem;
+  }
+  .chip {
+    display: inline-block;
+    margin-top: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .free { background: var(--ok-bg); color: var(--ok-ink); }
+  .cued { background: var(--cue-bg); color: var(--cue-ink); }
+  .struggled { background: var(--soft-bg); color: var(--soft-ink); }
+
+  .status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .site-footer {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 var(--space) calc(var(--space) + env(safe-area-inset-bottom, 0));
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+  }
+  .site-footer p { margin: 0; max-width: 40rem; }
+
+  @media (forced-colors: active) {
+    .panel, .bubble, .btn, .field input, .field select, .reply-form {
+      border: 1px solid CanvasText;
+    }
+    .btn-primary { background: Highlight; color: HighlightText; }
+  }
 </style>
 </head>
 <body>
-<header><h1>⚓ Anchor</h1><span>A phone number, not an app. Live prototype.</span></header>
-<main>
-  <section>
-    <p class="label">Sofia's WhatsApp</p>
-    <div class="phone">
-      <div class="wa-top">Anchor<small id="wa-note">send news here, or on WhatsApp</small></div>
-      <div class="chat" id="family"></div>
-      <form class="compose" id="compose">
-        <input id="news" placeholder="Η Άννα παντρεύεται τον Ιούνιο, στην εκκλησία στην Αίγινα" autocomplete="off">
-        <button aria-label="Send">➤</button>
-      </form>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <h1 class="brand" id="site-title">Anchor</h1>
+  <p class="tagline" id="tagline">Family memories, returning in the group chat — at the right time, without a new app.</p>
+</header>
+
+<main id="main" class="layout" aria-labelledby="site-title">
+  <section class="panel chat-shell" aria-labelledby="chat-heading">
+    <h2 class="panel-heading" id="chat-heading">Family group chat</h2>
+    <div class="chat-meta">
+      <h3>Athina's family</h3>
+      <p id="wa-note">Sofia · Maria · Athina · Anchor</p>
     </div>
+
+    <ul class="chat-log" id="chat" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></ul>
+
+    <form class="compose" id="compose" aria-describedby="compose-help">
+      <p id="compose-help" class="status">Share a family moment as Sofia or Maria. Anchor will save it for later.</p>
+      <div class="field field-from">
+        <label for="from">From</label>
+        <select id="from" name="from" autocomplete="off">
+          <option value="sofia">Sofia</option>
+          <option value="maria">Maria</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="news">Moment</label>
+        <input id="news" name="news" type="text" maxlength="500" autocomplete="off"
+          placeholder="Maria's first day of school — she didn't want to let go of my hand"
+          enterkeyhint="send">
+      </div>
+      <button class="btn btn-primary btn-send" type="submit">Send</button>
+    </form>
   </section>
-  <section>
-    <p class="label">Maria's phone</p>
-    <div class="phone maria"><div class="screen" id="maria"></div></div>
+
+  <section class="panel hood" id="hood" aria-labelledby="hood-heading" aria-busy="false">
+    <h2 id="hood-heading">Under the hood</h2>
+    <p class="lede">Loading…</p>
   </section>
-  <section class="hood" id="hood"></section>
 </main>
+
+<footer class="site-footer">
+  <p>Built on spaced retrieval: the family's own stories, returning gently so Athina keeps her place in family life.</p>
+</footer>
+
+<p class="status" id="live-status" role="status" aria-live="polite"></p>
+
 <script>
   const escape = (text) => String(text ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const ratings = { free: 'Remembered on her own', cued: 'Remembered with a hint', struggled: 'Struggled, the answer was told gently' };
-  const statuses = { calling: 'Καλεί…', ringing: '📞 Εισερχόμενη κλήση · Anchor', 'in-call': 'Σε κλήση με Anchor', ended: 'Η κλήση ολοκληρώθηκε', busy: 'Κατειλημμένο', 'no-answer': 'Δεν απάντησε', failed: 'Η κλήση απέτυχε' };
+  const names = { sofia: 'Sofia', maria: 'Maria', athina: 'Athina', anchor: 'Anchor' };
+  const ratings = { free: 'Remembered on her own', cued: 'Remembered with a cue', struggled: 'Needed a gentle reveal' };
   let last = '';
+  let announce = '';
+
+  const statusEl = () => document.getElementById('live-status');
+  const setStatus = (message) => { statusEl().textContent = message; };
+
+  function restoreFocus(id, start, end) {
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    if (typeof el.setSelectionRange === 'function' && start != null) {
+      try { el.setSelectionRange(start, end ?? start); } catch {}
+    }
+  }
 
   async function refresh() {
-    const state = await (await fetch('state')).json();
+    const state = window.DEMO ?? await (await fetch('state')).json();
     const snapshot = JSON.stringify(state);
     if (snapshot === last) return;
     last = snapshot;
     render(state);
   }
 
-  function render({ news, family, call, schedule, story, whatsapp }) {
+  function render(state) {
+    const { chat, moments, activeId, due, whatsapp, person } = state;
+    const waiting = moments?.some((m) => m.phase === 'awaiting' || m.phase === 'hinted');
+    const active = moments?.find((m) => m.id === activeId);
+    const focused = document.activeElement;
+    const focusId = focused?.id;
+    const selectionStart = focused?.selectionStart;
+    const selectionEnd = focused?.selectionEnd;
 
-    const chat = document.getElementById('family');
-    chat.innerHTML = family.map((line) => `<div class="bubble ${line.from}">${escape(line.text)}</div>`).join('');
-    chat.scrollTop = chat.scrollHeight;
-    document.getElementById('wa-note').textContent = window.DEMO ? 'Sofia, Maria\'s daughter' : whatsapp ? 'connected to Sofia\'s WhatsApp' : 'send news here, or on WhatsApp';
+    const el = document.getElementById('chat');
+    el.innerHTML = (chat || []).map((line) => {
+      const when = line.at ? new Date(line.at) : null;
+      const stamp = when && !Number.isNaN(when.valueOf())
+        ? `<time datetime="${escape(when.toISOString())}">${escape(when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}</time>`
+        : '';
+      const media = line.mediaUrl
+        ? `<img src="${escape(line.mediaUrl)}" alt="Photo shared with this moment">`
+        : '';
+      return `
+        <li class="bubble ${line.from}">
+          <span class="who">${escape(names[line.from] || line.from)}</span>
+          <span class="text">${escape(line.text)}</span>
+          ${media}
+          ${stamp}
+        </li>`;
+    }).join('');
+    el.scrollTop = el.scrollHeight;
 
-    const idle = call.status === 'idle' || call.status === 'ended' || !statuses[call.status] || ['busy', 'no-answer', 'failed'].includes(call.status);
-    const screen = document.getElementById('maria');
-    screen.innerHTML = call.status === 'idle'
-      ? `<div class="clock">11:00</div><div class="status muted">Maria's chosen time</div>`
-      : `<div class="status ${call.status === 'ringing' || call.status === 'calling' ? 'ringing' : ''}">${escape(statuses[call.status] ?? call.status)}</div>` +
-        call.lines.map((line) => `<div class="line ${line.from}">${escape(line.text)}</div>`).join('');
-    const noNews = news ? '' : 'disabled title="Send family news first"';
-    if (window.DEMO) { if (!demoPlaying) screen.insertAdjacentHTML('beforeend', `<button class="call-button" onclick="playDemo()">▶ Play the recorded call</button>`); }
-    else if (phone?.phase === 'ringing') screen.insertAdjacentHTML('beforeend', `<button class="call-button ringing" onclick="answer()">📞 Απάντηση</button>`);
-    else if (phone?.phase === 'listening') screen.insertAdjacentHTML('beforeend', `<button class="call-button recording" onclick="stopRecording()">🎙 Μιλάει η Μαρία… Τέλος</button>`);
-    else if (phone) screen.insertAdjacentHTML('beforeend', `<div class="status muted">${phone.phase === 'thinking' ? 'Anchor ακούει…' : '🔊'}</div>`);
-    else if (idle) screen.insertAdjacentHTML('beforeend', `<button class="call-button" ${noNews} onclick="ring()">📞 Anchor calls Maria</button><button class="real-call" ${noNews} onclick="startCall(this)">or ring the real phone (Twilio, billed)</button>`);
-    screen.scrollTop = screen.scrollHeight;
+    document.getElementById('wa-note').textContent = window.DEMO
+      ? 'Recorded demo'
+      : whatsapp
+        ? 'Connected to WhatsApp'
+        : 'Simulated group · connect Twilio for live WhatsApp';
 
-    document.getElementById('hood').innerHTML = `
-      <h2>Family news, extracted by Gemini</h2>
-      ${news ? `<div><b>${escape(news.who)}</b> · ${escape(news.what)} · ${escape(news.when)}</div>` : '<div class="muted">Waiting for Sofia…</div>'}
-      <h2>Linked to her story</h2>
-      <div>${escape(story.title)}</div>
-      ${news ? `<h2>Today's question</h2><div>«${escape(news.question)}»</div><div class="muted">Answer: ${escape(news.answer)}</div><h2>One hint, at most</h2><div>«${escape(news.hint)}»</div>` : ''}
-      <h2>Story elements that came back</h2>
-      <ul class="elements">${story.elements.map((element) => `<li class="${call.storyElements.includes(element) ? 'hit' : ''}">${escape(element)}</li>`).join('')}</ul>
-      <h2>Today's item</h2>
-      ${call.rating ? `<span class="chip ${call.rating}">${ratings[call.rating]}</span>` : '<span class="muted">Not practised yet</span>'}
-      <h2>Next call</h2>
-      ${schedule.nextCall
-        ? `<div class="next">in ${schedule.gapDays} day${schedule.gapDays > 1 ? 's' : ''}</div><div class="muted">${new Date(schedule.nextCall).toLocaleString('el-GR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</div>`
-        : `<div class="muted">Every ${schedule.gapDays} day. Remembered easily, the wait doubles. A hint, same wait. A struggle, tomorrow.</div>`}
-      ${call.rating && !window.DEMO ? `<h2>Share</h2><a href="demo.html" download>⬇ Download this call as one HTML file</a><div class="muted">It replays offline, with no Gemini or Twilio requests.</div>` : ''}`;
-  }
+    const list = (moments || []).length
+      ? `<ul class="moments">${moments.map((m) => `
+          <li class="moment">
+            <h3>${escape(m.who)} · ${escape(m.what)}</h3>
+            <p class="lede">${escape(m.when)}</p>
+            <p class="lede">Next in ${m.gapDays} day${m.gapDays === 1 ? '' : 's'} · ${escape(new Date(m.nextDue).toLocaleString())}</p>
+            ${m.rating
+              ? `<span class="chip ${m.rating}">${ratings[m.rating]}</span>`
+              : '<p class="lede">Not practised yet</p>'}
+            ${m.phase !== 'idle' ? `<p class="lede">Currently: ${escape(m.phase)}</p>` : ''}
+          </li>`).join('')}</ul>`
+      : '<p class="lede">Waiting for the family to share a moment…</p>';
 
-  let demoPlaying = false;
-  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const hood = document.getElementById('hood');
+    hood.setAttribute('aria-busy', 'false');
+    hood.innerHTML = `
+      <h2 id="hood-heading">For ${escape(person?.name || 'Athina')}</h2>
+      <p class="lede">${escape(person?.context || '')}</p>
+      <h2>Spaced retrieval</h2>
+      <p class="stat">${(due || []).length} due now</p>
+      <p class="lede">Free recall doubles the wait. A cue holds it. A struggle resets to tomorrow.</p>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="bring" ${!(moments || []).length || waiting || window.DEMO ? 'disabled' : ''}>Bring a moment back</button>
+        <button type="button" class="btn btn-secondary" id="advance" ${!(moments || []).length || waiting || window.DEMO ? 'disabled' : ''}>Practise next moment now</button>
+      </div>
+      ${waiting ? `
+        <h2 id="reply-heading">Athina's reply</h2>
+        <form class="reply-form" id="reply-form" aria-labelledby="reply-heading">
+          <p class="prompt">${escape(active?.question || 'Answer the question in the chat.')}</p>
+          <div class="field">
+            <label for="reply">Your reply</label>
+            <input id="reply" name="reply" type="text" autocomplete="off" enterkeyhint="send"
+              placeholder="Maria… she held Sofia's hand" ${window.DEMO ? 'disabled' : ''}>
+          </div>
+          <div class="reply-actions">
+            <button type="submit" class="btn btn-primary" id="send-reply" ${window.DEMO ? 'disabled' : ''}>Send reply</button>
+            <button type="button" class="btn btn-secondary" id="hesitate" ${window.DEMO ? 'disabled' : ''}>I'm not sure</button>
+          </div>
+        </form>` : ''}
+      <h2>Saved moments</h2>
+      ${list}
+      ${moments?.length && !window.DEMO
+        ? `<h2>Share</h2><p><a class="btn btn-secondary" href="demo.html" download="anchor-demo.html">Download offline demo</a></p>`
+        : ''}
+    `;
 
-  function demoState(done) {
-    const { news, family, moment, lines, storyElements, rating, schedule, story } = window.DEMO;
-    return {
-      news: done ? news : null,
-      family: done ? [...family, ...(moment ? [moment] : [])] : [],
-      call: done ? { status: 'ended', lines, storyElements, rating } : { status: 'idle', lines: [], storyElements: [] },
-      schedule: done ? schedule : { gapDays: rating === 'free' ? schedule.gapDays / 2 : schedule.gapDays },
-      story,
-    };
-  }
+    document.getElementById('bring')?.addEventListener('click', async () => {
+      setStatus('Bringing a moment back…');
+      await fetch('bring-back', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+      last = '';
+      await refresh();
+      setStatus('Anchor asked Athina a question in the chat.');
+      document.getElementById('reply')?.focus();
+    });
+    document.getElementById('advance')?.addEventListener('click', async () => {
+      const first = moments.find((m) => m.phase === 'idle');
+      if (!first) return;
+      setStatus('Starting practice for the next moment…');
+      await fetch('bring-back', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ momentId: first.id }),
+      });
+      last = '';
+      await refresh();
+      setStatus('Anchor asked Athina a question in the chat.');
+      document.getElementById('reply')?.focus();
+    });
+    document.getElementById('reply-form')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      sendReply(document.getElementById('reply').value);
+    });
+    document.getElementById('hesitate')?.addEventListener('click', () => sendReply("I'm not sure…"));
 
-  async function playDemo() {
-    const demo = window.DEMO;
-    const state = demoState(false);
-    demoPlaying = true;
-    render(state);
-    await wait(800);
-    state.family.push(demo.family[0]);
-    render(state);
-    await wait(1800);
-    state.news = demo.news;
-    state.family.push(demo.family[1]);
-    render(state);
-    await wait(2500);
-    state.call.status = 'ringing';
-    render(state);
-    await wait(2500);
-    state.call.status = 'in-call';
-    for (const line of demo.lines) {
-      state.call.lines.push(line);
-      render(state);
-      if (line.audio) await playAudio(line.audio);
-      else if (line.from === 'anchor' && !line.text.startsWith('♪')) await speakText(line.text);
-      else await wait(1500 + line.text.length * 40);
-      await wait(500);
+    restoreFocus(focusId, selectionStart, selectionEnd);
+
+    const nextAnnounce = waiting
+      ? `Waiting for Athina. ${(due || []).length} moments due.`
+      : `${(moments || []).length} moments saved. ${(due || []).length} due now.`;
+    if (nextAnnounce !== announce) {
+      announce = nextAnnounce;
+      setStatus(nextAnnounce);
     }
-    demoPlaying = false;
-    render(demoState(true));
   }
 
-  let phone = null;
-  let recorder = null;
-  const rerender = () => { last = ''; refresh(); };
-  const playAudio = (url) => new Promise((resolve) => { const audio = new Audio(url); audio.onended = resolve; audio.onerror = resolve; audio.play().catch(resolve); });
-  const speakText = (text) => new Promise((resolve) => { const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'el-GR'; utterance.onend = resolve; utterance.onerror = resolve; speechSynthesis.speak(utterance); });
-
-  async function ring() {
-    phone = { phase: 'ringing' };
-    await fetch('phone/ring', { method: 'POST' });
-    rerender();
-  }
-
-  async function answer() {
-    phone = { phase: 'speaking' };
-    rerender();
-    await run(await (await fetch('phone/start', { method: 'POST' })).json());
-  }
-
-  async function run(turn) {
-    if (!turn?.lines) { phone = null; alert(`The call dropped: ${turn?.message ?? 'no answer from the server'}`); return rerender(); }
-    phone = { phase: 'speaking' };
-    rerender();
-    if (turn.song) await playAudio(turn.song);
-    for (const line of turn.lines) await (line.audio ? playAudio(line.audio) : speakText(line.text));
-    if (!turn.next) { phone = null; return rerender(); }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const chunks = [];
-    recorder = new MediaRecorder(stream);
-    recorder.ondataavailable = (event) => chunks.push(event.data);
-    recorder.onstop = async () => {
-      stream.getTracks().forEach((track) => track.stop());
-      phone = { phase: 'thinking' };
-      rerender();
-      const blob = new Blob(chunks, { type: recorder.mimeType });
-      const response = await fetch(`phone/${turn.next}`, { method: 'POST', headers: { 'content-type': blob.type.split(';')[0] }, body: blob });
-      await run(await response.json());
-    };
-    recorder.start();
-    phone = { phase: 'listening' };
-    rerender();
-  }
-
-  function stopRecording() {
-    recorder?.stop();
-  }
-
-  async function startCall(button) {
-    button.disabled = true;
-    const response = await fetch('call', { method: 'POST' });
-    if (!response.ok) alert(`The call failed: ${(await response.json()).message}`);
+  async function sendReply(text) {
+    setStatus('Sending Athina\'s reply…');
+    await fetch('reply', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) });
+    last = '';
+    await refresh();
   }
 
   document.getElementById('compose').addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (window.DEMO) return;
     const input = document.getElementById('news');
     const text = input.value.trim() || input.placeholder;
+    const from = document.getElementById('from').value;
     input.value = '';
-    await fetch('news', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) });
-    refresh();
+    setStatus('Saving moment…');
+    await fetch('moment', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text, from }),
+    });
+    last = '';
+    await refresh();
+    setStatus('Moment saved. Anchor confirmed in the chat.');
+    input.focus();
   });
 
   if (window.DEMO) {
-    document.querySelector('header span').textContent = 'A phone number, not an app. Recorded demo, press play.';
-    document.getElementById('compose').style.display = 'none';
-    render(demoState(true));
+    document.getElementById('tagline').textContent = 'Recorded demo — scroll the chat to review the conversation.';
+    document.getElementById('compose').hidden = true;
+    render(window.DEMO);
   } else {
     refresh();
     setInterval(refresh, 1000);

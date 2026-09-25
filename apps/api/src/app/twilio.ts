@@ -17,22 +17,14 @@ async function post(resource: string, form: [string, string][]) {
   return (await response.json()) as { sid: string };
 }
 
-export function callMaria(baseUrl: string) {
-  return post('Calls', [
-    ['To', process.env.MARIA_PHONE ?? ''],
-    ['From', process.env.TWILIO_FROM ?? ''],
-    ['Url', `${baseUrl}/voice/start`],
-    ['StatusCallback', `${baseUrl}/voice/status`],
-    ...['initiated', 'ringing', 'answered', 'completed'].map((event): [string, string] => ['StatusCallbackEvent', event]),
-  ]);
-}
-
-export function sendWhatsApp(to: string, body: string) {
-  return post('Messages', [
+export function sendWhatsApp(to: string, body: string, mediaUrl?: string) {
+  const form: [string, string][] = [
     ['From', WHATSAPP_SANDBOX],
     ['To', to],
     ['Body', body],
-  ]);
+  ];
+  if (mediaUrl) form.push(['MediaUrl', mediaUrl]);
+  return post('Messages', form);
 }
 
 export async function download(mediaUrl: string): Promise<Buffer> {
@@ -44,8 +36,4 @@ export async function download(mediaUrl: string): Promise<Buffer> {
 const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const twiml = (...verbs: string[]) => `<?xml version="1.0" encoding="UTF-8"?><Response>${verbs.join('')}</Response>`;
-export const say = (text: string) => `<Say voice="Google.el-GR-Wavenet-B" language="el-GR">${escape(text)}</Say>`;
-export const play = (url: string) => `<Play>${escape(url)}</Play>`;
 export const message = (text: string) => `<Message>${escape(text)}</Message>`;
-export const listen = (action: string, prompt: string) =>
-  `<Gather input="speech" language="el-GR" speechTimeout="auto" timeout="8" actionOnEmptyResult="true" action="${action}">${prompt}</Gather>`;
