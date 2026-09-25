@@ -20,7 +20,7 @@ import {
 } from '../core/types';
 import { ask, speak, valid } from '../model/model';
 import { react } from './capture/capture';
-import { isCommand, pictureOf, wordCount } from './capture/filter';
+import { pictureOf, wordCount } from './capture/filter';
 import { nextSteps } from './members';
 
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];
@@ -33,7 +33,6 @@ const REPLY_SCHEMA = {
   required: ['transcript', 'kind'],
 };
 const BUTTON = /^inv:(later|never|share|keep|what):(.+)$/;
-const STOP = /^stop[.!]?$/i;
 const QUESTION_WORD = /^(who|what|where|when|which|why)\b/i;
 const logger = new Logger('Invitations');
 
@@ -155,78 +154,7 @@ export async function sendMe(family: Family, member: Member, ctx: Context) {
   await tell(family, member, { text: lines.nothingNew, buttons: nextSteps(member, 'sendMe') }, ctx);
 }
 
-async function answer(event: Incoming, family: Family, text: string, ctx: Context) {
-  await announce(family, { text, replyTo: event.messageId }, ctx);
-  return true;
-}
-
-async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
-  const transport = ctx.transport(family.id);
-  if (isCommand(event.text, '/private')) {
-    const person = event.replyToSender;
-    if (!(await transport.isAdmin(family.chatId, event.sender.id))) return answer(event, family, lines.adminOnly, ctx);
-    if (!person) return answer(event, family, lines.privateHow, ctx);
-    const isNew = !family.members.some((member) => member.id === person.id);
-    ctx.store.joinMember(family, person);
-    if (isNew) ctx.store.save();
-    const start = { label: lines.buttons.start, url: transport.startLink(family.id) };
-    await announce(family, { text: lines.memberStart(person.name), buttons: [start] }, ctx);
-    return true;
-  }
-  if (!isCommand(event.text, '/send')) return false;
-  if (!(await transport.isAdmin(family.chatId, event.sender.id))) return answer(event, family, lines.adminOnly, ctx);
-  if (!family.members.some((member) => member.started)) return answer(event, family, lines.nobodyPrivate, ctx);
-  for (const member of family.members) {
-    if (!member.started) continue;
-    const now = ctx.now();
-    const priority = byPriority(now);
-    const returns = (moment: Moment) => moment.returns[member.id]?.count ?? 0;
-    const [moment] = family.moments
-      .filter((item) => !item.sensitive && item.by.id !== member.id && returns(item) < MAX_RETURNS)
-      .sort((a, b) => returns(a) - returns(b) || priority(a, b));
-    if (moment) {
-      await deliver(family, member, moment, now, ctx);
-      continue;
-    }
-    if (member.invitation) {
-      member.invitation = undefined;
-      ctx.store.save();
-    }
-    await announce(family, { text: lines.nothingToInvite(member.name) }, ctx);
-  }
-  return true;
-}
-
 async function inPrivate(event: Incoming, family: Family, member: Member, ctx: Context): Promise<boolean> {
-  if (isCommand(event.text, '/start')) {
-    const buttons = [
-      { label: lines.buttons.agree, data: 'inv:agree' },
-      { label: lines.buttons.notNow, data: 'inv:decline' },
-    ];
-    await tell(family, member, { text: lines.welcome(member.name), buttons }, ctx);
-    return true;
-  }
-  if (isCommand(event.text, '/stop') || STOP.test(event.text?.trim() ?? '')) {
-    if (member.started || member.invitation) {
-      member.started = false;
-      member.invitation = undefined;
-      ctx.store.save();
-    }
-    await tell(family, member, { text: lines.stopped }, ctx);
-    return true;
-  }
-  if (event.button === 'inv:agree') {
-    if (!member.started) {
-      member.started = true;
-      ctx.store.save();
-    }
-    await tell(family, member, { text: lines.agreed(member.name) }, ctx);
-    return true;
-  }
-  if (event.button === 'inv:decline') {
-    await tell(family, member, { text: lines.notNow }, ctx);
-    return true;
-  }
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
   if ((event.button && !action) || event.text?.startsWith('/')) return false;
   if (action === 'never') {
@@ -404,7 +332,7 @@ export const invitations: Feature = {
 
   async handle(event, family, ctx) {
     if (!family) return false;
-    if (event.chat === 'group') return inGroup(event, family, ctx);
+    if (event.chat === 'group') return false;
     const member = family.members.find((person) => person.id === event.sender.id);
     return member ? inPrivate(event, family, member, ctx) : false;
   },
@@ -412,7 +340,7 @@ export const invitations: Feature = {
   async tick(family, window, ctx) {
     const slot = slotIn(window, 11);
     for (const member of family.members) {
-      if (slot !== undefined && member.started && member.lastInvitationDay !== dayIndex(slot)) {
+      if (slot !== undefined && member.started && member.choices.moments && member.lastInvitationDay !== dayIndex(slot)) {
         member.invitation = undefined;
         member.lastInvitationDay = dayIndex(slot);
         const [moment] = family.moments.filter((item) => qualifies(item, member.id, slot)).sort(byPriority(slot));

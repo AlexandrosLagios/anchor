@@ -13,7 +13,7 @@ import { Blocked, type Choices, type Context, type Family, type Incoming, type I
 import { ask, speak } from '../model/model';
 import { invitations, nextSlot, qualifies } from './invitations';
 
-const DEFAULT_CHOICES: Choices = { moments: false, reminders: true, shares: true, voice: false, call: false };
+const DEFAULT_CHOICES: Choices = { moments: true, reminders: true, shares: true, voice: false, call: false };
 
 vi.mock('../model/model', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../model/model')>()),
@@ -123,7 +123,9 @@ beforeEach(() => {
   const store = openStore(file, now);
   ctx = { now: () => now, store, transport: () => transport };
   family = store.addFamily('-100', '-100');
-  ctx.store.joinMember(family, { id: '7', name: 'Nikos' }).started = true;
+  const member = ctx.store.joinMember(family, { id: '7', name: 'Nikos' });
+  member.started = true;
+  member.choices.moments = true;
 });
 
 test('qualifies takes a moment of another sender that is not sensitive, 3 hours old, due, and under 7 returns', () => {
@@ -144,146 +146,8 @@ test('nextSlot is the first local 11:00 after now', () => {
   expect(nextSlot(at(25, 15))).toBe(at(26, 11));
 });
 
-test('/private from an admin registers the replied-to member once and posts memberStart with the Start link', async () => {
-  family.members.length = 0;
-  transport.admins.add('1');
-  const replyTo = { replyTo: '40', replyToSender: { id: '7', name: 'Nikos' } };
-  expect(await receive(inGroup({ text: '/private', ...replyTo }))).toBe(true);
-  expect(await receive(inGroup({ text: '/private please', ...replyTo }))).toBe(true);
-
-  expect(saved()?.members).toEqual([{ id: '7', name: 'Nikos', started: false, choices: DEFAULT_CHOICES }]);
-  const start = { text: lines.memberStart('Nikos'), buttons: [{ label: lines.buttons.start, url: transport.startLink('-100') }] };
-  expect(messages()).toEqual([
-    ['-100', start],
-    ['-100', start],
-  ]);
-});
-
-test('/private from a member who is not an admin gets adminOnly and registers nobody, also with no replied-to member', async () => {
-  family.members.length = 0;
-  const withReply = inGroup({ text: '/private', replyToSender: { id: '7', name: 'Nikos' } });
-  const withoutReply = inGroup({ text: '/private' });
-  expect(await receive(withReply)).toBe(true);
-  expect(await receive(withoutReply)).toBe(true);
-  expect(family.members).toEqual([]);
-  expect(messages()).toEqual([
-    ['-100', { text: lines.adminOnly, replyTo: withReply.messageId }],
-    ['-100', { text: lines.adminOnly, replyTo: withoutReply.messageId }],
-  ]);
-});
-
-test('/private from an admin with no reply, or as a reply to Anchor, gets privateHow and registers nobody', async () => {
-  family.members.length = 0;
-  transport.admins.add('1');
-  const noReply = inGroup({ text: '/private' });
-  const replyToAnchor = inGroup({ text: '/private', replyTo: '41' });
-  expect(await receive(noReply)).toBe(true);
-  expect(await receive(replyToAnchor)).toBe(true);
-  expect(family.members).toEqual([]);
-  expect(messages()).toEqual([
-    ['-100', { text: lines.privateHow, replyTo: noReply.messageId }],
-    ['-100', { text: lines.privateHow, replyTo: replyToAnchor.messageId }],
-  ]);
-});
-
-test('/start from a member asks for a yes and leaves started alone, and any other person or group message is left to the next feature', async () => {
-  nikos().started = false;
-  const welcome = {
-    text: lines.welcome('Nikos'),
-    buttons: [
-      { label: lines.buttons.agree, data: 'inv:agree' },
-      { label: lines.buttons.notNow, data: 'inv:decline' },
-    ],
-  };
-  expect(await receive(fromNikos({ text: '/start -100' }))).toBe(true);
-  expect(nikos().started).toBe(false);
-  expect(messages()).toEqual([['7', welcome]]);
-
-  expect(await receive({ ...fromNikos({ text: '/start' }), chatId: '8', sender: { id: '8', name: 'Eleni' } })).toBe(false);
-  expect(await receive(inGroup({ text: 'Maria on her first day at school' }))).toBe(false);
-  expect(transport.sent).toHaveLength(1);
-
-  nikos().started = true;
-  await receive(fromNikos({ text: '/start' }));
-  expect(nikos().started).toBe(true);
-  expect(messages()[1]).toEqual(['7', welcome]);
-});
-
-test('"Not now" on the welcome sends notNow and changes nothing, and nothing comes back before the yes', async () => {
-  nikos().started = false;
-  add();
-  const save = vi.spyOn(ctx.store, 'save');
-  expect(await receive(fromNikos({ button: 'inv:decline' }))).toBe(true);
-  expect(nikos().started).toBe(false);
-  expect(save).not.toHaveBeenCalled();
-  expect(messages()).toEqual([['7', { text: lines.notNow }]]);
-
-  await tickAt(at(25, 11));
-  transport.admins.add('1');
-  const send = inGroup({ text: '/send' });
-  await receive(send);
-  expect(messages().slice(1)).toEqual([['-100', { text: lines.nobodyPrivate, replyTo: send.messageId }]]);
-  expect(nikos().invitation).toBeUndefined();
-});
-
-test('/send from an admin with no member, or none who said yes, gets nobodyPrivate and sends nothing in private', async () => {
-  transport.admins.add('1');
-  add();
-  family.members.length = 0;
-  const noMember = inGroup({ text: '/send' });
-  expect(await receive(noMember)).toBe(true);
-  ctx.store.joinMember(family, { id: '7', name: 'Nikos' });
-  const noYes = inGroup({ text: '/send' });
-  expect(await receive(noYes)).toBe(true);
-  expect(messages()).toEqual([
-    ['-100', { text: lines.nobodyPrivate, replyTo: noMember.messageId }],
-    ['-100', { text: lines.nobodyPrivate, replyTo: noYes.messageId }],
-  ]);
-  expect(nikos().invitation).toBeUndefined();
-});
-
-test('"Yes, I\'d like that" sets started and sends agreed, and the next 11:00 slot brings back a moment shared before the yes', async () => {
-  nikos().started = false;
-  add({ savedAt: at(24, 8) });
-  now = at(25, 9);
-  expect(await receive(fromNikos({ button: 'inv:agree' }))).toBe(true);
-  expect(saved()?.members[0].started).toBe(true);
-  expect(messages()).toEqual([['7', { text: lines.agreed('Nikos') }]]);
-
-  await tickAt(at(25, 11));
-  expect(nikos().invitation?.momentId).toBe('m1');
-  expect(messages().slice(1)).toEqual([
-    ['7', { photo: { id: 'photo-57' } }],
-    ['7', { voice: { wav }, text: invitationText, buttons: inviteButtons('m1') }],
-  ]);
-});
-
-test('/stop and "Stop." end the returns, close the open invitation silently, and tell the family nothing', async () => {
-  const moment = add();
-  for (const text of ['/stop', 'Stop.', ' stop! ', 'STOP']) {
-    nikos().started = true;
-    invite(moment);
-    expect(await receive(fromNikos({ text }))).toBe(true);
-    expect(saved()?.members[0]).toEqual({ id: '7', name: 'Nikos', started: false, choices: DEFAULT_CHOICES });
-  }
-  expect(ask).not.toHaveBeenCalled();
-  expect(messages()).toEqual(Array(4).fill(['7', { text: lines.stopped }]));
-
-  await tickAt(at(26, 11));
-  expect(transport.sent).toHaveLength(4);
-});
-
-test('/stop works before the yes, and a stop inside a longer text is a reply', async () => {
-  nikos().started = false;
-  await receive(fromNikos({ text: '/stop' }));
-  expect(messages()).toEqual([['7', { text: lines.stopped }]]);
-
-  nikos().started = true;
-  invite(add());
-  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'story' });
-  await receive(fromNikos({ text: 'Stop by the old school' }));
-  expect(ask).toHaveBeenCalledTimes(1);
-  expect(nikos().started).toBe(true);
+test('a group event is left to the members feature', async () => {
+  expect(await receive(inGroup({ text: '/memory' }))).toBe(false);
 });
 
 test('the 11:00 tick sends the photo, then the invitation voice with both buttons, and schedules the next return', async () => {
@@ -852,38 +716,6 @@ test('a repeated "Don\'t bring this back" tap sends dontBringBack again but save
   expect(moment.sensitive).toBe(true);
   expect(save).not.toHaveBeenCalled();
   expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.dontBringBack, lines.dontBringBack]);
-});
-
-test('/send from an admin closes the open invitation and invites with the fewest returns, whatever the age and the due time', async () => {
-  transport.admins.add('1');
-  const open = add({ id: 'open', returns: { '7': { count: 1, due: at(26, 11) } } });
-  add({ id: 'own', by: { id: '7', name: 'Nikos' } });
-  add({ id: 'sensitive', sensitive: true });
-  add({ id: 'done', returns: { '7': { count: 7, due: 0 } } });
-  add({ id: 'many', salience: 5, returns: { '7': { count: 2, due: 0 } } });
-  add({ id: 'fresh', savedAt: at(25, 11, 59), salience: 4, returns: { '7': { count: 1, due: at(27, 11) } } });
-  invite(open);
-  nikos().lastInvitationDay = dayIndex(at(24, 11));
-  expect(await receive(inGroup({ text: '/send' }))).toBe(true);
-
-  expect(nikos().invitation?.momentId).toBe('fresh');
-  expect(family.moments.find(({ id }) => id === 'fresh')?.returns['7']).toEqual({ count: 2, due: at(27, 11) });
-  expect(nikos().lastInvitationDay).toBe(dayIndex(at(24, 11)));
-  expect(transport.sent.map(({ chatId }) => chatId)).toEqual(['7', '7']);
-});
-
-test('/send posts nothingToInvite for a member with no moment left, and a member who is not an admin gets adminOnly', async () => {
-  ctx.store.joinMember(family, { id: '8', name: 'Eleni' });
-  invite(add({ by: { id: '7', name: 'Nikos' } }));
-  const fromMember = inGroup({ text: '/send' });
-  expect(await receive(fromMember)).toBe(true);
-  expect(messages()).toEqual([['-100', { text: lines.adminOnly, replyTo: fromMember.messageId }]]);
-  expect(nikos().invitation).toBeDefined();
-
-  transport.admins.add('1');
-  await receive(inGroup({ text: '/send' }));
-  expect(messages().slice(1)).toEqual([['-100', { text: lines.nothingToInvite('Nikos') }]]);
-  expect(saved()?.members[0].invitation).toBeUndefined();
 });
 
 test('a reply whose call is still pending when the 11:00 slot closes the invitation sends nothing', async () => {

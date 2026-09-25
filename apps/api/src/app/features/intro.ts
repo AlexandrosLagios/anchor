@@ -23,7 +23,8 @@ export const intro: Feature = {
     if (!event.joined || !event.familyId) return false;
     const joined = family ?? ctx.store.addFamily(event.familyId, event.chatId);
     ctx.store.save();
-    await ctx.transport(joined.id).send(event.chatId, { text: lines.intro });
+    const buttons = [{ label: lines.buttons.chooseForMe, url: ctx.transport(joined.id).startLink(joined.id) }];
+    await ctx.transport(joined.id).send(event.chatId, { text: lines.intro, buttons });
     return true;
   },
 };
