@@ -31,21 +31,21 @@ export function nextSteps(member: Member, except?: string): Button[] {
   return steps.filter((step) => step.data !== `nxt:${except}`);
 }
 
+export const chooseButton = (family: Family, ctx: Context): Button => ({
+  label: lines.buttons.chooseForMe,
+  url: ctx.transport(family.id).startLink(family.id),
+});
+
 export function groupNextSteps(family: Family, ctx: Context): Button[] {
-  return [
-    { label: lines.buttons.showMemory, data: 'nxt:memory' },
-    { label: lines.buttons.chooseForMe, url: ctx.transport(family.id).startLink(family.id) },
-  ];
+  return [{ label: lines.buttons.showMemory, data: 'nxt:memory' }, chooseButton(family, ctx)];
 }
 
 // the flag goes up before the send, so a failed send never repeats the nudge
 export async function nudge(family: Family, member: Member, ctx: Context) {
   member.nudged = true;
   ctx.store.save();
-  const transport = ctx.transport(family.id);
-  const buttons = [{ label: lines.buttons.chooseForMe, url: transport.startLink(family.id) }];
   try {
-    await transport.send(family.chatId, { text: lines.nudge(member.name), buttons, onlyFor: member.id });
+    await ctx.transport(family.id).send(family.chatId, { text: lines.nudge(member.name), buttons: [chooseButton(family, ctx)], onlyFor: member.id });
   } catch (error) {
     logger.warn(`The nudge to ${member.id} failed: ${error}`);
   }
@@ -70,24 +70,18 @@ function findFamilyByPayload(payload: string, ctx: Context): Family | undefined 
   return ctx.store.state.families.find((item) => item.reminders.some((reminder) => reminder.id === reminderId));
 }
 
-async function sendPointer(event: Incoming, ctx: Context) {
-  // a private chat id carries the transport prefix of a family id
-  await ctx.transport(event.chatId).send(event.chatId, { text: lines.pointer });
-  return true;
-}
-
 async function start(event: Incoming, family: Family | undefined, ctx: Context): Promise<boolean> {
   const payload = event.text?.slice('/start'.length).trim();
   if (payload) {
     const target = findFamilyByPayload(payload, ctx) ?? family;
-    if (!target) return sendPointer(event, ctx);
+    if (!target) return false;
     const member = ctx.store.joinMember(target, event.sender);
     member.started = true;
     ctx.store.save();
     await tell(target, member, { text: lines.welcome(member.name), buttons: choiceButtons(member) }, ctx);
     return true;
   }
-  if (!family) return sendPointer(event, ctx);
+  if (!family) return false;
   const member = family.members.find((person) => person.id === event.sender.id);
   if (!member) return false;
   member.started = true;

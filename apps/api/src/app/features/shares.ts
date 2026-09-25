@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { closeOffer, fadeOffers, findOffer, sendOffer } from '../core/offers';
 import { lines } from '../core/lines';
-import type { Context, Family, Feature, Member, Moment } from '../core/types';
+import type { Context, Family, Feature, Incoming, Member, Moment } from '../core/types';
 import { sendNow } from './invitations';
 
 const BUTTON = /^shr:(yes|no|stop):(.+)$/;
@@ -35,7 +35,7 @@ async function offerFor(family: Family, moment: Moment, ctx: Context) {
   );
 }
 
-async function removeTap(family: Family, event: { chatId: string; messageId: string; sender: { id: string } }, ctx: Context) {
+async function removeTap(family: Family, event: Incoming, ctx: Context) {
   try {
     await ctx.transport(family.id).remove(event.chatId, event.messageId, event.sender.id);
   } catch (error) {

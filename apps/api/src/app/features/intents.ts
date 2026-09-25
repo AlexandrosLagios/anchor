@@ -41,6 +41,7 @@ function schemaFor(momentIds: string[]) {
   };
 }
 
+// ponytail: every shareable moment goes into the prompt; shortlist by people or date when a record reaches thousands of moments
 function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean, moments: Moment[]): string {
   const where = chat === 'group' ? 'the family group' : 'a private chat with one family member';
   return [

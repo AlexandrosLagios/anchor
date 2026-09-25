@@ -1,5 +1,6 @@
 import { lines } from '../core/lines';
 import type { Feature } from '../core/types';
+import { chooseButton } from './members';
 
 export const intro: Feature = {
   name: 'intro',
@@ -23,8 +24,7 @@ export const intro: Feature = {
     if (!event.joined || !event.familyId) return false;
     const joined = family ?? ctx.store.addFamily(event.familyId, event.chatId);
     ctx.store.save();
-    const buttons = [{ label: lines.buttons.chooseForMe, url: ctx.transport(joined.id).startLink(joined.id) }];
-    await ctx.transport(joined.id).send(event.chatId, { text: lines.intro, buttons });
+    await ctx.transport(joined.id).send(event.chatId, { text: lines.intro, buttons: [chooseButton(joined, ctx)] });
     return true;
   },
 };

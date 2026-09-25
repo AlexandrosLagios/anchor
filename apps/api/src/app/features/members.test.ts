@@ -103,19 +103,19 @@ test('/start r_<id> finds the family that holds that reminder and starts the mem
   expect(messages()).toEqual([['7', { text: lines.welcome('Nikos'), buttons: choiceButtons(nikos()) }]]);
 });
 
-test('/start with no payload from a member sends welcome with the choice buttons, and from a stranger sends pointer', async () => {
+test('/start with no payload from a member sends welcome with the choice buttons, and from a stranger goes to the router', async () => {
   const member = ctx.store.joinMember(family, { id: '7', name: 'Nikos' });
   await receive(fromNikos({ text: '/start' }));
   expect(member.started).toBe(true);
   expect(messages()).toEqual([['7', { text: lines.welcome('Nikos'), buttons: choiceButtons(member) }]]);
 
-  expect(await receive({ ...fromNikos({ text: '/start' }), chatId: '9', sender: { id: '9', name: 'Eleni' } })).toBe(true);
-  expect(messages()[1]).toEqual(['9', { text: lines.pointer }]);
+  expect(await receive({ ...fromNikos({ text: '/start' }), chatId: '9', sender: { id: '9', name: 'Eleni' } })).toBe(false);
+  expect(messages()).toHaveLength(1);
 });
 
-test('a payload that finds no family, from a person with no family, gets pointer', async () => {
-  expect(await receive(fromNikos({ text: '/start nope' }))).toBe(true);
-  expect(messages()).toEqual([['7', { text: lines.pointer }]]);
+test('a payload that finds no family, from a person with no family, goes to the router, which answers pointer', async () => {
+  expect(await receive(fromNikos({ text: '/start nope' }))).toBe(false);
+  expect(messages()).toEqual([]);
   expect(family.members).toEqual([]);
 });
 

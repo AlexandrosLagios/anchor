@@ -29,7 +29,8 @@ function sharedBy(moment: Moment, max = 600): string {
 }
 
 // "Nikos", "Nikos and Eleni", or "Nikos, Eleni, and Maria"
-const and = (names: string[]) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')}, and ${names.at(-1)}`);
+const list = new Intl.ListFormat('en');
+const and = (names: string[]) => list.format(names);
 
 export type ChoiceName = 'moments' | 'reminders' | 'shares' | 'voice' | 'call';
 
