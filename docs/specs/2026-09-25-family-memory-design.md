@@ -347,7 +347,10 @@ Twilio places the call, and OpenAI Realtime is the voice. The call runs through 
   4. The daily call: at the 11:00 slot, at most once a day (`member.lastCallDay`), and only when the family shared a moment since the last call.
   5. Calls to Anchor's number: the member rings Anchor. This part changes the voice URL of the Twilio number, and needs the user's go first.
 - The call opens with `call.opening(name)`. Anchor quotes the moment with `invitation(moment)`, listens, and asks at most one short follow-up.
+- The bridge ignores the member until the opener has played, so a "Hello?" at pickup never cancels the opener.
 - The call asks `call.askShare` before the end. Without a yes, Anchor keeps no audio and no transcript of the call.
+- The member answers the share question in one of three ways: the words and the voice, the words only, or no. A yes to the words only posts the words without the voice note. The voice note keeps only the member's turns before the share question.
+- The call code strips emoji from a line before the voice speaks the line.
 - The call ends with a way to reach a person: `call.reachPerson(sender)`. A yes posts `wouldLoveCall(name, sender)` in the group, with a mention of the sender. Then `call.goodbye(name)`, and Anchor hangs up.
 - A goodbye from the member also ends the call. A call lasts at most 10 minutes.
 - Ingress: the Nest HTTP server upgrades `/call/stream` to a WebSocket. The inline TwiML passes a random token per call as a stream `<Parameter>`. The bridge drops a stream whose token Anchor did not issue. A webhook for calls to Anchor's number checks the Twilio signature.
@@ -406,7 +409,7 @@ v2 files and owners. Step 4 creates each new file, as a stub where the table say
 | `features/ask.ts`, `features/invitations.ts`, `features/memories.ts`, `features/capture/*`, `features/intro.ts`, `demo-flow.test.ts` | 5 | The v1 features, and the v2 changes of sections 4.5 to 4.7. |
 | `features/reminders/*` | 6 | The `reminders` feature (section 4.13). Step 4 lands a stub in `features/reminders/reminders.ts`. |
 | `features/fastforward.ts` | 6 | `/fastforward HH:MM` (section 4.10). |
-| `call/*` | 7 | The Media Streams bridge to OpenAI Realtime, and the audio capture. |
+| `call/*` | 7 | The Media Streams bridge to OpenAI Realtime, and the audio capture. `call/` keeps its own copies of the `ffmpeg` pipeline of `transports/voice.ts` and the Twilio auth of `twilio.ts`, because step 7 owns neither file. The review after the demo removes the copies. |
 | `features/calls.ts` | 7 | The `calls` feature and `callMember` (section 4.15). Step 4 lands a stub. |
 | `main.ts`, `DEPLOY.md`, `scripts/deploy-bot.sh` | 7 | The WebSocket upgrade, the public ingress, and the deploy notes. |
 | `family.service.ts`, `apps/api/.env.example` | 4 | The final `FEATURES` order, `restartWindow`, and every v2 variable. No later step changes these files. |
@@ -675,7 +678,7 @@ Step 1 adds these lines to `apps/api/.env.example`.
 | `TZ` | the host zone | The zone of the 11:00 and 18:00 slots. |
 | `TWILIO_FROM` | unset | v2: the Twilio number that Anchor calls from, in E.164. When the variable is unset, the choices screen hides "Call me". |
 | `ANCHOR_PUBLIC_URL` | unset | v2: the `https://` base URL of `anchor-bot`. The call stream connects to `wss://` on the same host. |
-| `ANCHOR_REALTIME_MODEL` | `gpt-realtime-2.1-mini` | v2: the OpenAI Realtime model of the call. UNVERIFIED: the model name. Step 7 confirms the name against the Realtime guide. |
+| `ANCHOR_REALTIME_MODEL` | `gpt-realtime-2.1-mini` | v2: the OpenAI Realtime model of the call. The call proof ran live on `gpt-realtime-2.1`. UNVERIFIED: the mini model on a call. Step 7 tries the mini model first, and falls back to `gpt-realtime-2.1`. |
 
 The call also uses `OPENAI_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY_SID`, and `TWILIO_API_KEY_SECRET`, which `apps/api/.env.example` already holds.
 
