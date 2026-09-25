@@ -228,10 +228,11 @@ test('each return reuses the invitation voice and doubles the gap, and a moment 
   expect(moment.returns['7']).toEqual({ count: 2, due: at(28, 11) });
 
   const dues: number[] = [];
-  while (moment.returns['7'].count < 7) {
+  for (let i = 0; i < 5; i++) {
     await tickAt(moment.returns['7'].due);
     dues.push(moment.returns['7'].due);
   }
+  expect(moment.returns['7'].count).toBe(7);
   expect(dues.slice(0, 4)).toEqual([at(32, 11), at(40, 11), at(56, 11), at(88, 11)]);
   const sent = transport.sent.length;
   await tickAt(new Date(2027, 8, 25, 11).getTime());
@@ -384,33 +385,34 @@ test('a failed or invalid reply call reads a voice note or 3 words as a story, a
   expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.thanks, lines.warmClose, lines.thanks]);
 });
 
-test('"Yes, share it" posts storyAdded as a reply to the moment, then the story, appends the story, and ignores a second tap', async () => {
+test('"Yes, share it" posts storyAdded as a reply to the moment with a mention of the sender, reacts with a big heart, and ignores a second tap', async () => {
   const moment = add();
   invite(moment, { story: { text: 'She would not let go of my hand' }, shareAsked: true });
   expect(await receive(fromNikos({ button: 'inv:share:m1' }))).toBe(true);
   expect(await receive(fromNikos({ button: 'inv:share:m1' }))).toBe(true);
 
   expect(messages()).toEqual([
-    ['-100', { text: lines.storyAdded('Nikos'), replyTo: '57' }],
-    ['-100', { text: '«She would not let go of my hand»' }],
+    ['-100', { text: lines.storyAdded('Nikos', 'Sofia', 'She would not let go of my hand'), replyTo: '57', mention: { id: '1', name: 'Sofia' } }],
     ['7', { text: lines.shared }],
   ]);
+  expect(transport.reactions).toEqual([{ chatId: '-100', messageId: 'sent-1', emoji: '\u2764', big: true }]);
   const record = saved();
   expect(record?.moments[0].stories).toEqual([
-    { id: expect.any(String), by: { id: '7', name: 'Nikos' }, at: now, text: 'She would not let go of my hand', messageIds: ['sent-1', 'sent-2'] },
+    { id: expect.any(String), by: { id: '7', name: 'Nikos' }, at: now, text: 'She would not let go of my hand', messageIds: ['sent-1'] },
   ]);
   expect(record?.storytellers[0].invitation).toBeUndefined();
 });
 
-test('a shared voice story follows storyAdded as the voice note', async () => {
+test('a shared voice story follows storyAdded as the voice note, not as a reply', async () => {
   const moment = add();
   invite(moment, { story: { text: 'She held my hand', voice: { id: 'voice-a' } }, shareAsked: true });
   await receive(fromNikos({ button: 'inv:share:m1' }));
   expect(messages()).toEqual([
-    ['-100', { text: lines.storyAdded('Nikos'), replyTo: '57' }],
+    ['-100', { text: lines.storyAdded('Nikos', 'Sofia', 'She held my hand'), replyTo: '57', mention: { id: '1', name: 'Sofia' } }],
     ['-100', { voice: { id: 'voice-a' } }],
     ['7', { text: lines.shared }],
   ]);
+  expect(transport.reactions).toEqual([{ chatId: '-100', messageId: 'sent-1', emoji: '\u2764', big: true }]);
   expect(moment.stories[0]).toMatchObject({ text: 'She held my hand', voice: { id: 'voice-a' }, messageIds: ['sent-1', 'sent-2'] });
 });
 
@@ -432,6 +434,13 @@ test('"Not now" moves the return to the next 11:00, keeps the count, closes the 
 
   await receive(fromNikos({ button: 'inv:later:m1' }));
   expect(messages()).toEqual([['7', { text: lines.notNow }]]);
+});
+
+test('"Not now" on a moment with no return entry yet creates one instead of throwing', async () => {
+  const moment = add();
+  invite(moment);
+  await expect(receive(fromNikos({ button: 'inv:later:m1' }))).resolves.toBe(true);
+  expect(moment.returns['7']).toEqual({ count: 0, due: at(26, 11) });
 });
 
 test('"Don\'t bring this back" marks the moment sensitive and closes its invitation, also from a stale invitation', async () => {
@@ -461,7 +470,7 @@ test('/invite from an admin closes the open invitation and invites with the fewe
   expect(await receive(inGroup({ text: '/invite' }))).toBe(true);
 
   expect(nikos().invitation?.momentId).toBe('fresh');
-  expect(family.moments.find(({ id }) => id === 'fresh')?.returns['7']).toEqual({ count: 2, due: at(27, 12) });
+  expect(family.moments.find(({ id }) => id === 'fresh')?.returns['7']).toEqual({ count: 2, due: at(27, 11) });
   expect(nikos().lastInvitationDay).toBe(dayIndex(at(24, 11)));
   expect(transport.sent.map(({ chatId }) => chatId)).toEqual(['7', '7']);
 });
@@ -503,6 +512,19 @@ test('a delivery stops when its invitation closes while the voice clip is pendin
   await delivery;
 
   expect(transport.sent.map(({ message }) => message)).toEqual([{ photo: { id: 'photo-57' } }, { text: lines.warmClose }]);
+});
+
+test('a delivery stops before the voice note when the moment is forgotten while the voice clip is pending', async () => {
+  const moment = add();
+  let clip: (value: Buffer) => void;
+  vi.mocked(speak).mockReturnValue(new Promise((resolve) => (clip = resolve)));
+  const delivery = tickAt(at(25, 11));
+  await vi.waitFor(() => expect(speak).toHaveBeenCalled());
+  family.moments.splice(family.moments.indexOf(moment), 1);
+  clip(wav);
+  await delivery;
+
+  expect(transport.sent.map(({ message }) => message)).toEqual([{ photo: { id: 'photo-57' } }]);
 });
 
 test('a reply to an invitation whose moment was forgotten closes the invitation and is left to the router', async () => {

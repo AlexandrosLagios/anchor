@@ -56,6 +56,12 @@ function afterDays(time: number, days: number) {
   return date.getTime();
 }
 
+function elevenOn(time: number): number {
+  const date = new Date(time);
+  date.setHours(11, 0, 0, 0);
+  return date.getTime();
+}
+
 const isCommand = (text: string | undefined, command: string) => text === command || !!text?.startsWith(`${command} `);
 
 function warnUnlessBlocked(error: unknown, what: string): undefined {
@@ -84,14 +90,17 @@ async function announce(family: Family, message: Outgoing, ctx: Context) {
   }
 }
 
+const isOpen = (family: Family, storyteller: Storyteller, invitation: Invitation, moment: Moment) =>
+  storyteller.invitation === invitation && family.moments.includes(moment) && !moment.sensitive;
+
 async function deliver(family: Family, storyteller: Storyteller, moment: Moment, at: number, ctx: Context) {
   const invitation: Invitation = { momentId: moment.id, day: dayIndex(at), messageIds: [], shareAsked: false, helped: false };
   storyteller.invitation = invitation;
   const count = (moment.returns[storyteller.id]?.count ?? 0) + 1;
-  moment.returns[storyteller.id] = { count, due: afterDays(at, GAP_DAYS[count - 1] ?? 0) };
+  moment.returns[storyteller.id] = { count, due: afterDays(elevenOn(at), GAP_DAYS[count - 1] ?? 0) };
   ctx.store.save();
 
-  const open = () => storyteller.invitation === invitation;
+  const open = () => isOpen(family, storyteller, invitation, moment);
   const transport = ctx.transport(family.id);
   const post = async (message: Outgoing) => {
     const sent = await transport.send(storyteller.id, message);
@@ -200,15 +209,26 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
   if (action === 'share' && !story) return;
   storyteller.invitation = undefined;
   if (action === 'later') {
-    moment.returns[storyteller.id].due = nextSlot(ctx.now());
+    (moment.returns[storyteller.id] ??= { count: 0, due: 0 }).due = nextSlot(ctx.now());
     ctx.store.save();
     await tell(storyteller, { text: lines.notNow }, family, ctx);
   } else if (action === 'keep') {
     ctx.store.save();
     await tell(storyteller, { text: lines.notShared }, family, ctx);
   } else {
-    const added = await announce(family, { text: lines.storyAdded(storyteller.name), replyTo: moment.messageIds[0] }, ctx);
-    const quoted = await announce(family, story.voice ? { voice: story.voice } : { text: `«${story.text}»` }, ctx);
+    const added = await announce(
+      family,
+      { text: lines.storyAdded(storyteller.name, moment.by.name, story.text), replyTo: moment.messageIds[0], mention: moment.by },
+      ctx,
+    );
+    if (added) {
+      try {
+        await ctx.transport(family.id).react(family.chatId, added.messageId, '\u2764', true);
+      } catch (error) {
+        logger.warn(`The story reaction on moment ${moment.id} failed: ${error}`);
+      }
+    }
+    const spoken = story.voice ? await announce(family, { voice: story.voice }, ctx) : undefined;
     if (family.moments.includes(moment)) {
       moment.stories.push({
         id: randomUUID(),
@@ -216,7 +236,7 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
         at: ctx.now(),
         text: story.text,
         voice: story.voice,
-        messageIds: [added?.messageId, quoted?.messageId].filter(Boolean),
+        messageIds: [added?.messageId, spoken?.messageId].filter(Boolean),
       });
     }
     ctx.store.save();
@@ -249,7 +269,7 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
     invitation.helped = true;
     ctx.store.save();
     await tell(storyteller, { text: lines.gentleHelp(dateOf(moment), moment.title) }, family, ctx);
-    if (moment.voice && storyteller.invitation === invitation) await tell(storyteller, { voice: moment.voice }, family, ctx);
+    if (moment.voice && isOpen(family, storyteller, invitation, moment)) await tell(storyteller, { voice: moment.voice }, family, ctx);
     return;
   }
   storyteller.invitation = undefined;
