@@ -238,6 +238,7 @@ v2 lines. Step 4 writes the lines of steps 6 and 7. Step 5 writes the lines of s
 | `intro` | 5 | The v1 text, with "An admin can reply /private to a grandparent's message, and I'll send them family moments in private." replaced by "Tap the button to choose what I send you in private." |
 | `nudge(name)` | 5 | {name}, I can send you family moments, reminders, and voice notes in private. Tap to choose 🙂 |
 | `welcome(name)` | 5 | Hello {name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. I can send you family moments now and then, remind you of things, and talk to you by voice. Seeing moments again helps them stay with us. Tap what you'd like. You can change it at any time: just say "settings". |
+| `choicesScreen` | 5 | Here is what I send you. Tap to change it 🙂 (above the choices screen for the `settings` intent; `/start` gets `welcome`) |
 | `choice(on, label)` | 5 | ✅ {label} when on, ⬜ {label} when off |
 | `choicesSaved(names)` | 5 | All set 💛 You get: {names}. With no names: All set. I won't send you anything for now. Say "settings" to change this. |
 | `askPhone` | 5 | To call you, I need your phone number. Tap the button below to share it 🙂 |
@@ -249,7 +250,7 @@ v2 lines. Step 4 writes the lines of steps 6 and 7. Step 5 writes the lines of s
 | `unclear` | 5 | I'm not sure I understood 🙂 Here is what I can do: |
 | `missed(count)` | 5 | The family shared {count} moments since we last talked 💛 |
 | `nothingNew` | 5 | You're up to date 💛 Nothing new since we last talked. |
-| `calling` | 5 | I'm ringing you now 📞 |
+| `calling` | 5 | I'm ringing you now 📞 (`callMember` sends it after Twilio accepts the call) |
 | `callFailed` | 5 | I couldn't ring you just now. Shall I send you a moment here instead? |
 | `reminderOffer(who, text)` | 4 | ⏰ {who} wrote: «{text}» (new line) Shall I remind you? {who} is "You" when the sender gets the reminder. |
 | `reminderSet(time)` | 4 | Done ✍ I'll remind you at {time} in our private chat. |
