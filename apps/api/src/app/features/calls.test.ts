@@ -11,7 +11,7 @@ import { lines } from '../core/lines';
 import { openStore } from '../core/store';
 import { dayIndex } from '../core/clock';
 import type { Context, Family, Member, Moment, Reminder } from '../core/types';
-import { callMember, calls } from './calls';
+import { callMember, calls, withoutLapses } from './calls';
 
 vi.mock('../call/dial', () => ({ ring: vi.fn(), answered: vi.fn() }));
 vi.mock('../call/stream', async (importOriginal) => ({ ...(await importOriginal<typeof import('../call/stream')>()), expectCall: vi.fn() }));
@@ -220,4 +220,44 @@ test('the calls tick rings a member once, even with a reminder at the daily slot
   family.reminders.push(reminder({ id: 'r1' }), reminder({ id: 'r2' }));
   await tick(NOW - 2_000, NOW);
   expect(ring).toHaveBeenCalledTimes(1);
+});
+
+test.each([
+  ["I went to Kalamata too last year, so that's what it reminds me of. I don't remember.", "I went to Kalamata too last year, so that's what it reminds me of."],
+  ['I do not recall the name. We swam every morning!', 'We swam every morning!'],
+  ["I'm not sure. I think it was July. I forgot the hotel", 'I think it was July.'],
+  ["I don't know.", ''],
+  ['She knows the beach well. I remember the boat.', 'She knows the beach well. I remember the boat.'],
+])('withoutLapses keeps the story and drops the lapses: %s', (text, kept) => {
+  expect(withoutLapses(text)).toBe(kept);
+});
+
+test('a story with a lapse posts the words without the lapse, and without the voice', async () => {
+  await callMember(family, nikos, ctx);
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(
+    record({
+      share: 'voice',
+      shareAsked: { ms: 100, line: 1 },
+      audio: [Buffer.alloc(800, 0xff)],
+      speech: [[0, 100]],
+      transcript: [{ speaker: 'person', text: "We went to the sea. I don't remember the rest." }],
+    }),
+  );
+  await expect.poll(() => family.moments[1].stories.length).toBe(1);
+  expect(family.moments[1].stories[0]).toMatchObject({ text: 'We went to the sea.', voice: undefined });
+  expect(transport.sent.filter(({ chatId }) => chatId === '7').map(({ message }) => message.text)).toEqual([lines.calling]);
+});
+
+test('a story of lapses only shares nothing', async () => {
+  await callMember(family, nikos, ctx);
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(record({ share: 'words', shareAsked: { ms: 0, line: 1 }, transcript: [{ speaker: 'person', text: "I can't remember." }] }));
+  await new Promise((done) => setTimeout(done, 10));
+  expect(family.moments[1].stories).toEqual([]);
+});
+
+test('the follow-up invites and never asks for a fact to recall', async () => {
+  await callMember(family, nikos, ctx);
+  expect(script().instructions).toContain('never ask for a name, a date, or a fact');
 });

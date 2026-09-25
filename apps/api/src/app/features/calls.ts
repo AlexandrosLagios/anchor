@@ -23,6 +23,16 @@ export const spoken = (line: string) =>
     .replace(/\s+([»,.!?])/g, '$1')
     .trim();
 
+// ponytail: a phrase list, so a story sentence such as "I don't know how she did it" drops too; a model check replaces it when that loses real stories
+const LAPSE = /\b(?:don['’]?t|do not|can['’]?t|cannot|can not) (?:remember|recall|know)\b|\bi['’]?m not sure\b|\bi am not sure\b|\bi (?:forget|forgot)\b/i;
+
+/** The member's words without the sentences that say they don't remember, so the family never reads a lapse (spec section 1). */
+export const withoutLapses = (text: string) =>
+  (text.match(/[^.!?]+[.!?]*/g) ?? [])
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence && !LAPSE.test(sentence))
+    .join(' ');
+
 const newestMoment = (family: Family, member: Member) =>
   family.moments.filter((moment) => moment.by.id !== member.id && !moment.sensitive).sort((a, b) => b.savedAt - a.savedAt)[0];
 
@@ -43,7 +53,7 @@ function instructions(member: Member, moment: Moment) {
     'You are not a person. Never claim feelings or a shared past of your own.',
     `You have already said the opening line. It quoted a moment that ${moment.by.name} shared in the family chat, and asked what it reminds ${member.name} of: ${spoken(lines.sharedBy(moment))}`,
     "Take one step per turn, and wait for the person's answer before the next step:",
-    `1. Listen, and let ${member.name} talk as long as they like. Answer warmly in one short sentence. Ask at most one short follow-up question about what they told you, or skip it when they have said enough.`,
+    `1. Listen, and let ${member.name} talk as long as they like. Answer warmly in one short sentence. Ask at most one short follow-up question about what they told you, or skip it when they have said enough. The follow-up invites and never tests: ask how it felt or who was there, and never ask for a name, a date, or a fact. When ${member.name} does not remember something, say that it does not matter, and move on.`,
     `2. Ask: "${lines.call.askShare}"`,
     `3. Ask: "${lines.call.reachPerson(moment.by.name)}"`,
     `4. Say out loud: "${spoken(lines.call.goodbye(member.name))}" Then call end_call with their answers.`,
@@ -55,10 +65,13 @@ function instructions(member: Member, moment: Moment) {
 
 async function afterCall(family: Family, member: Member, moment: Moment, record: CallRecord, ctx: Context) {
   const story = storyOf(record);
-  if (record.shareAsked && (record.share === 'voice' || record.share === 'words') && story.text) {
+  const text = withoutLapses(story.text);
+  if (record.shareAsked && (record.share === 'voice' || record.share === 'words') && text) {
+    // the voice would still say the dropped lapse, so a trimmed story goes out as words only
+    const withVoice = record.share === 'voice' && story.audio.length > 0 && text === story.text.trim();
     // the private send uploads the clip once, and the group post reuses its file id
-    const sent = record.share === 'voice' && story.audio.length ? await tell(family, member, { voice: { wav: mulawWav(story.audio) }, text: lines.shared }, ctx) : undefined;
-    await shareStory(family, member, moment, { text: story.text, voice: sent?.voice }, ctx);
+    const sent = withVoice ? await tell(family, member, { voice: { wav: mulawWav(story.audio) }, text: lines.shared }, ctx) : undefined;
+    await shareStory(family, member, moment, { text, voice: sent?.voice }, ctx);
   }
   if (record.tellSender) {
     await ctx

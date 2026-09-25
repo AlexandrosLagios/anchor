@@ -76,6 +76,7 @@ function run(twilio: WebSocket, start: TwilioEvent, { script, end }: Expected, r
     hangUp: () => twilio.close(),
   });
   const limit = setTimeout(() => twilio.close(), MAX_CALL_MS);
+  const startedAt = Date.now();
   call.twilio(start);
 
   realtime.on('open', () => call.open());
@@ -95,6 +96,8 @@ function run(twilio: WebSocket, start: TwilioEvent, { script, end }: Expected, r
   twilio.on('close', () => {
     clearTimeout(limit);
     realtime.close();
+    const { callSid, latencies, share, tellSender } = call.record;
+    log.log(`Call ${callSid} ended after ${Math.round((Date.now() - startedAt) / 1000)} s; latencies ${latencies.join(', ') || 'none'} ms; share ${share ?? 'not asked'}; tell the sender ${tellSender ?? false}`);
     end(call.record);
   });
 }
