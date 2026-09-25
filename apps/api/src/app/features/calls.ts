@@ -144,7 +144,11 @@ export const calls: Feature = {
       // ponytail: one call per member per tick, so a second reminder in the same window arrives in private only
       const reminder = family.reminders.find((item) => item.to === member.id && item.sentAt !== undefined && item.sentAt > window.from && item.sentAt <= window.to);
       if (reminder) {
-        await callMember(family, member, ctx, reminder);
+        // a moment read after the reminder counts as the daily call, so 11:00 never rings about it again
+        if ((await callMember(family, member, ctx, reminder)) && newestMoment(family, member)) {
+          member.lastCallDay = dayIndex(window.to);
+          ctx.store.save();
+        }
         continue;
       }
       const moment = newestMoment(family, member);

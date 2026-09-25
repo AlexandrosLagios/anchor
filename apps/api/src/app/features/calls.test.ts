@@ -193,6 +193,15 @@ test('the calls tick rings a member who chose calls for a reminder sent in the w
   expect(script().opener).toContain('Your reminder. Eleni wrote');
 });
 
+test('a reminder call that reads a moment counts as the daily call', async () => {
+  nikos.choices.call = true;
+  const morning = NOW - 3 * 3_600_000;
+  family.reminders.push(reminder({ sentAt: morning }));
+  await tick(morning - 2_000, morning);
+  await tick(NOW - 2_000, NOW);
+  expect(ring).toHaveBeenCalledTimes(1);
+});
+
 test('the calls tick rings nobody who did not choose calls', async () => {
   family.reminders.push(reminder({}));
   await tick(NOW - 2_000, NOW);
