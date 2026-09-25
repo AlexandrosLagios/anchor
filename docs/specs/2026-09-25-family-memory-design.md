@@ -47,7 +47,7 @@ Step 3 writes the v1 findings into section 11. Read section 11 before a v1.x cha
 ### 4.1 Roles
 
 - A family member is any person in the group.
-- A storyteller is a grandparent. A group admin replies `/storyteller` to a message of the grandparent. Anchor then posts a Start button.
+- A storyteller is a grandparent. A group admin replies `/private` to a message of the grandparent. Anchor then posts a Start button.
 - The grandparent taps the Start button once. Telegram lets a bot write in a private chat only after that tap.
 
 ### 4.2 Capture
@@ -104,8 +104,8 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - "Yes, share it" posts `storyAdded(name, sender, story)` in the group as a reply to the first message of the moment, with a mention of the sender (section 4.10). The voice note follows by its media id. Then the code appends the story to the moment and sends `shared` in private.
 - "No, thanks" sends `notShared`, closes the invitation, and stores no story.
 - An invitation that is still open at the next 11:00 slot closes without a message.
-- An admin sends `/invite` in the group to send an invitation to every started storyteller at once. An open invitation closes first.
-- `/invite` skips the 3-hour rule and the due check. `/invite` picks the moment with the lowest return count, and `byPriority` breaks a tie. When no moment qualifies for a storyteller, Anchor posts `nothingToInvite(name)` in the group.
+- An admin sends `/send` in the group to send an invitation to every started storyteller at once. An open invitation closes first.
+- `/send` skips the 3-hour rule and the due check. `/send` picks the moment with the lowest return count, and `byPriority` breaks a tie. When no moment qualifies for a storyteller, Anchor posts `nothingToInvite(name)` in the group.
 
 ### 4.6 Ask Anchor (step 2b)
 
@@ -117,7 +117,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 ### 4.7 Commands and fixed replies
 
 - When Anchor joins a group, Anchor creates the family and posts `intro`.
-- `/storyteller`, sent by an admin as a reply to the message of a member, registers `event.replyToSender` as a storyteller. Anchor posts `storytellerStart(name)` with a URL button to `transport.startLink(family id)`.
+- `/private`, sent by an admin as a reply to the message of a member, registers `event.replyToSender` as a storyteller. Anchor posts `storytellerStart(name)` with a URL button to `transport.startLink(family id)`.
 - `/start` in private, from a registered storyteller, gets `welcome(name)` with the buttons "Yes, I'd like that" and "Not now" (user story 1, "Say yes myself"). Only "Yes, I'd like that" sets `started` and sends `agreed(name)`. "Not now" sends `notNow`. Nothing comes back to a storyteller before that yes. Moments shared before the yes come back after it.
 - `/stop`, or the single word "stop" in private, sets `started` to false, closes the open invitation silently, and sends `stopped`. Nothing more comes back until `/start` and a new yes. The family is not told.
 - "Anchor, forget this", sent as a reply, deletes the moment or the story that owns the replied-to message. Anchor reacts with 👌. An Ask Anchor answer belongs to its moment, because `ask` adds the answer post to `memoryPostIds`.
@@ -126,7 +126,9 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - `echoes` stores every album message id as `Moment.echoPostIds` on the newer moment. `send` returns `messageIds` for an album. This rule lands in a follow-up PR after the step 2 PR.
 - "Anchor, don't bring this back", sent as a reply, sets `sensitive` on the moment that owns the replied-to message. The moment stays in the record, and Anchor reacts with 👌.
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
-- `/memory` and `/invite` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
+- `/memory` and `/send` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
+- `/private`, as a reply to a member's message, lets that member get family moments in private. `/send` sends a moment to each private member now.
+- The bot registers a "/" menu with `setMyCommands`. In a group, only admins see `/memory`, `/private`, `/send`, and `/fastforward`. In a private chat, everyone sees `/start` and `/stop`. The descriptions live in `core/lines.ts`.
 - A private message that no feature handles gets `noInvitation` from a started storyteller, and `notJoined` from a storyteller who has not said yes or who stopped. Any other person gets `pointer`.
 
 ### 4.8 Clock
@@ -139,7 +141,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 
 | Key | Text |
 | --- | --- |
-| `intro` | Hi, I'm Anchor 👋 I'm not a person: I keep this family's photos and stories, each one in the words of the person who shared it. When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, so it stays with all of us. An admin can reply /storyteller to a grandparent's message. Reply "Anchor, forget this" to delete a moment, or "Anchor, don't bring this back" to keep it without bringing it back. This is a test build, so please share staged photos only. |
+| `intro` | Hi, I'm Anchor 👋 I'm not a person: I keep this family's photos and stories, each one in the words of the person who shared it. When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, so it stays with all of us. An admin can reply /private to a grandparent's message. Reply "Anchor, forget this" to delete a moment, or "Anchor, don't bring this back" to keep it without bringing it back. This is a test build, so please share staged photos only. |
 | `storytellerStart(name)` | {name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment. |
 | `welcome(name)` | Hello {name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. Now and then, and a little more often for you, I'll send you a moment the family shared. Seeing moments again helps them stay with us. You can answer by voice or by text. There's no right answer, I share nothing unless you say yes, and you can send /stop at any time. Would you like that? |
 | `sharedBy(moment)` | {sender} shared: «{text}», or {sender} shared a photo: {title} (a video, a voice note) when the moment is wordless |
@@ -381,7 +383,7 @@ export interface Feature {
 | 1 | `intro` | 1 | `joined` and `migratedTo` events |
 | 2 | `fastforward` | 2b | `/fastforward` |
 | 3 | `forget` | 2 | "Anchor, forget this" and "Anchor, don't bring this back" |
-| 4 | `invitations` | 2 | `/storyteller`, `/invite`, `/start`, private replies, and invitation buttons |
+| 4 | `invitations` | 2 | `/private`, `/send`, `/start`, private replies, and invitation buttons |
 | 5 | `memories` | 2 | `/memory`, and replies to memory posts |
 | 6 | `ask` | 2b | group messages that start with "Anchor," |
 | 7 | `capture` | 2 | every other group message, and the bundle close on each tick |
@@ -477,7 +479,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - The poll calls `getUpdates` with a long-poll timeout and omits `allowed_updates`. `message`, `callback_query`, and `my_chat_member` arrive by default. The offset advances after each update.
 - A bot that is a group admin gets every group message, whatever the privacy mode.
 - `toIncoming` maps a group message, a private message, a `callback_query`, and a `my_chat_member` update that adds the bot to a group.
-- In a group, a command can arrive as `/memory@<bot username>`. `toIncoming` strips the suffix when it names this bot, so the features match `/memory`, `/invite`, `/storyteller`, and `/start` exactly. A command that names another bot stays as it is.
+- In a group, a command can arrive as `/memory@<bot username>`. `toIncoming` strips the suffix when it names this bot, so the features match `/memory`, `/send`, `/private`, and `/start` exactly. A command that names another bot stays as it is.
 - `toIncoming` maps `message.video` to `video`, and the video's `thumbnail` to `thumbnail`. A `video_note` maps to `unsupported`.
 - `toIncoming` maps a message that carries `migrate_to_chat_id` to an event with `migratedTo`. `intro` then moves the family to the new chat id. A basic group can become a supergroup, for example when a member promotes Anchor to admin.
 - `album` goes out through `sendMediaGroup`. `mention` becomes a `text_mention` entity, with offsets in UTF-16 code units. `react` with `big` sets `is_big`.
