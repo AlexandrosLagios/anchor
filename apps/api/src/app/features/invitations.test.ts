@@ -157,14 +157,31 @@ test('/private from an admin registers the replied-to member once and posts stor
   ]);
 });
 
-test('/private from a member who is not an admin gets adminOnly and registers nobody, and an admin with no replied-to member gets nothing', async () => {
+test('/private from a member who is not an admin gets adminOnly and registers nobody, also with no replied-to member', async () => {
   family.storytellers.length = 0;
-  const fromMember = inGroup({ text: '/private', replyToSender: { id: '7', name: 'Nikos' } });
-  expect(await receive(fromMember)).toBe(true);
-  transport.admins.add('1');
-  expect(await receive(inGroup({ text: '/private' }))).toBe(true);
+  const withReply = inGroup({ text: '/private', replyToSender: { id: '7', name: 'Nikos' } });
+  const withoutReply = inGroup({ text: '/private' });
+  expect(await receive(withReply)).toBe(true);
+  expect(await receive(withoutReply)).toBe(true);
   expect(family.storytellers).toEqual([]);
-  expect(messages()).toEqual([['-100', { text: lines.adminOnly, replyTo: fromMember.messageId }]]);
+  expect(messages()).toEqual([
+    ['-100', { text: lines.adminOnly, replyTo: withReply.messageId }],
+    ['-100', { text: lines.adminOnly, replyTo: withoutReply.messageId }],
+  ]);
+});
+
+test('/private from an admin with no reply, or as a reply to Anchor, gets privateHow and registers nobody', async () => {
+  family.storytellers.length = 0;
+  transport.admins.add('1');
+  const noReply = inGroup({ text: '/private' });
+  const replyToAnchor = inGroup({ text: '/private', replyTo: '41' });
+  expect(await receive(noReply)).toBe(true);
+  expect(await receive(replyToAnchor)).toBe(true);
+  expect(family.storytellers).toEqual([]);
+  expect(messages()).toEqual([
+    ['-100', { text: lines.privateHow, replyTo: noReply.messageId }],
+    ['-100', { text: lines.privateHow, replyTo: replyToAnchor.messageId }],
+  ]);
 });
 
 test('/start from a storyteller asks for a yes and leaves started alone, and any other person or group message is left to the next feature', async () => {
@@ -201,8 +218,25 @@ test('"Not now" on the welcome sends notNow and changes nothing, and nothing com
 
   await tickAt(at(25, 11));
   transport.admins.add('1');
-  await receive(inGroup({ text: '/send' }));
-  expect(transport.sent).toHaveLength(1);
+  const send = inGroup({ text: '/send' });
+  await receive(send);
+  expect(messages().slice(1)).toEqual([['-100', { text: lines.nobodyPrivate, replyTo: send.messageId }]]);
+  expect(nikos().invitation).toBeUndefined();
+});
+
+test('/send from an admin with no storyteller, or none who said yes, gets nobodyPrivate and sends nothing in private', async () => {
+  transport.admins.add('1');
+  add();
+  family.storytellers.length = 0;
+  const noStoryteller = inGroup({ text: '/send' });
+  expect(await receive(noStoryteller)).toBe(true);
+  family.storytellers.push({ id: '7', name: 'Nikos', started: false });
+  const noYes = inGroup({ text: '/send' });
+  expect(await receive(noYes)).toBe(true);
+  expect(messages()).toEqual([
+    ['-100', { text: lines.nobodyPrivate, replyTo: noStoryteller.messageId }],
+    ['-100', { text: lines.nobodyPrivate, replyTo: noYes.messageId }],
+  ]);
   expect(nikos().invitation).toBeUndefined();
 });
 
