@@ -159,7 +159,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 
 The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks".
 
-`invitation`, `memoryCaption`, `storyAdded`, and `echoCaption` clip each quoted text to 600 characters and end the clip with "…". The caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. The step 1 session writes every line. A feature step asks that session for a wording change, and no line may break section 1.
+`invitation`, `memoryCaption`, and `storyAdded` clip the quoted text to 600 characters, and `echoCaption` clips each of its two quotes to 450 characters. Each clip ends with "…". Every caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. The step 1 session writes every line. A feature step asks that session for a wording change, and no line may break section 1.
 
 ### 4.10 Demo additions
 
