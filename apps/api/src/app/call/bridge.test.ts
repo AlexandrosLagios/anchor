@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest';
-import { bridge, speechOf } from './bridge';
+import { bridge, speechOf, storyOf } from './bridge';
 
 const payload = (bytes: number, fill: number) => Buffer.alloc(bytes, fill).toString('base64');
 
@@ -14,6 +14,7 @@ function setup() {
     hangUp,
     instructions: 'Be Anchor.',
     opener: 'Hello, this is Anchor.',
+    askShare: 'Shall I share what you told me with the family?',
     now: () => clock,
   });
   const tick = (ms: number) => (clock += ms);
@@ -42,7 +43,7 @@ test('the call starts in μ-law with the opener once Twilio and Realtime are bot
       type: 'realtime',
       instructions: 'Be Anchor.',
       reasoning: { effort: 'low' },
-      audio: { input: { format: { type: 'audio/pcmu' } }, output: { format: { type: 'audio/pcmu' } } },
+      audio: { input: { format: { type: 'audio/pcmu' }, noise_reduction: { type: 'near_field' } }, output: { format: { type: 'audio/pcmu' } } },
       tools: [{ type: 'function', name: 'end_call' }],
     },
   });
@@ -98,12 +99,13 @@ test('speech with nothing playing sends no clear', () => {
   expect(toTwilio).toEqual([]);
 });
 
-test('end_call hangs up after the goodbye has played, and keeps the share answer', () => {
+test('end_call hangs up after the goodbye has played, and keeps both answers', () => {
   const { call, toTwilio, hangUp } = connected();
   call.realtime({ type: 'response.output_audio.delta', item_id: 'item1', delta: payload(160, 9) });
-  const endCall = { type: 'function_call', name: 'end_call', arguments: '{"share":"words"}' };
+  const endCall = { type: 'function_call', name: 'end_call', arguments: '{"share":"words","tell_sender":true}' };
   call.realtime({ type: 'response.done', response: { output: [{ type: 'message' }, endCall], usage: { total_tokens: 7 } } });
   expect(call.record.share).toBe('words');
+  expect(call.record.tellSender).toBe(true);
   expect(toTwilio.at(-1)).toEqual({ event: 'mark', streamSid: 'MZ1', mark: { name: 'hangup' } });
   call.twilio({ event: 'mark', mark: { name: 'audio' } });
   expect(hangUp).not.toHaveBeenCalled();
@@ -153,4 +155,41 @@ test('speechOf cuts the caller audio to the detected speech, once per overlap', 
   call.realtime({ type: 'input_audio_buffer.speech_started', audio_start_ms: 980 });
   call.realtime({ type: 'input_audio_buffer.speech_stopped', audio_end_ms: 1000 });
   expect(speechOf(call.record)).toEqual(Buffer.concat([Buffer.alloc(160, 5), Buffer.alloc(160, 6), Buffer.alloc(160, 7), Buffer.alloc(160, 49)]));
+});
+
+test('end_call with unclear answers keeps nothing and tells nobody', () => {
+  const { call } = connected();
+  call.realtime({ type: 'response.done', response: { output: [{ type: 'function_call', name: 'end_call', arguments: '{"share":"maybe"' }] } });
+  expect(call.record.share).toBe('no');
+  expect(call.record.tellSender).toBe(false);
+});
+
+test('a Realtime error before the opener has played hangs up', () => {
+  const { call, hangUp } = setup();
+  call.twilio({ event: 'start', start: { streamSid: 'MZ1', callSid: 'CA1' } });
+  call.open();
+  call.realtime({ type: 'error' });
+  expect(hangUp).toHaveBeenCalledOnce();
+});
+
+test('a Realtime error after the opener keeps the call going', () => {
+  const { call, hangUp } = connected();
+  call.realtime({ type: 'error' });
+  expect(hangUp).not.toHaveBeenCalled();
+});
+
+test('storyOf keeps only the words and the speech before the share question', () => {
+  const { call } = connected();
+  for (let i = 0; i < 50; i++) call.twilio({ event: 'media', media: { payload: payload(160, i), timestamp: String(i * 20) } });
+  call.realtime({ type: 'input_audio_buffer.speech_started', audio_start_ms: 100 });
+  call.realtime({ type: 'input_audio_buffer.speech_stopped', audio_end_ms: 140 });
+  call.realtime({ type: 'conversation.item.input_audio_transcription.completed', transcript: 'He held his dad’s hand.' });
+  call.realtime({ type: 'response.output_audio_transcript.done', transcript: 'Did he let go?' });
+  call.realtime({ type: 'conversation.item.input_audio_transcription.completed', transcript: 'Only at the gate.' });
+  call.realtime({ type: 'response.output_audio_transcript.done', transcript: 'Lovely. Shall I share what you told me with the family?' });
+  for (let i = 50; i < 60; i++) call.twilio({ event: 'media', media: { payload: payload(160, i), timestamp: String(i * 20) } });
+  call.realtime({ type: 'input_audio_buffer.speech_started', audio_start_ms: 1020 });
+  call.realtime({ type: 'input_audio_buffer.speech_stopped', audio_end_ms: 1100 });
+  call.realtime({ type: 'conversation.item.input_audio_transcription.completed', transcript: 'Yes, in text.' });
+  expect(storyOf(call.record)).toEqual({ text: 'He held his dad’s hand. Only at the gate.', audio: Buffer.concat([Buffer.alloc(160, 5), Buffer.alloc(160, 6)]) });
 });
