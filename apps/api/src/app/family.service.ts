@@ -3,10 +3,13 @@ import { demoNow } from './core/clock';
 import { createRouter } from './core/router';
 import { openStore } from './core/store';
 import type { Feature } from './core/types';
+import { ask } from './features/ask';
+import { echoes } from './features/echoes';
+import { fastforward } from './features/fastforward';
 import { intro } from './features/intro';
 import { TelegramTransport } from './transports/telegram';
 
-const FEATURES: Feature[] = [intro];
+const FEATURES: Feature[] = [intro, fastforward, ask, echoes];
 
 @Injectable()
 export class FamilyService implements OnApplicationBootstrap, OnApplicationShutdown {
