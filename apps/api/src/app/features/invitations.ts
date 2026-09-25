@@ -15,7 +15,7 @@ import {
   type Storyteller,
   type Transport,
 } from '../core/types';
-import { ask, speak, valid } from '../gemini';
+import { ask, speak, valid } from '../model/model';
 import { wordCount } from './capture/filter';
 
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];

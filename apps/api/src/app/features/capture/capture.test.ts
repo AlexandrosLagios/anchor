@@ -9,12 +9,12 @@ import type { Mock } from 'vitest';
 import { FakeTransport } from '../../core/fake-transport';
 import { openStore } from '../../core/store';
 import type { Context, Family, Incoming, Moment } from '../../core/types';
-import { ask } from '../../gemini';
+import { ask } from '../../model/model';
 import { bundles, capture, forget } from './capture';
 import { BUNDLE_GAP_MS } from './filter';
 
-vi.mock('../../gemini', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../gemini')>()),
+vi.mock('../../model/model', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../model/model')>()),
   ask: vi.fn(),
   transcribe: vi.fn(),
   speak: vi.fn(),

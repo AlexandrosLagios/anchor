@@ -4,12 +4,12 @@ import { beforeEach, expect, test, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { FakeTransport } from '../../core/fake-transport';
 import type { Incoming } from '../../core/types';
-import { ask } from '../../gemini';
+import { ask } from '../../model/model';
 import { classify, validate } from './classify';
 import type { Bundle } from './filter';
 
-vi.mock('../../gemini', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../gemini')>()),
+vi.mock('../../model/model', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../model/model')>()),
   ask: vi.fn(),
   transcribe: vi.fn(),
   speak: vi.fn(),

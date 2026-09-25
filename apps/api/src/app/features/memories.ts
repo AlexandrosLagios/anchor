@@ -4,7 +4,7 @@ import { dayIndex, slotIn } from '../core/clock';
 import { lines } from '../core/lines';
 import { byPriority, isAnniversary } from '../core/priority';
 import type { Context, Family, Feature, Incoming, Media, Moment } from '../core/types';
-import { transcribe } from '../gemini';
+import { transcribe } from '../model/model';
 import { wordCount } from './capture/filter';
 
 const logger = new Logger('Memories');

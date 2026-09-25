@@ -10,11 +10,11 @@ import { FakeTransport } from '../core/fake-transport';
 import { lines } from '../core/lines';
 import { openStore } from '../core/store';
 import { Blocked, type Context, type Family, type Incoming, type Invitation, type Moment, type Outgoing } from '../core/types';
-import { ask, speak } from '../gemini';
+import { ask, speak } from '../model/model';
 import { invitations, nextSlot, qualifies } from './invitations';
 
-vi.mock('../gemini', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../gemini')>()),
+vi.mock('../model/model', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../model/model')>()),
   ask: vi.fn(),
   transcribe: vi.fn(),
   speak: vi.fn(),

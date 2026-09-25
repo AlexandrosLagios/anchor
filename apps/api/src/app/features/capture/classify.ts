@@ -1,6 +1,6 @@
 import { cut } from '../../core/lines';
 import type { Transport } from '../../core/types';
-import { ask, valid } from '../../gemini';
+import { ask, valid } from '../../model/model';
 import type { Bundle } from './filter';
 import { typedText } from './filter';
 

@@ -11,15 +11,15 @@ import { lines } from '../core/lines';
 import { openStore } from '../core/store';
 import type { Context, Family, Incoming, Media, Moment } from '../core/types';
 
-// keep the real validators, mock every call that reaches Gemini
-vi.mock('../gemini', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../gemini')>()),
+// keep the real validators, mock every call that reaches the model
+vi.mock('../model/model', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../model/model')>()),
   ask: vi.fn(),
   transcribe: vi.fn(),
   speak: vi.fn(),
 }));
 
-import { transcribe } from '../gemini';
+import { transcribe } from '../model/model';
 import { dueKeys, labelFor, memories } from './memories';
 
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 8, day, hour, minute).getTime();
@@ -278,7 +278,7 @@ test('a rejected or empty transcription gives the voice note line', async () => 
 
   const posted2 = moment({ id: 'm2', memoryPostIds: ['sent-2'] });
   family.moments.push(posted2);
-  vi.mocked(transcribe).mockRejectedValue(new Error('gemini down'));
+  vi.mocked(transcribe).mockRejectedValue(new Error('model down'));
   await memories.handle?.(groupEvent({ voice, replyTo: 'sent-2', messageId: '13' }), family, ctx);
   expect(posted2.stories[0].text).toBe(lines.voiceNote);
 });
