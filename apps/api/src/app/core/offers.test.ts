@@ -18,7 +18,14 @@ function setup() {
   return { transport, store, family, member, ctx, at: (time: number) => (now = time) };
 }
 
-async function send(family: Family, kind: Offer['kind'], to: Member, ref: string, message: Outgoing, ctx: Context): Promise<Offer> {
+async function send(
+  family: Family,
+  kind: Offer['kind'],
+  to: Member,
+  ref: string,
+  message: (id: string) => Outgoing,
+  ctx: Context,
+): Promise<Offer> {
   const offer = await sendOffer(family, kind, to, ref, message, ctx);
   if (!offer) throw new Error('expected sendOffer to record an offer');
   return offer;
@@ -26,18 +33,31 @@ async function send(family: Family, kind: Offer['kind'], to: Member, ref: string
 
 test('sendOffer sends the message onlyFor the member, records the offer, and saves', async () => {
   const { transport, store, family, member, ctx } = setup();
-  const offer = await sendOffer(family, 'share', member, 'm1', { text: 'Shall I send this?' }, ctx);
+  const offer = await sendOffer(family, 'share', member, 'm1', () => ({ text: 'Shall I send this?' }), ctx);
   expect(offer).toEqual({ id: expect.stringMatching(/^[0-9a-f]{8}$/), kind: 'share', to: '42', messageId: 'sent-1', at: 1_000_000, ref: 'm1' });
   expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: 'Shall I send this?', onlyFor: '42' } }]);
   expect(family.offers).toEqual([offer]);
   expect(store.family('-100')?.offers).toEqual([offer]);
 });
 
+test('sendOffer builds the id before the send, so a button in the message can carry it', async () => {
+  const { transport, family, member, ctx } = setup();
+  const offer = await send(
+    family,
+    'share',
+    member,
+    'm1',
+    (id) => ({ text: 'Shall I send this?', buttons: [{ label: 'Yes, send it', data: `shr:${id}:yes` }] }),
+    ctx,
+  );
+  expect(transport.sent[0].message.buttons).toEqual([{ label: 'Yes, send it', data: `shr:${offer.id}:yes` }]);
+});
+
 test('a failed send logs and records nothing', async () => {
   const { transport, family, member, ctx } = setup();
   vi.spyOn(transport, 'send').mockRejectedValue(new Error('down'));
   const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
-  const offer = await sendOffer(family, 'reminder', member, 'r1', { text: 'Shall I remind you?' }, ctx);
+  const offer = await sendOffer(family, 'reminder', member, 'r1', () => ({ text: 'Shall I remind you?' }), ctx);
   expect(offer).toBeUndefined();
   expect(family.offers).toEqual([]);
   expect(warn).toHaveBeenCalled();
@@ -45,14 +65,14 @@ test('a failed send logs and records nothing', async () => {
 
 test('findOffer finds an offer by id, and returns undefined otherwise', async () => {
   const { family, member, ctx } = setup();
-  const offer = await send(family, 'share', member, 'm1', { text: 'hi' }, ctx);
+  const offer = await send(family, 'share', member, 'm1', () => ({ text: 'hi' }), ctx);
   expect(findOffer(family, offer.id)).toBe(offer);
   expect(findOffer(family, 'missing')).toBeUndefined();
 });
 
 test('closeOffer edits the offer onlyFor the member when given a change, and drops the record', async () => {
   const { transport, family, member, ctx } = setup();
-  const offer = await send(family, 'share', member, 'm1', { text: 'hi' }, ctx);
+  const offer = await send(family, 'share', member, 'm1', () => ({ text: 'hi' }), ctx);
   await closeOffer(family, offer, ctx, { text: 'Sent 💛' });
   expect(transport.edits).toEqual([{ chatId: '-100', messageId: 'sent-1', change: { text: 'Sent 💛', onlyFor: '42' } }]);
   expect(family.offers).toEqual([]);
@@ -60,7 +80,7 @@ test('closeOffer edits the offer onlyFor the member when given a change, and dro
 
 test('closeOffer removes the offer onlyFor the member with no change, and drops the record', async () => {
   const { transport, family, member, ctx } = setup();
-  const offer = await send(family, 'share', member, 'm1', { text: 'hi' }, ctx);
+  const offer = await send(family, 'share', member, 'm1', () => ({ text: 'hi' }), ctx);
   await closeOffer(family, offer, ctx);
   expect(transport.removed).toEqual([{ chatId: '-100', messageId: 'sent-1', onlyFor: '42' }]);
   expect(family.offers).toEqual([]);
@@ -68,7 +88,7 @@ test('closeOffer removes the offer onlyFor the member with no change, and drops 
 
 test('closeOffer still drops the record when the edit or the remove fails', async () => {
   const { transport, family, member, ctx } = setup();
-  const offer = await send(family, 'share', member, 'm1', { text: 'hi' }, ctx);
+  const offer = await send(family, 'share', member, 'm1', () => ({ text: 'hi' }), ctx);
   vi.spyOn(transport, 'remove').mockRejectedValue(new Error('gone'));
   const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
   await closeOffer(family, offer, ctx);
@@ -78,10 +98,10 @@ test('closeOffer still drops the record when the edit or the remove fails', asyn
 
 test('fadeOffers removes every offer of the kind that is at least FADE_MS old, saves once, and returns the faded offers', async () => {
   const { transport, family, member, ctx, at } = setup();
-  const stale = await send(family, 'share', member, 'm2', { text: 'stale' }, ctx);
-  const otherKind = await send(family, 'reminder', member, 'r1', { text: 'reminder' }, ctx);
+  const stale = await send(family, 'share', member, 'm2', () => ({ text: 'stale' }), ctx);
+  const otherKind = await send(family, 'reminder', member, 'r1', () => ({ text: 'reminder' }), ctx);
   at(1_000_000 + FADE_MS - 1000);
-  const fresh = await send(family, 'share', member, 'm1', { text: 'fresh' }, ctx);
+  const fresh = await send(family, 'share', member, 'm1', () => ({ text: 'fresh' }), ctx);
 
   const faded = await fadeOffers(family, 'share', 1_000_000 + FADE_MS, ctx);
   expect(faded).toEqual([stale]);
@@ -91,7 +111,7 @@ test('fadeOffers removes every offer of the kind that is at least FADE_MS old, s
 
 test('fadeOffers does nothing, and saves nothing extra, when no offer of the kind has faded', async () => {
   const { family, member, ctx } = setup();
-  await sendOffer(family, 'share', member, 'm1', { text: 'fresh' }, ctx);
+  await sendOffer(family, 'share', member, 'm1', () => ({ text: 'fresh' }), ctx);
   const faded = await fadeOffers(family, 'share', 1_000_000, ctx);
   expect(faded).toEqual([]);
   expect(family.offers).toHaveLength(1);

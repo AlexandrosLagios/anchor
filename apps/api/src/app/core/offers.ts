@@ -12,12 +12,13 @@ export async function sendOffer(
   kind: Offer['kind'],
   to: Member,
   ref: string,
-  message: Outgoing,
+  message: (id: string) => Outgoing,
   ctx: Context,
 ): Promise<Offer | undefined> {
+  const id = randomUUID().replace(/-/g, '').slice(0, 8);
   try {
-    const sent = await ctx.transport(family.id).send(family.chatId, { ...message, onlyFor: to.id });
-    const offer: Offer = { id: randomUUID().replace(/-/g, '').slice(0, 8), kind, to: to.id, messageId: sent.messageId, at: ctx.now(), ref };
+    const sent = await ctx.transport(family.id).send(family.chatId, { ...message(id), onlyFor: to.id });
+    const offer: Offer = { id, kind, to: to.id, messageId: sent.messageId, at: ctx.now(), ref };
     family.offers.push(offer);
     ctx.store.save();
     return offer;
