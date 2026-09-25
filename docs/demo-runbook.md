@@ -72,3 +72,14 @@ gcloud run services logs read anchor-bot --project=a11y-hack26ath-267 --region=e
 1. Before each rehearsal, do steps 1 and 2 of "Reset and prepare".
 2. Run the script with a stopwatch, and write down the time of each beat.
 3. If the run takes more than 3 minutes, cut the optional beat, then shorten the narration.
+4. After each rehearsal, run the optional beat once: the "Then and now" album shows the 1958 photo and Eleni's photo.
+5. In the group, send "Anchor, when did Nikos start school?". Anchor replies with the photo and its date, then his voice story.
+
+## Show a lookback on cue
+
+Caution: `/fastforward` moves the family clock of the whole bot for good. After `/fastforward 7`, every new moment shows a date 7 days ahead, also in the gentle help of beat 5. Run this check after the demo, or with the dev bot.
+
+1. Send `/fastforward 7` in the group. Anchor replies "⏩ It's now … on the family clock."
+2. Send `/memory` at once. The "One week ago" post appears at once.
+
+The 18:00 slot does not post on cue. On the real clock, a `/fastforward 7` at midday puts the 18:00 slot of the jump on day 6, so nothing posts until the next real 18:00.
