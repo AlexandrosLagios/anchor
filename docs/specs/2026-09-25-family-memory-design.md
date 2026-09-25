@@ -37,8 +37,8 @@ The spike stays the source for the platform research and for the rejected platfo
 
 ## 3. Milestones
 
-- **v1**: the team tests Anchor in a Telegram group. One laptop runs the API with long polling, so the first test needs no deploy. Steps 1 to 3 build v1.
-- **v1.x**: Ask Anchor (section 4.6), then the changes that the v1 findings ask for.
+- **v1**: the team tests Anchor in a Telegram group, then rehearses the demo. One laptop runs the API with long polling, so the first test needs no deploy. Steps 1, 1b, 2, 2b, and 3 build v1, including Ask Anchor and the demo additions of section 4.10.
+- **v1.x**: the changes that the v1 findings ask for.
 
 Step 3 writes the v1 findings into section 11. Read section 11 before a v1.x change starts.
 
@@ -98,16 +98,16 @@ Moments come back to a storyteller more often than to the group, in private, at 
   - `story`: the reply adds to one story, which joins the texts and the transcripts and keeps the first voice note. After the first story reply, Anchor sends `thanks` with the buttons "Yes, share it" and "No, thanks".
   - `unsure`, the first time: Anchor sends `gentleHelp(date, title)`, then the sender's voice note by its media id when the moment has one. The invitation stays open, and `helped` becomes true.
   - `unsure` after the help, or `other`: Anchor sends `warmClose`, and the invitation closes.
-- "Yes, share it" posts `storyAdded(name)` in the group as a reply to the first message of the moment. The voice note follows by its media id, or the text follows as a quote. Then the code appends the story to the moment and sends `shared` in private.
+- "Yes, share it" posts `storyAdded(name, sender, story)` in the group as a reply to the first message of the moment, with a mention of the sender (section 4.10). The voice note follows by its media id. Then the code appends the story to the moment and sends `shared` in private.
 - "No, thanks" sends `notShared`, closes the invitation, and stores no story.
 - An invitation that is still open at the next 11:00 slot closes without a message.
 - An admin sends `/invite` in the group to send an invitation to every started storyteller at once. An open invitation closes first.
 - `/invite` skips the 3-hour rule and the due check. `/invite` picks the moment with the lowest return count, and `byPriority` breaks a tie. When no moment qualifies for a storyteller, Anchor posts `nothingToInvite(name)` in the group.
 
-### 4.6 Ask Anchor (v1.x)
+### 4.6 Ask Anchor (step 2b)
 
 - A group message that matches `/^anchor\b[,:]?\s+/i` is a question. The `forget` feature runs first, so "Anchor, forget this" never reaches `ask`.
-- One Gemini call picks one moment id from an enum of the ids of the family, or `none` (section 6.4).
+- One Gemini call picks one moment id from an enum of the ids of the family, or `none` (section 6.4). The enum leaves out every sensitive moment.
 - Anchor replies to the question with the video or the photo and the caption `askAnswer(title, date, names)`. The first voice story follows by its media id.
 - `none`, or a failed call, gets `notFound`.
 
@@ -124,7 +124,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 
 ### 4.8 Clock
 
-- `now()` returns the demo-clock time: `clockStart + (realNow - clockStart) * 86400 / ANCHOR_DAY_SECONDS`.
+- `now()` returns the demo-clock time: `clockStart + (realNow - clockStart) * 86400 / ANCHOR_DAY_SECONDS + clockOffset`.
 - The store sets `State.clockStart` once, at the first boot, so a restart keeps the timeline.
 - The slots use local time. Set `TZ=Europe/Athens` when the host runs in UTC.
 
@@ -145,7 +145,10 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `notShared` | Of course. I won't share it. |
 | `notNow` | No problem 🙂 Another time. |
 | `dontBringBack` | Of course. I'll keep it, and I won't bring it back. |
-| `storyAdded(name)` | {name} added a story to this moment 🎙️ |
+| `storyAdded(name, sender, story)` | {name} added a story to {sender}'s moment 🎙️ (new line) «{story}» |
+| `echoCaption(olderSender, olderText, newerSender, newerText)` | Then and now 💛 (new line) {olderSender} shared: «{olderText}» (new line) {newerSender} shared: «{newerText}» |
+| `fastforwarded(date)` | ⏩ It's now {date} on the family clock. |
+| `fastforwardUsage` | Send /fastforward and a number of days, for example /fastforward 7. |
 | `askAnswer(title, date, names)` | {title} · {date} 💛 plus "Stories from {names}" when the moment has stories |
 | `notFound` | I couldn't find that in the family record yet. |
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
@@ -156,7 +159,19 @@ Moments come back to a storyteller more often than to the group, in private, at 
 
 The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks".
 
-`invitation` and `memoryCaption` clip the quoted text to 600 characters and end the clip with "…". The caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. A step may change the wording of its own lines, but no line may break section 1.
+`invitation`, `memoryCaption`, `storyAdded`, and `echoCaption` clip each quoted text to 600 characters and end the clip with "…". The caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. A step may change the wording of its own lines, but no line may break section 1.
+
+### 4.10 Demo additions
+
+These additions put journey steps 2 and 5 on stage, and they let the live demo run on cue.
+
+- **Then and now** (step 2b): on each tick, the `echoes` feature checks each moment that was saved inside the window, is not sensitive, and has no `echo`.
+  - One Gemini call picks an older moment that echoes the new one, or `none` (section 6.6). The older moment must come from a different sender and must not be sensitive.
+  - On a match, Anchor posts an album of the two videos or photos, older first, with the caption `echoCaption(older sender, older text, newer sender, newer text)`. When a moment has no picture, the album holds the other picture. When neither has one, the post is the caption as text.
+  - The code sets `echo` on the new moment, so each new moment gets at most one echo post.
+- **The story reaches the sharer** (step 2): the group post of a shared story is `storyAdded(name, sender, story)`, with `mention` set to the sender of the moment. The post quotes the story, clipped to 600 characters. Anchor reacts with a big ❤ on the post.
+- **Stage time travel** (step 2b): an admin sends `/fastforward <days>`, with 1 to 400 days. The `fastforward` feature adds the days to `State.clockOffset`, saves, and replies `fastforwarded(date)`. The next tick sees the jump as one window, so each slot feature fires at most once. An invalid argument gets `fastforwardUsage`.
+- **The demo script** (step 3): the team test ends with a written 3-minute script that walks journey steps 1 to 6, and the team rehearses the script twice.
 
 ## 5. Architecture
 
@@ -193,7 +208,9 @@ All paths are under `apps/api/src/app/`.
 | `features/capture/capture.ts` | 2 | The `forget` and `capture` features. |
 | `features/memories.ts` | 2 | The `memories` feature. |
 | `features/invitations.ts` | 2 | The `invitations` feature. |
-| `features/ask.ts` | v1.x | The `ask` feature. |
+| `features/ask.ts` | 2b | The `ask` feature. |
+| `features/echoes.ts` | 2b | The `echoes` feature (then and now). |
+| `features/fastforward.ts` | 2b | The `fastforward` feature. |
 
 ### 5.3 The contract
 
@@ -221,15 +238,18 @@ export type Incoming = {
   unsupported?: boolean; // sticker, GIF, video note, document, poll, service message
   replyTo?: string;
   replyToSender?: { id: string; name: string }; // the sender of the replied-to message
+  migratedTo?: string; // the new chat id when the group became a supergroup
   button?: string; // the data of a pressed button
   joined?: boolean; // Anchor joined this group
 };
 
 export type Outgoing = {
   text?: string; // the caption when photo or voice is set
-  photo?: Media; // set at most one of photo, video, and voice
+  photo?: Media; // set at most one of photo, video, voice, and album
   video?: Media;
   voice?: Media | { wav: Buffer };
+  album?: Array<{ photo: Media } | { video: Media }>; // the caption goes on the first item; no buttons
+  mention?: Person; // mentions the first occurrence of the name in the text
   buttons?: Button[];
   replyTo?: string;
 };
@@ -238,7 +258,7 @@ export class Blocked extends Error {} // send throws Blocked when the person blo
 
 export interface Transport {
   send(chatId: string, message: Outgoing): Promise<{ messageId: string; voice?: Media }>;
-  react(chatId: string, messageId: string, emoji: string): Promise<void>;
+  react(chatId: string, messageId: string, emoji: string, big?: boolean): Promise<void>;
   download(media: Media): Promise<{ data: Buffer; mimeType: string }>;
   isAdmin(chatId: string, userId: string): Promise<boolean>;
   startLink(payload: string): string;
@@ -274,6 +294,7 @@ export type Moment = {
   lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'
   memoryPostIds: string[];
   returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
+  echo?: string; // the id of the older moment that this moment echoes
 };
 
 export type Invitation = {
@@ -300,7 +321,7 @@ export type Family = {
   counters: Record<string, number>;
 };
 
-export type State = { clockStart: number; families: Family[] };
+export type State = { clockStart: number; clockOffset: number; families: Family[] }; // clockOffset in ms, set by /fastforward
 
 export type Window = { from: number; to: number }; // demo-clock ms
 
@@ -336,12 +357,14 @@ export interface Feature {
 
 | Position | Feature | Step | Handles |
 | --- | --- | --- | --- |
-| 1 | `intro` | 1 | `joined` events |
-| 2 | `forget` | 2 | "Anchor, forget this" and "Anchor, don't bring this back" |
-| 3 | `invitations` | 2 | `/storyteller`, `/invite`, `/start`, private replies, and invitation buttons |
-| 4 | `memories` | 2 | `/memory`, and replies to memory posts |
-| 5 | `ask` | v1.x | group messages that start with "Anchor," |
-| 6 | `capture` | 2 | every other group message, and the bundle close on each tick |
+| 1 | `intro` | 1 | `joined` and `migratedTo` events |
+| 2 | `fastforward` | 2b | `/fastforward` |
+| 3 | `forget` | 2 | "Anchor, forget this" and "Anchor, don't bring this back" |
+| 4 | `invitations` | 2 | `/storyteller`, `/invite`, `/start`, private replies, and invitation buttons |
+| 5 | `memories` | 2 | `/memory`, and replies to memory posts |
+| 6 | `ask` | 2b | group messages that start with "Anchor," |
+| 7 | `capture` | 2 | every other group message, and the bundle close on each tick |
+| 8 | `echoes` | 2b | no events; its tick runs after the capture tick |
 
 ### 5.5 The host
 
@@ -405,7 +428,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - The reply call (step 2, in `features/invitations.ts`) reads one private reply, text or voice, next to the moment's title and the sender's words. The schema is `{ transcript: string, kind: story | unsure | other }`.
 - `story` is a detail, a feeling, or a memory. `unsure` is a hesitation or a question, for example "a school?". `other` is an acknowledgement, for example "ok" or an emoji.
 
-### 6.4 Find a moment (v1.x)
+### 6.4 Find a moment (step 2b)
 
 - The prompt holds the question and one line per moment: id, title, date, people, and the first 200 characters of each story.
 - The schema is `{ momentId: enum }`, with the moment ids of the family and `none`.
@@ -416,7 +439,14 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - `speak(text, style?)` keeps its models and its cache, and gets an optional style. The prototype keeps the default style.
 - The bot passes the style "warm, calm and slow, like a kind family friend talking to a grandparent".
 
-## 7. Telegram transport (step 1)
+### 6.6 Find an echo (step 2b)
+
+- The prompt holds the new moment (title, text, people, and date) and one line per older moment (id, title, date, sender, and people).
+- The schema is `{ momentId: enum }`, with the ids of the older moments that qualify and `none`.
+- An echo is the same kind of life event across the family, for example two first days at school or two weddings.
+- A failed call counts as `none`.
+
+## 7. Telegram transport (steps 1 and 1b)
 
 - The client calls the Bot API with `httpFetch` from `http.ts`, as `gemini.ts` does, and adds no dependency.
 - The poll calls `getUpdates` with a long-poll timeout and omits `allowed_updates`. `message`, `callback_query`, and `my_chat_member` arrive by default. The offset advances after each update.
@@ -424,6 +454,8 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - `toIncoming` maps a group message, a private message, a `callback_query`, and a `my_chat_member` update that adds the bot to a group.
 - In a group, a command can arrive as `/memory@<bot username>`. `toIncoming` strips the suffix when it names this bot, so the features match `/memory`, `/invite`, `/storyteller`, and `/start` exactly. A command that names another bot stays as it is.
 - `toIncoming` maps `message.video` to `video`, and the video's `thumbnail` to `thumbnail`. A `video_note` maps to `unsupported`.
+- `toIncoming` maps a message that carries `migrate_to_chat_id` to an event with `migratedTo`. `intro` then moves the family to the new chat id. A basic group can become a supergroup, for example when a member promotes Anchor to admin.
+- `album` goes out through `sendMediaGroup`. `mention` becomes a `text_mention` entity, with offsets in UTF-16 code units. `react` with `big` sets `is_big`.
 - `send` uses `sendMessage`, `sendPhoto`, `sendVideo`, or `sendVoice`, with `reply_parameters: { message_id }` for a reply. A caption holds at most 1024 characters. A video goes out by its `file_id`, so the 20 MB download limit never applies to it.
 - A `{ wav }` voice goes through `voice.ts`, which runs `ffmpeg -f wav -i pipe:0 -c:a libopus -b:a 32k -f ogg pipe:1`. The OGG file uploads as multipart form data, and the result returns the new `file_id` as the voice media id.
 - A `file_id` belongs to the bot, not to a chat. The bot can resend a voice note from the group in a private chat, and the reverse.
@@ -479,13 +511,15 @@ Each step is one session, one branch, and one PR. Each step uses TDD, then `/cod
 
 | Step | Branch | Needs | Scope | Done when |
 | --- | --- | --- | --- | --- |
-| 1 Foundation | `feat/family-bot-foundation` | none | `core/*`, `features/intro.ts`, `family.service.ts`, `transports/*`, the `gemini.ts` additions, and `.env.example`. | The bot joins a test group and posts `intro`, and a private message gets `pointer`. |
-| 2 Memory features | `feat/family-memory-features` | 1 | Capture and forget, memories and stories, and invitations: sections 4.1 to 4.5, 4.7, and 6.2. | The flow tests of section 9 pass for every feature. |
-| 3 Team test and deploy | `fix/v1-team-test` | 2 | The team test, the fixes, section 11, `ffmpeg` in the Dockerfile, the `anchor-bot` service, and `DEPLOY.md`. | The team walks the checklist in a Telegram group without a blocker. |
+| 1 Foundation | `feat/family-bot-foundation` | none | `core/*`, `features/intro.ts`, `family.service.ts`, `transports/*`, the `gemini.ts` additions, `.env.example`, and the migration fix. | The bot joins a test group and posts `intro`, and a private message gets `pointer`. |
+| 1b Demo contract | from the step 1 session | 1 | `Outgoing.album`, `Outgoing.mention`, `react` with `big`, `State.clockOffset`, and `Moment.echo`. | Each addition has a test through `FakeTransport` and `toIncoming`. |
+| 2 Memory features | `feat/family-memory-features` | 1, and 1b for the sharer change | Capture and forget, memories and stories, and invitations: sections 4.1 to 4.5, 4.7, 6.2, and the sharer change of 4.10. | The flow tests of section 9 pass for every feature. |
+| 2b Demo features | `feat/family-demo-features` | 1b | `ask`, `echoes`, and `fastforward`: sections 4.6, 4.10, 6.4, and 6.6. | The flow tests of section 9 pass for the three features. |
+| 3 Team test | `fix/v1-team-test` | 2 and 2b | The team test, the fixes, the demo script, and section 11. The deploy prep is already PR 2 (`chore/anchor-bot-deploy`). | The team walks the checklist and the demo script in a Telegram group without a blocker. |
 
-Inside step 2, the three features touch separate files, so subagents can build them in parallel.
+Inside steps 2 and 2b, the features touch separate files, so subagents can build them in parallel. One session owns each file: the step 1 session owns `core/` and `transports/`, and steps 2 and 2b own only their feature files and their own lines.
 
-The session of step 3 prepares the deploy, and a person runs `gcloud run deploy`, because the deploy costs money.
+A person runs `gcloud run deploy`, because the deploy costs money. The store saves only on a change, because each save on the Cloud Storage volume costs storage operations.
 
 ## 11. v1 findings
 
