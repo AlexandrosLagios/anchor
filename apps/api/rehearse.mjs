@@ -1,45 +1,47 @@
-// Rehearses one full call against a running api with no Twilio cost: node apps/api/rehearse.mjs [baseUrl]
-// Maria's answers come from the macOS Greek voice, so the script needs macOS.
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+// Rehearses one spaced-retrieval loop against a running api.
+// Needs GEMINI_API_KEY in apps/api/.env.local (loaded by the api process).
+// Usage: node apps/api/rehearse.mjs [baseUrl]
 import assert from 'node:assert/strict';
 
 const base = process.argv[2] ?? 'http://localhost:3000';
-const folder = mkdtempSync(join(tmpdir(), 'anchor-'));
-
-function voice(name, text) {
-  execFileSync('say', ['-v', 'Melina', '-o', join(folder, `${name}.aiff`), text]);
-  execFileSync('afconvert', ['-f', 'WAVE', '-d', 'LEI16@16000', join(folder, `${name}.aiff`), join(folder, `${name}.wav`)]);
-  return readFileSync(join(folder, `${name}.wav`));
-}
 
 async function post(path, body) {
   const response = await fetch(`${base}/${path}`, {
     method: 'POST',
-    headers: { 'content-type': body instanceof Buffer ? 'audio/wav' : 'application/json' },
-    body: body instanceof Buffer ? body : JSON.stringify(body),
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error(`${path}: ${response.status} ${await response.text()}`);
   return response.status === 204 ? undefined : response.json();
 }
 
-const before = await (await fetch(`${base}/state`)).json();
-console.log('news:', (await post('news', { text: 'Η Άννα παντρεύεται τον Ιούνιο, στην εκκλησία στην Αίγινα' })).ack);
-await post('phone/ring');
-let turn = await post('phone/start');
-assert.equal(turn.next, 'story');
-turn = await post('phone/story', voice('story', 'Παντρευτήκαμε στο εκκλησάκι της Αίγινας. Ο Γιάννης έτρεμε από την αγωνία.'));
-console.log('anchor:', turn.lines.map((line) => line.text).join(' '));
-assert.equal(turn.next, 'today');
-turn = await post('phone/today', voice('today', 'Η Άννα! Η εγγονή μου.'));
-console.log('anchor:', turn.lines.map((line) => line.text).join(' '));
-assert.equal(turn.next, undefined);
+async function state() {
+  return (await fetch(`${base}/state`)).json();
+}
 
-const state = await (await fetch(`${base}/state`)).json();
-console.log('maria heard as:', state.call.lines.filter((line) => line.from === 'maria').map((line) => line.text));
-console.log('family:', state.family.at(-1).text);
-assert.equal(state.call.rating, 'free');
-assert.equal(state.schedule.gapDays, before.schedule.gapDays * 2);
-console.log(`PASS: remembered freely, the next call waits ${state.schedule.gapDays} days`);
+console.log('moment:', (await post('moment', {
+  text: "Maria's first day of school — she didn't want to let go of my hand",
+  from: 'sofia',
+})).ack);
+
+const before = await state();
+assert.ok(before.moments.length >= 1);
+const momentId = before.moments[0].id;
+
+const brought = await post('bring-back', { momentId });
+console.log('question:', brought.question);
+assert.equal(brought.ok, true);
+
+const cued = await post('reply', { text: "I'm not sure…" });
+console.log('cue:', cued.outcome);
+assert.equal(cued.outcome, 'cued');
+
+const done = await post('reply', { text: 'Maria! Sofia\'s daughter — she held her hand.' });
+console.log('outcome:', done.outcome);
+assert.ok(['free', 'cued'].includes(done.outcome));
+
+const after = await state();
+assert.ok(after.moments[0].rating);
+assert.ok(after.chat.some((line) => line.from === 'athina'));
+console.log('gapDays:', after.moments[0].gapDays);
+console.log('ok');

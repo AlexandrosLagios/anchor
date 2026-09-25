@@ -68,7 +68,7 @@ export async function ask<T>(
 
 export async function speak(text: string): Promise<Buffer> {
   const audio = await cached(`speak:${VOICE}:${text}`, async () => {
-    const style = 'warm, calm and slow, like a kind nurse talking to an older Greek woman';
+    const style = 'warm, calm and slow, like a kind family friend talking to an older woman';
     const content = await interact(
       TTS_MODELS,
       (model) => ({

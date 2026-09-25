@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { familyMessage, nextGap, rate } from './protocol';
+import { familyNote, nextGap, rate, scheduleNext } from './protocol';
 
 test('rate', () => {
   expect(rate(1, 1, false)).toBe('free');
@@ -8,15 +8,25 @@ test('rate', () => {
   expect(rate(2, 4, false)).toBe('struggled');
 });
 
-test('nextGap doubles on free recall, holds on a hint, resets on a struggle', () => {
+test('nextGap doubles on free recall, holds on a cue, resets on a struggle', () => {
   expect(nextGap(2, 'free')).toBe(4);
   expect(nextGap(2, 'cued')).toBe(2);
   expect(nextGap(8, 'struggled')).toBe(1);
 });
 
-test('familyMessage never reports a lapse', () => {
-  expect(familyMessage(true, 'free', 'τον γάμο της Άννας')).toBe(
-    'Σήμερα η Μαρία μού είπε την ιστορία του γάμου της και θυμήθηκε τον γάμο της Άννας 💛',
+test('familyNote never reports a lapse', () => {
+  expect(familyNote('free', "Maria's first day of school")).toBe(
+    "Athina remembered Maria's first day of school today 💛",
   );
-  expect(familyMessage(false, 'struggled', 'τον γάμο της Άννας')).toBe('Σήμερα μιλήσαμε με τη Μαρία 💛');
+  expect(familyNote('cued', "Maria's first day of school")).toBe(
+    "Athina remembered Maria's first day of school today 💛",
+  );
+  expect(familyNote('struggled', "Maria's first day of school")).toBeUndefined();
+});
+
+test('scheduleNext lands at 11:00 local', () => {
+  const from = new Date('2026-09-25T15:30:00');
+  const next = new Date(scheduleNext(2, from));
+  expect(next.getDate()).toBe(27);
+  expect(next.getHours()).toBe(11);
 });
