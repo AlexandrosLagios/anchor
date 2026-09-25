@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { cut, lines } from '../core/lines';
 import type { Feature, Moment } from '../core/types';
-import * as gemini from '../gemini';
+import * as model from '../model/model';
 
 const logger = new Logger('Ask');
 
@@ -55,8 +55,8 @@ export const ask: Feature = {
     try {
       const clip = event.voice ? await ctx.transport(family.id).download(event.voice) : undefined;
       const prompt = buildPrompt(question, choices, !!event.voice);
-      const answer = await gemini.ask<{ momentId: string }>(prompt, schema, clip ? { media: [clip] } : {});
-      momentId = gemini.valid.oneOf(answer.momentId, choiceIds);
+      const answer = await model.ask<{ momentId: string }>(prompt, schema, clip ? { media: [clip] } : {});
+      momentId = model.valid.oneOf(answer.momentId, choiceIds);
     } catch (error) {
       logger.warn(`ask failed: ${error}`);
     }

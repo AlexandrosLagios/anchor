@@ -7,10 +7,10 @@ import { lines } from '../core/lines';
 import { createRouter } from '../core/router';
 import { openStore } from '../core/store';
 import type { Family, Moment, Person } from '../core/types';
-import { ask } from '../gemini';
+import { ask } from '../model/model';
 import { echoes } from './echoes';
 
-vi.mock('../gemini', async (importOriginal) => ({ ...(await importOriginal<typeof import('../gemini')>()), ask: vi.fn() }));
+vi.mock('../model/model', async (importOriginal) => ({ ...(await importOriginal<typeof import('../model/model')>()), ask: vi.fn() }));
 
 type MomentIdSchema = { properties: { momentId: { enum: string[] }; earlier: { enum: string[] } } };
 
@@ -213,7 +213,7 @@ test('a send failure for the first new moment does not stop the second from gett
   ]);
 });
 
-test('a moment marked sensitive by the time its turn comes gets no Gemini call', async () => {
+test('a moment marked sensitive by the time its turn comes gets no model call', async () => {
   const { transport, family, router } = setup();
   const older = makeMoment({ by: dimitris, savedAt: NOW - 10000 });
   const first = makeMoment({ by: sofia, savedAt: NOW - 5 });

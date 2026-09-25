@@ -89,7 +89,9 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - The 11:00 slot sends at most one invitation per started storyteller per day.
 - A moment qualifies when the storyteller did not send it, it is not sensitive, and it is at least 3 demo-clock hours old. `moment.returns[storytellerId].due` must be at or before now. A missing entry counts as due.
 - `byPriority` picks the first qualifying moment.
-- Anchor sends the video or the photo first. Then Anchor sends a voice note of `invitation(sender, text)`, with the text as the caption and the buttons "Not now" and "Don't bring this back". When no voice clip exists, Anchor sends the text with the buttons.
+- Anchor sends the video or the photo first. Then Anchor sends a voice note of `invitation(sender, text)`, with the text as the caption and the buttons "Not now", "Don't bring this back", and "What is this?". When no voice clip exists, Anchor sends the text with the buttons.
+- "What is this?", or a reply of kind `question`, gets `tellDirectly(title, date, sender)`, then the sender's voice note when the moment has one (user story 5, "Just ask"). The invitation stays open for a story, and the answer never hints that he should have known.
+- An invitation with no reply for 3 demo-clock hours gets `gentleHelp(date, title)` once, like a hesitant reply (user story 4). `Invitation.sentAt` and `Invitation.replied` drive this rule.
 - The code makes the TTS clip once per moment. The transport returns a media id for the uploaded clip, and the code stores the id in `moment.invitationVoice`.
 - After each delivered invitation, the code increments `count` and sets `due` to the slot time plus the next gap. The gaps are 1, 2, 4, 8, 16, and 32 days. After the seventh return, the moment gets no more private returns.
 - A delivered invitation counts as a return whether or not the storyteller answers. Silence is never read as forgetting, and nobody is watched.
@@ -115,12 +117,13 @@ Moments come back to a storyteller more often than to the group, in private, at 
 
 - When Anchor joins a group, Anchor creates the family and posts `intro`.
 - `/storyteller`, sent by an admin as a reply to the message of a member, registers `event.replyToSender` as a storyteller. Anchor posts `storytellerStart(name)` with a URL button to `transport.startLink(family id)`.
-- `/start` in private, from a registered storyteller, sets `started` and gets `welcome(name)`.
+- `/start` in private, from a registered storyteller, gets `welcome(name)` with the buttons "Yes, I'd like that" and "Not now" (user story 1, "Say yes myself"). Only "Yes, I'd like that" sets `started` and sends `agreed(name)`. "Not now" sends `notNow`. Nothing comes back to a storyteller before that yes. Moments shared before the yes come back after it.
+- `/stop`, or the single word "stop" in private, sets `started` to false, closes the open invitation silently, and sends `stopped`. Nothing more comes back until `/start` and a new yes. The family is not told.
 - "Anchor, forget this", sent as a reply, deletes the moment or the story that owns the replied-to message. Anchor reacts with 👌.
 - "Anchor, don't bring this back", sent as a reply, sets `sensitive` on the moment that owns the replied-to message. The moment stays in the record, and Anchor reacts with 👌.
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
 - `/memory` and `/invite` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
-- A private message that no feature handles gets `noInvitation` from a storyteller, and `pointer` from any other person.
+- A private message that no feature handles gets `noInvitation` from a started storyteller, and `notJoined` from a storyteller who has not said yes or who stopped. Any other person gets `pointer`.
 
 ### 4.8 Clock
 
@@ -134,12 +137,15 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | --- | --- |
 | `intro` | Hi, I'm Anchor 👋 I'm not a person: I keep this family's photos and stories, each one in the words of the person who shared it. When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, so it stays with all of us. An admin can reply /storyteller to a grandparent's message. Reply "Anchor, forget this" to delete a moment, or "Anchor, don't bring this back" to keep it without bringing it back. This is a test build, so please share staged photos only. |
 | `storytellerStart(name)` | {name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment. |
-| `welcome(name)` | Hello {name} 🙂 I'm Anchor. I keep your family's photos and stories, and I'm not a person. Now and then, and a little more often for you, I'll send you a moment the family shared. Seeing moments again helps them stay with us. Tell me what it brings back, by voice or by text. There's no right answer, and I share nothing unless you say yes. |
+| `welcome(name)` | Hello {name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. Now and then, and a little more often for you, I'll send you a moment the family shared. Seeing moments again helps them stay with us. You can answer by voice or by text. There's no right answer, I share nothing unless you say yes, and you can send /stop at any time. Would you like that? |
 | `invitation(sender, text)` | {sender} shared: «{text}» (new line) What does it remind you of? |
 | `memoryCaption(label, sender, text)` | {label} 💛 (new line) {sender} shared: «{text}» (new line) Reply with a story or a voice note to add it to the family record. |
 | labels | `7` One week ago · `30` One month ago · `365` One year ago · anniversary On this day in {year} · `fromRecord` From the family record |
 | `gentleHelp(date, title)` | No rush 🙂 This is from {date}: {title}. Any memory it brings is welcome. |
 | `warmClose` | Thank you 💛 |
+| `agreed(name)` | Wonderful, {name} 💛 I'll send you the first moment soon. |
+| `stopped` | Of course. I won't send you any more moments. If you'd like them again, send /start. |
+| `tellDirectly(title, date, sender)` | This is {title}, from {date}. {sender} shared it 💛 |
 | `thanks` | Thank you for the story 💛 Shall I share it with the family? |
 | `shared` | Done, the family can hear it now 💛 |
 | `notShared` | Of course. I won't share it. |
@@ -153,11 +159,12 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `notFound` | I couldn't find that in the family record yet. |
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
+| `notJoined` | Thank you 🙂 If you'd like family moments from me, send /start. |
 | `voiceNote` | 🎤 voice note |
 | `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
 | `nothingToInvite(name)` | {name} has seen every moment so far. |
 
-The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks".
+The buttons read "Start", "Yes, I'd like that", "Not now", "Don't bring this back", "What is this?", "Yes, share it", and "No, thanks".
 
 `invitation`, `memoryCaption`, and `storyAdded` clip the quoted text to 600 characters, and `echoCaption` clips each of its two quotes to 450 characters. Each clip ends with "…". Every caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. The step 1 session writes every line. A feature step asks that session for a wording change, and no line may break section 1.
 
@@ -306,6 +313,8 @@ export type Invitation = {
   story?: { text: string; voice?: Media };
   shareAsked: boolean;
   helped: boolean; // the gentle help went out once
+  sentAt: number; // demo-clock ms of the delivery
+  replied: boolean; // any reply, a question, or "What is this?" came
 };
 
 export type Storyteller = Person & {
@@ -352,7 +361,7 @@ export interface Feature {
 
 - `route(event)` finds the family. For a group event, the router uses `event.familyId`. For a private event without `familyId`, the router uses `store.familyOfStoryteller(sender.id)`.
 - The router offers the event to each feature in `FEATURES` order until a feature returns `true`.
-- An unhandled private event gets `noInvitation` when the sender is a storyteller, and `pointer` otherwise. The router drops an unhandled group event.
+- An unhandled private event gets `noInvitation` when the sender is a started storyteller, `notJoined` when the sender is a storyteller who is not started, and `pointer` otherwise. The router drops an unhandled group event.
 - `tick(window)` calls `feature.tick(family, window, ctx)` for every family and every feature, each call in its own try/catch.
 
 `FEATURES` in `family.service.ts` keeps this order:
@@ -400,11 +409,13 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 
 ### 6.1 Shared rules
 
-- The model seam: every feature calls only the exports of `gemini.ts`, which are `ask`, `transcribe`, `speak`, and `valid`. Every test mocks that module. A teammate is moving the provider from Gemini to OpenAI, and the seam lets that change land without an edit to a feature.
+- The model seam: every feature calls only the exports of `model/model.ts`, which are `ask`, `transcribe`, `speak`, and `valid`. Every test mocks that module. The prototype imports the seam through the re-export in `gemini.ts`, and the re-export goes with the prototype.
+- The providers: `model/provider.ts` defines the provider interface. `model/openai.ts` is the only file that knows OpenAI, and `model/gemini.ts` is the only file that knows Gemini. `ANCHOR_MODEL_PROVIDER` selects the provider, and the default is `openai`.
 - The seam contract: `ask<T>(prompt, schema, { audio?, media?, fast?, timeoutMs? })` returns JSON that matches the schema, and `media` holds images and audio clips. `transcribe(clip)` returns a transcript or an empty string. `speak(text, style?)` returns WAV, which `transports/voice.ts` converts for Telegram.
+- Every provider returns WAV from `speak`, because `transports/voice.ts` converts WAV only. A voice note in another format falls back to text.
 - `ask` gets a `media` option, a list of `{ data, mimeType }`, next to the `audio` option that the prototype uses. An `image/*` item becomes an image input, and an `audio/*` item becomes an audio input.
-- The input items are `{ type: 'image', data, mime_type }` and `{ type: 'audio', data, mime_type }`, with base64 data (ai.google.dev/api/interactions-api).
-- The disk cache key includes a hash of every media item.
+- In the Gemini provider, the input items are `{ type: 'image', data, mime_type }` and `{ type: 'audio', data, mime_type }`, with base64 data (ai.google.dev/api/interactions-api).
+- The disk cache has one directory per provider, and the cache key includes a hash of every media item. A switch of provider never serves a cached answer of the other provider.
 - UNVERIFIED: the Interactions API docs do not confirm `enum`, `minimum`, or `maximum` in a response schema. The validators enforce every rule in code.
 - Every result passes a validator before the code uses it. Section 8 lists each fallback.
 - The prompts describe Anchor as the keeper of the family's record. No prompt mentions memory loss.
@@ -429,8 +440,8 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 ### 6.3 Transcribe and read a reply
 
 - `transcribe(media)` (step 1) returns the transcript of a voice note, or an empty string. The schema is `{ transcript: string }`, and the call uses the fast models. Group voice stories use this call.
-- The reply call (step 2, in `features/invitations.ts`) reads one private reply, text or voice, next to the moment's title and the sender's words. The schema is `{ transcript: string, kind: story | unsure | other }`.
-- `story` is a detail, a feeling, or a memory. `unsure` is a hesitation or a question, for example "a school?". `other` is an acknowledgement, for example "ok" or an emoji.
+- The reply call (step 2, in `features/invitations.ts`) reads one private reply, text or voice, next to the moment's title and the sender's words. The schema is `{ transcript: string, kind: story | unsure | question | other }`.
+- The kinds are `story | unsure | question | other`. `story` is a detail, a feeling, or a memory. `unsure` is a hesitation, for example "a school?". `question` asks what the moment is, for example "who is that?". `other` is an acknowledgement, for example "ok" or an emoji.
 
 ### 6.4 Find a moment (step 2b)
 
@@ -468,6 +479,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - `isAdmin` uses `getChatMember`. The statuses `creator` and `administrator` mean an admin.
 - `startLink` returns `https://t.me/<bot username>?start=<payload>`, with the username from `getMe`. The payload holds at most 64 characters from `A-Z`, `a-z`, `0-9`, `_`, and `-`.
 - Button data holds 1 to 64 bytes. A URL button works in a group and in a private chat.
+- Each button sits in its own `inline_keyboard` row, so an older reader gets large tap targets.
 - A callback query always gets `answerCallbackQuery`, also when no feature acts on the query.
 - Only one process may poll one token. Each developer creates a dev bot in BotFather for local work.
 
@@ -519,7 +531,7 @@ Each step is one session, one branch, and one PR. Each step uses TDD, then `/cod
 | 1b Demo contract | from the step 1 session | 1 | `Outgoing.album`, `Outgoing.mention`, `react` with `big`, `State.clockOffset`, `Moment.echo`, and the new lines of section 4.9. | Each addition has a test through `FakeTransport` and `toIncoming`. |
 | 2 Memory features | `feat/family-memory-features` | 1, and 1b for the sharer change | Capture and forget, memories and stories, and invitations: sections 4.1 to 4.5, 4.7, 6.2, and the sharer change of 4.10. | The flow tests of section 9 pass for every feature. |
 | 2b Demo features | `feat/family-demo-features` | 1b | `ask`, `echoes`, and `fastforward`: sections 4.6, 4.10, 6.4, and 6.6. | The flow tests of section 9 pass for the three features. |
-| 3 Team test | `fix/v1-team-test` | 2 and 2b | The team test, the fixes, the demo script, and section 11. The deploy prep is already PR 2 (`chore/anchor-bot-deploy`). | The team walks the checklist and the demo script in a Telegram group without a blocker. |
+| 3 Team test | `fix/v1-team-test` | 2 and 2b | The deploy of `anchor-bot` to Cloud Run, the team test against the live bot, the fixes, the demo script, and section 11. A second dev bot token serves the local fix loop. | The team walks the checklist and the demo script against the live bot without a blocker. |
 
 Inside steps 2 and 2b, the features touch separate files, so subagents can build them in parallel. One session owns each file. The step 1 session owns `core/` and `transports/`, including every line in `core/lines.ts`. Steps 2 and 2b own only their feature files and their `FEATURES` lines.
 

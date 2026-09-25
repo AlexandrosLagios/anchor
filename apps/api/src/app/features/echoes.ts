@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { cut, lines } from '../core/lines';
 import type { Context, Family, Feature, Media, Moment } from '../core/types';
-import { ask, valid } from '../gemini';
+import { ask, valid } from '../model/model';
 
 const logger = new Logger('Echoes');
 
