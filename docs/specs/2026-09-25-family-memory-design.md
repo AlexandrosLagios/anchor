@@ -128,6 +128,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
 - Every member can send `/memory` (section 4.3). `/private`, `/send`, and `/fastforward` are admin commands. A member who is not an admin and sends one of them gets `adminOnly` in the group, and nothing changes.
 - `/private`, as a reply to a member's message, lets that member get family moments in private. `/send` sends a moment to each private member now.
+- `/private` that replies to no person, or to Anchor's own message, gets `privateHow`. `/send` with no started storyteller gets `nobodyPrivate`. No command fails in silence.
 - The bot registers a "/" menu with `setMyCommands`. In a group, every member sees `/memory`, and only admins see `/private`, `/send`, and `/fastforward`. In a private chat, everyone sees `/start` and `/stop`. The descriptions live in `core/lines.ts`.
 - A private message that no feature handles gets `noInvitation` from a started storyteller, and `notJoined` from a storyteller who has not said yes or who stopped. Any other person gets `pointer`.
 
@@ -167,6 +168,8 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
 | `adminOnly` | Only a group admin can do that 🙂 |
+| `privateHow` | Reply /private to a message from the person who should get family moments in private. |
+| `nobodyPrivate` | Nobody gets family moments in private yet. Reply /private to a grandparent's message first. |
 | `notJoined` | Thank you 🙂 If you'd like family moments from me, send /start. |
 | `forgetWhich` | This post shows two moments. Which one should I forget? (one button per moment) |
 | `quietWhich` | This post shows two moments. Which one should I stop bringing back? (one button per moment) |
