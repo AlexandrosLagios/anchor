@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { cut } from '../core/lines';
-import { Blocked, type Incoming, type Media, type Outgoing, type Transport } from '../core/types';
+import { Blocked, type Incoming, type Media, type Outgoing, type Person, type Transport } from '../core/types';
 import { httpFetch } from '../http';
 import { toOgg } from './voice';
 
@@ -82,6 +82,12 @@ export function toIncoming(update: Update, username: string): Incoming | undefin
   return undefined;
 }
 
+function mentionIn(text: string | undefined, person?: Person) {
+  const offset = text && person?.name ? text.indexOf(person.name) : -1;
+  if (!person || offset < 0) return undefined;
+  return [{ type: 'text_mention', offset, length: person.name.length, user: { id: Number(person.id), is_bot: false, first_name: person.name } }];
+}
+
 // ponytail: the only upload is a voice note, so every Buffer goes up as <key>.ogg; pass a file name when a second upload kind appears
 function encode(params: Record<string, unknown>) {
   if (!Object.values(params).some((value) => Buffer.isBuffer(value))) {
@@ -152,26 +158,39 @@ export class TelegramTransport implements Transport {
     }
   }
 
-  async send(chatId: string, { text, photo, video, voice, buttons, replyTo }: Outgoing) {
+  async send(chatId: string, { text, photo, video, voice, album, mention, buttons, replyTo }: Outgoing) {
+    const reply_parameters = replyTo ? { message_id: Number(replyTo), allow_sending_without_reply: true } : undefined;
+    const caption = text && cut(text, 1024);
+    const captioned = { caption, caption_entities: mentionIn(caption, mention) };
+    if (album) {
+      const media = album.map((item, index) => ({
+        ...('video' in item ? { type: 'video', media: item.video.id } : { type: 'photo', media: item.photo.id }),
+        ...(index === 0 ? captioned : {}),
+      }));
+      const [first] = await call<Message[]>(this.token, 'sendMediaGroup', { chat_id: chatId, media, reply_parameters });
+      return { messageId: String(first.message_id), voice: undefined };
+    }
     const params = {
       chat_id: chatId,
-      reply_parameters: replyTo ? { message_id: Number(replyTo), allow_sending_without_reply: true } : undefined,
+      reply_parameters,
       reply_markup: buttons?.length
         ? { inline_keyboard: [buttons.map(({ label, data, url }) => (url ? { text: label, url } : { text: label, callback_data: data }))] }
         : undefined,
     };
-    const caption = text && cut(text, 1024);
     let sent: Message;
-    if (video) sent = await call<Message>(this.token, 'sendVideo', { ...params, video: video.id, caption });
-    else if (photo) sent = await call<Message>(this.token, 'sendPhoto', { ...params, photo: photo.id, caption });
-    else if (voice) sent = await call<Message>(this.token, 'sendVoice', { ...params, voice: 'wav' in voice ? toOgg(voice.wav) : voice.id, caption });
-    else sent = await call<Message>(this.token, 'sendMessage', { ...params, text: text && cut(text, 4096) });
+    if (video) sent = await call<Message>(this.token, 'sendVideo', { ...params, ...captioned, video: video.id });
+    else if (photo) sent = await call<Message>(this.token, 'sendPhoto', { ...params, ...captioned, photo: photo.id });
+    else if (voice) sent = await call<Message>(this.token, 'sendVoice', { ...params, ...captioned, voice: 'wav' in voice ? toOgg(voice.wav) : voice.id });
+    else {
+      const message = text && cut(text, 4096);
+      sent = await call<Message>(this.token, 'sendMessage', { ...params, text: message, entities: mentionIn(message, mention) });
+    }
     return { messageId: String(sent.message_id), voice: sent.voice && { id: sent.voice.file_id, mimeType: sent.voice.mime_type } };
   }
 
-  async react(chatId: string, messageId: string, emoji: string) {
-    const reaction = [{ type: 'emoji', emoji: emoji.replace(/️/g, '') }];
-    await call(this.token, 'setMessageReaction', { chat_id: chatId, message_id: Number(messageId), reaction });
+  async react(chatId: string, messageId: string, emoji: string, big?: boolean) {
+    const reaction = [{ type: 'emoji', emoji: emoji.replace(/\uFE0F/g, '') }];
+    await call(this.token, 'setMessageReaction', { chat_id: chatId, message_id: Number(messageId), reaction, is_big: big });
   }
 
   async download(media: Media) {

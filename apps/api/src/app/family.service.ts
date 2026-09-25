@@ -32,7 +32,7 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
     const configured = Number(process.env.ANCHOR_DAY_SECONDS);
     const daySeconds = configured > 0 ? configured : 86400;
     const telegram = await TelegramTransport.connect(token, this.stop.signal);
-    const now = () => demoNow(store.state.clockStart, daySeconds);
+    const now = () => demoNow(store.state, daySeconds);
     const router = createRouter(FEATURES, { now, store, transport: () => telegram });
 
     // ponytail: the first window starts at boot, so a slot that falls while the host is down is skipped; persist the last tick when that matters

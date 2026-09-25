@@ -2,20 +2,22 @@ import type { Media, Outgoing, Transport } from './types';
 
 export class FakeTransport implements Transport {
   readonly sent: { chatId: string; messageId: string; message: Outgoing }[] = [];
-  readonly reactions: { chatId: string; messageId: string; emoji: string }[] = [];
+  readonly reactions: { chatId: string; messageId: string; emoji: string; big?: boolean }[] = [];
   readonly admins = new Set<string>();
   readonly files = new Map<string, { data: Buffer; mimeType: string }>();
 
   async send(chatId: string, message: Outgoing) {
-    if ([message.photo, message.video, message.voice].filter(Boolean).length > 1) throw new Error('An Outgoing sets at most one of photo, video, and voice');
+    if ([message.photo, message.video, message.voice, message.album].filter(Boolean).length > 1) {
+      throw new Error('An Outgoing sets at most one of photo, video, voice, and album');
+    }
     const messageId = `sent-${this.sent.length + 1}`;
     this.sent.push({ chatId, messageId, message });
     const voice = message.voice && ('wav' in message.voice ? { id: `voice-${messageId}`, mimeType: 'audio/ogg' } : message.voice);
     return { messageId, voice };
   }
 
-  async react(chatId: string, messageId: string, emoji: string) {
-    this.reactions.push({ chatId, messageId, emoji });
+  async react(chatId: string, messageId: string, emoji: string, big?: boolean) {
+    this.reactions.push({ chatId, messageId, emoji, big });
   }
 
   async download(media: Media) {

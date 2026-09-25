@@ -7,7 +7,7 @@ const logger = new Logger('Store');
 
 // ponytail: each save rewrites the whole record; move to SQLite when a save gets slow or a second process writes
 export function openStore(file: string, realNow = Date.now()): Store {
-  const state = load(file) ?? { clockStart: realNow, families: [] };
+  const state = load(file) ?? { clockStart: realNow, clockOffset: 0, families: [] };
   const store: Store = {
     state,
     family: (id) => state.families.find((family) => family.id === id),
@@ -33,7 +33,7 @@ function load(file: string): State | undefined {
   const text = readFileSync(file, 'utf8');
   try {
     const state = JSON.parse(text) as State;
-    if (typeof state.clockStart === 'number' && Array.isArray(state.families)) return state;
+    if (typeof state.clockStart === 'number' && Array.isArray(state.families)) return { ...state, clockOffset: state.clockOffset ?? 0 };
     throw new Error('not a State');
   } catch (error) {
     const aside = `${file}.corrupt-${Date.now()}`;

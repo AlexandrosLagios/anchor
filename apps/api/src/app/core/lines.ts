@@ -45,7 +45,11 @@ export const lines = {
   notShared: "Of course. I won't share it.",
   notNow: 'No problem 🙂 Another time.',
   dontBringBack: "Of course. I'll keep it, and I won't bring it back.",
-  storyAdded: (name: string) => `${name} added a story to this moment 🎙️`,
+  storyAdded: (name: string, sender: string, story: string) => `${name} added a story to ${sender}'s moment 🎙️\n«${clip(story)}»`,
+  echoCaption: (olderSender: string, olderText: string, newerSender: string, newerText: string) =>
+    `Then and now 💛\n${olderSender} shared: «${clip(olderText)}»\n${newerSender} shared: «${clip(newerText)}»`,
+  fastforwarded: (date: string) => `⏩ It's now ${date} on the family clock.`,
+  fastforwardUsage: 'Send /fastforward and a number of days, for example /fastforward 7.',
   askAnswer: (title: string, date: string, names: string[]) =>
     `${title} · ${date} 💛${names.length ? `\nStories from ${names.join(', ')}` : ''}`,
   notFound: "I couldn't find that in the family record yet.",

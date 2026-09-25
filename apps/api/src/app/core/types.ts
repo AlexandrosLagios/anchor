@@ -25,9 +25,11 @@ export type Incoming = {
 
 export type Outgoing = {
   text?: string; // the caption when photo or voice is set
-  photo?: Media; // set at most one of photo, video, and voice
+  photo?: Media; // set at most one of photo, video, voice, and album
   video?: Media;
   voice?: Media | { wav: Buffer };
+  album?: Array<{ photo: Media } | { video: Media }>; // the caption goes on the first item; no buttons
+  mention?: Person; // mentions the first occurrence of the name in the text
   buttons?: Button[];
   replyTo?: string;
 };
@@ -36,7 +38,7 @@ export class Blocked extends Error {} // send throws Blocked when the person blo
 
 export interface Transport {
   send(chatId: string, message: Outgoing): Promise<{ messageId: string; voice?: Media }>;
-  react(chatId: string, messageId: string, emoji: string): Promise<void>;
+  react(chatId: string, messageId: string, emoji: string, big?: boolean): Promise<void>;
   download(media: Media): Promise<{ data: Buffer; mimeType: string }>;
   isAdmin(chatId: string, userId: string): Promise<boolean>;
   startLink(payload: string): string;
@@ -72,6 +74,7 @@ export type Moment = {
   lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'
   memoryPostIds: string[];
   returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
+  echo?: string; // the id of the older moment that this moment echoes
 };
 
 export type Invitation = {
@@ -98,7 +101,7 @@ export type Family = {
   counters: Record<string, number>;
 };
 
-export type State = { clockStart: number; families: Family[] };
+export type State = { clockStart: number; clockOffset: number; families: Family[] }; // clockOffset in ms, set by /fastforward
 
 export type Window = { from: number; to: number }; // demo-clock ms
 

@@ -1,7 +1,7 @@
-import type { Window } from './types';
+import type { State, Window } from './types';
 
-export function demoNow(clockStart: number, daySeconds: number, realNow = Date.now()): number {
-  return Math.round(clockStart + ((realNow - clockStart) * 86400) / daySeconds);
+export function demoNow({ clockStart, clockOffset }: Pick<State, 'clockStart' | 'clockOffset'>, daySeconds: number, realNow = Date.now()): number {
+  return Math.round(clockStart + ((realNow - clockStart) * 86400) / daySeconds + clockOffset);
 }
 
 export function dayIndex(ms: number): number {
