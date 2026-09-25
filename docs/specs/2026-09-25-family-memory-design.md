@@ -126,9 +126,9 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - `echoes` stores every album message id as `Moment.echoPostIds` on the newer moment. `send` returns `messageIds` for an album. This rule lands in a follow-up PR after the step 2 PR.
 - "Anchor, don't bring this back", sent as a reply, sets `sensitive` on the moment that owns the replied-to message. The moment stays in the record, and Anchor reacts with 👌.
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
-- `/memory` and `/send` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
+- Every member can send `/memory` (section 4.3). `/private`, `/send`, and `/fastforward` are admin commands. A member who is not an admin and sends one of them gets `adminOnly` in the group, and nothing changes.
 - `/private`, as a reply to a member's message, lets that member get family moments in private. `/send` sends a moment to each private member now.
-- The bot registers a "/" menu with `setMyCommands`. In a group, only admins see `/memory`, `/private`, `/send`, and `/fastforward`. In a private chat, everyone sees `/start` and `/stop`. The descriptions live in `core/lines.ts`.
+- The bot registers a "/" menu with `setMyCommands`. In a group, every member sees `/memory`, and only admins see `/private`, `/send`, and `/fastforward`. In a private chat, everyone sees `/start` and `/stop`. The descriptions live in `core/lines.ts`.
 - A private message that no feature handles gets `noInvitation` from a started storyteller, and `notJoined` from a storyteller who has not said yes or who stopped. Any other person gets `pointer`.
 
 ### 4.8 Clock
@@ -166,6 +166,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `notFound` | I couldn't find that in the family record yet. |
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
+| `adminOnly` | Only a group admin can do that 🙂 |
 | `notJoined` | Thank you 🙂 If you'd like family moments from me, send /start. |
 | `forgetWhich` | This post shows two moments. Which one should I forget? (one button per moment) |
 | `quietWhich` | This post shows two moments. Which one should I stop bringing back? (one button per moment) |
