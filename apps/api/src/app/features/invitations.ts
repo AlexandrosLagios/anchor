@@ -11,9 +11,11 @@ import {
   type Feature,
   type Incoming,
   type Invitation,
+  type Media,
   type Moment,
   type Outgoing,
   type Member,
+  type Person,
   type Transport,
 } from '../core/types';
 import { ask, speak, valid } from '../model/model';
@@ -254,6 +256,27 @@ async function explain(text: string, invitation: Invitation, moment: Moment, fam
   if (moment.voice && isOpen(family, member, invitation, moment)) await tell(family, member, { voice: moment.voice }, ctx);
 }
 
+export async function shareStory(family: Family, person: Person, moment: Moment, story: { text: string; voice?: Media }, ctx: Context) {
+  const added = await announce(
+    family,
+    { text: lines.storyAdded(person.name, moment.by.name, story.text), replyTo: moment.messageIds[0], mention: moment.by },
+    ctx,
+  );
+  if (added) await react(ctx, family, family.chatId, added.messageId, '\u2764', true);
+  const spoken = story.voice ? await announce(family, { voice: story.voice }, ctx) : undefined;
+  if (family.moments.includes(moment)) {
+    moment.stories.push({
+      id: randomUUID(),
+      by: { id: person.id, name: person.name },
+      at: ctx.now(),
+      text: story.text,
+      voice: story.voice,
+      messageIds: [added?.messageId, spoken?.messageId].filter(Boolean),
+    });
+  }
+  ctx.store.save();
+}
+
 async function settle(action: string, invitation: Invitation, moment: Moment, family: Family, member: Member, ctx: Context) {
   const story = invitation.story;
   if (action === 'share' && !story) return;
@@ -266,24 +289,7 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
     ctx.store.save();
     await tell(family, member, { text: lines.notShared }, ctx);
   } else {
-    const added = await announce(
-      family,
-      { text: lines.storyAdded(member.name, moment.by.name, story.text), replyTo: moment.messageIds[0], mention: moment.by },
-      ctx,
-    );
-    if (added) await react(ctx, family, family.chatId, added.messageId, '\u2764', true);
-    const spoken = story.voice ? await announce(family, { voice: story.voice }, ctx) : undefined;
-    if (family.moments.includes(moment)) {
-      moment.stories.push({
-        id: randomUUID(),
-        by: { id: member.id, name: member.name },
-        at: ctx.now(),
-        text: story.text,
-        voice: story.voice,
-        messageIds: [added?.messageId, spoken?.messageId].filter(Boolean),
-      });
-    }
-    ctx.store.save();
+    await shareStory(family, member, moment, story, ctx);
     await tell(family, member, { text: lines.shared }, ctx);
   }
 }
