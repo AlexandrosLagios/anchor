@@ -1,9 +1,8 @@
 import { Logger } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
 import { lines } from '../../core/lines';
-import { closeOffer, fadeOffers, findOffer, sendOffer } from '../../core/offers';
+import { closeOffer, editOffer, fadeOffers, findOffer, sendOffer, shortId } from '../../core/offers';
 import { tell } from '../../core/tell';
-import type { Button, Context, Family, Feature, Incoming, Offer, Reminder } from '../../core/types';
+import type { Button, Context, Family, Feature, Incoming, Reminder } from '../../core/types';
 import { react } from '../capture/capture';
 import { readOffer } from './offer';
 import { DEFAULT_TIMES, TIME, around, nextLocal, passesGate } from './rules';
@@ -33,22 +32,14 @@ function drop(family: Family, reminder: Reminder) {
   family.reminders.splice(family.reminders.indexOf(reminder), 1);
 }
 
-// keeps the offer record, so an offer that waits for Start still fades
-async function edit(family: Family, offer: Offer, change: { text?: string; buttons?: Button[] }, ctx: Context) {
-  try {
-    await ctx.transport(family.id).edit(family.chatId, offer.messageId, { ...change, onlyFor: offer.to });
-  } catch (error) {
-    logger.warn(`Editing the reminder offer ${offer.id} failed: ${error}`);
-  }
-}
-
 async function makeOffer(family: Family, event: Incoming, ctx: Context) {
   ctx.store.joinMember(family, event.sender);
   const reading = await readOffer(event, family, ctx.now());
-  const member = reading && family.members.find((person) => person.id === reading.to);
-  if (!reading || !member?.choices.reminders) return;
+  if (!reading) return;
+  const member = family.members.find((person) => person.id === reading.to);
+  if (!member?.choices.reminders) return;
   const reminder: Reminder = {
-    id: randomUUID().replace(/-/g, '').slice(0, 8),
+    id: shortId(),
     to: member.id,
     from: event.sender,
     text: event.text ?? '',
@@ -89,10 +80,10 @@ async function answer(family: Family, id: string, action: string, event: Incomin
       reminder.status = 'waiting';
       ctx.store.save();
       const start = { label: lines.buttons.start, url: ctx.transport(family.id).startLink(`r_${reminder.id}`) };
-      await edit(family, offer, { text: lines.reminderStart(action), buttons: [start] }, ctx);
+      await editOffer(family, offer, { text: lines.reminderStart(action), buttons: [start] }, ctx);
     }
   } else if (action === 'more' && reminder.time) {
-    await edit(family, offer, { buttons: [...timeButtons(offer.id, around(reminder.time)), noThanks(offer.id)] }, ctx);
+    await editOffer(family, offer, { buttons: [...timeButtons(offer.id, around(reminder.time)), noThanks(offer.id)] }, ctx);
   } else if (action === 'no') {
     drop(family, reminder);
     await closeOffer(family, offer, ctx);
@@ -103,30 +94,28 @@ async function answer(family: Family, id: string, action: string, event: Incomin
   }
 }
 
-// the family comes from the reminder, because the person can be a member who never wrote in private
-async function confirm(id: string, event: Incoming, ctx: Context) {
-  for (const family of ctx.store.state.families) {
-    const reminder = family.reminders.find((item) => item.id === id && item.to === event.sender.id && item.status === 'waiting');
-    const member = reminder && family.members.find((person) => person.id === reminder.to);
-    if (!reminder || !member) continue;
-    reminder.due = nextLocal(ctx.now(), reminder.time);
-    reminder.status = 'set';
-    ctx.store.save();
-    await tell(family, member, { text: lines.reminderConfirmed(reminder.time) }, ctx);
-    await react(ctx, family, family.chatId, reminder.sourceId, '✍');
-    return;
-  }
+// the router finds the family of the member, because only a member gets a reminder offer
+async function confirm(family: Family, id: string, event: Incoming, ctx: Context) {
+  const reminder = family.reminders.find((item) => item.id === id && item.to === event.sender.id && item.status === 'waiting');
+  const member = reminder && family.members.find((person) => person.id === reminder.to);
+  if (!reminder || !member) return;
+  reminder.due = nextLocal(ctx.now(), reminder.time);
+  reminder.status = 'set';
+  ctx.store.save();
+  await tell(family, member, { text: lines.reminderConfirmed(reminder.time) }, ctx);
+  await react(ctx, family, family.chatId, reminder.sourceId, '✍');
 }
 
 export const reminders: Feature = {
   name: 'reminders',
   async handle(event, family, ctx) {
+    if (!family) return false;
     const start = event.chat === 'private' ? event.text?.match(START) : undefined;
     if (start) {
-      await confirm(start[1], event, ctx); // members then sends the welcome
+      await confirm(family, start[1], event, ctx); // members then sends the welcome
       return false;
     }
-    if (event.chat !== 'group' || !family) return false;
+    if (event.chat !== 'group') return false;
     const tapped = event.button?.match(TAP);
     if (tapped) {
       await answer(family, tapped[1], tapped[2], event, ctx);
