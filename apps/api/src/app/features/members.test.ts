@@ -8,8 +8,18 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { FakeTransport } from '../core/fake-transport';
 import { lines } from '../core/lines';
 import { openStore } from '../core/store';
+import { speak } from '../model/model';
 import type { Choices, Context, Family, Incoming } from '../core/types';
 import { CHOICES, choiceButtons, members, nextSteps } from './members';
+
+vi.mock('../model/model', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../model/model')>()),
+  ask: vi.fn(),
+  transcribe: vi.fn(),
+  speak: vi.fn(),
+}));
+
+const wav = Buffer.from('RIFF clip');
 
 const ALL_OFF: Choices = { moments: false, reminders: false, shares: false, voice: false, call: false };
 const DEFAULT_CHOICES: Choices = { moments: false, reminders: true, shares: true, voice: false, call: false };
@@ -51,6 +61,7 @@ const saved = () => openStore(file).family('-100');
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(speak).mockResolvedValue(wav);
   now = at(25, 12);
   sequence = 0;
   file = join(mkdtempSync(join(tmpdir(), 'anchor-members-')), 'state.json');
@@ -176,12 +187,12 @@ test("another user's contact changes nothing and sends askPhone again", async ()
   expect(messages()).toEqual([['7', { text: lines.askPhone, buttons: [{ label: lines.buttons.sharePhone, contact: true }] }]]);
 });
 
-test('Done sends choicesSaved with the names of the choices that are on, in CHOICES order, and the next steps', async () => {
+test('Done sends choicesSaved with the names of the choices that are on, in CHOICES order, and the next steps, as a voice note with the voice choice', async () => {
   const member = ctx.store.joinMember(family, { id: '7', name: 'Nikos' });
   member.choices = { moments: true, reminders: false, shares: false, voice: true, call: false };
   await receive(fromNikos({ button: 'set:done' }));
   expect(messages()).toEqual([
-    ['7', { text: lines.choicesSaved(['family moments', 'voice notes']), buttons: nextSteps(member, 'settings') }],
+    ['7', { text: lines.choicesSaved(['family moments', 'voice notes']), buttons: nextSteps(member, 'settings'), voice: { wav } }],
   ]);
 });
 
