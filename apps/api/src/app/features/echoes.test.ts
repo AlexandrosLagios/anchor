@@ -48,8 +48,9 @@ function setup() {
   const transport = new FakeTransport();
   const store = openStore(file, NOW);
   const family = store.addFamily('-100', '-100');
-  const router = createRouter([echoes], { now: () => NOW, store, transport: () => transport });
-  return { file, transport, family, router };
+  const ctx = { now: () => NOW, store, transport: () => transport };
+  const router = createRouter([echoes], ctx);
+  return { file, transport, family, ctx, router };
 }
 
 test('a match with earlier match posts an album with the older moment first and sets echo', async () => {
@@ -165,6 +166,18 @@ test('a failed call posts nothing and leaves echo unset', async () => {
   expect(newMoment.echo).toBeUndefined();
 });
 
+test('a null answer posts nothing, leaves echo unset, and does not throw', async () => {
+  const { transport, family, ctx } = setup();
+  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
+  const newMoment = makeMoment({ by: sofia, savedAt: NOW });
+  family.moments.push(candidate, newMoment);
+  vi.mocked(ask).mockResolvedValueOnce(null);
+  await expect(echoes.tick?.(family, { from: NOW - 10, to: NOW }, ctx)).resolves.toBeUndefined();
+
+  expect(transport.sent).toEqual([]);
+  expect(newMoment.echo).toBeUndefined();
+});
+
 test('a new moment with an echo already gets no call', async () => {
   const { transport, family, router } = setup();
   const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
@@ -173,6 +186,49 @@ test('a new moment with an echo already gets no call', async () => {
   await router.tick({ from: NOW - 10, to: NOW });
 
   expect(ask).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([]);
+});
+
+test('a send failure for the first new moment does not stop the second from getting its echo', async () => {
+  const { transport, family, router } = setup();
+  const older = makeMoment({ by: dimitris, savedAt: NOW - 10000, photo: { id: 'older-photo' } });
+  const first = makeMoment({ by: sofia, savedAt: NOW - 5, photo: { id: 'first-photo' } });
+  const second = makeMoment({ by: dimitris, savedAt: NOW, photo: { id: 'second-photo' } });
+  family.moments.push(older, first, second);
+  vi.spyOn(transport, 'send').mockRejectedValueOnce(new Error('network blip'));
+  vi.mocked(ask)
+    .mockResolvedValueOnce({ momentId: older.id, earlier: 'match' })
+    .mockResolvedValueOnce({ momentId: first.id, earlier: 'match' });
+  await router.tick({ from: NOW - 10, to: NOW });
+
+  expect(ask).toHaveBeenCalledTimes(2);
+  expect(first.echo).toBe(older.id);
+  expect(second.echo).toBe(first.id);
+  expect(transport.sent).toEqual([
+    {
+      chatId: '-100',
+      messageId: 'sent-1',
+      message: {
+        album: [{ photo: { id: 'first-photo' } }, { photo: { id: 'second-photo' } }],
+        text: lines.echoCaption(sofia.name, first.text, dimitris.name, second.text),
+      },
+    },
+  ]);
+});
+
+test('a moment marked sensitive by the time its turn comes gets no Gemini call', async () => {
+  const { transport, family, router } = setup();
+  const older = makeMoment({ by: dimitris, savedAt: NOW - 10000 });
+  const first = makeMoment({ by: sofia, savedAt: NOW - 5 });
+  const second = makeMoment({ by: dimitris, savedAt: NOW });
+  family.moments.push(older, first, second);
+  vi.mocked(ask).mockImplementationOnce(async () => {
+    second.sensitive = true;
+    return { momentId: 'none', earlier: 'match' };
+  });
+  await router.tick({ from: NOW - 10, to: NOW });
+
+  expect(ask).toHaveBeenCalledTimes(1);
   expect(transport.sent).toEqual([]);
 });
 

@@ -33,17 +33,19 @@ function buildPrompt(question: string, choices: Moment[], hasVoice: boolean) {
 export const ask: Feature = {
   name: 'ask',
   async handle(event, family, ctx) {
-    if (event.chat !== 'group' || !family) return false;
+    if (event.chat !== 'group' || !family || event.forwarded) return false;
     const text = event.text ?? '';
     const match = QUESTION.exec(text);
     if (!match) return false;
     const question = text.slice(match[0].length);
 
-    const choices = family.moments.filter((moment) => !moment.sensitive);
-    if (!choices.length) {
-      await ctx.transport(family.id).send(event.chatId, { text: lines.notFound });
+    const notFound = async () => {
+      await ctx.transport(family.id).send(event.chatId, { text: lines.notFound, replyTo: event.messageId });
       return true;
-    }
+    };
+
+    const choices = family.moments.filter((moment) => !moment.sensitive);
+    if (!choices.length) return notFound();
 
     const choiceIds = choices.map((moment) => moment.id);
     const schema = { type: 'object', properties: { momentId: { type: 'string', enum: [...choiceIds, 'none'] } }, required: ['momentId'] };
@@ -59,10 +61,7 @@ export const ask: Feature = {
     }
 
     const moment = momentId ? family.moments.find((candidate) => candidate.id === momentId) : undefined;
-    if (!moment || moment.sensitive) {
-      await ctx.transport(family.id).send(event.chatId, { text: lines.notFound });
-      return true;
-    }
+    if (!moment || moment.sensitive) return notFound();
 
     const names = [...new Set(moment.stories.map((story) => story.by.name))];
     await ctx.transport(family.id).send(event.chatId, {

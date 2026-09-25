@@ -120,7 +120,7 @@ test('a "none" answer gets notFound', async () => {
 
   await router.route(question);
 
-  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound } }]);
+  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound, replyTo: 'q1' } }]);
 });
 
 test('an id outside the enum gets notFound', async () => {
@@ -130,7 +130,7 @@ test('an id outside the enum gets notFound', async () => {
 
   await router.route(question);
 
-  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound } }]);
+  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound, replyTo: 'q1' } }]);
 });
 
 test('a failed call gets notFound', async () => {
@@ -140,7 +140,7 @@ test('a failed call gets notFound', async () => {
 
   await router.route(question);
 
-  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound } }]);
+  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound, replyTo: 'q1' } }]);
 });
 
 test('a voice question downloads the clip and passes it as media', async () => {
@@ -175,7 +175,7 @@ test('a family whose every moment is sensitive gets notFound without a call', as
 
   await router.route(question);
 
-  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound } }]);
+  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound, replyTo: 'q1' } }]);
   expect(gemini.ask).not.toHaveBeenCalled();
 });
 
@@ -189,7 +189,7 @@ test('a moment deleted during the call gets notFound', async () => {
 
   await router.route(question);
 
-  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound } }]);
+  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound, replyTo: 'q1' } }]);
 });
 
 test('a group text that does not start the question, and a private question, return false', async () => {
@@ -200,6 +200,7 @@ test('a group text that does not start the question, and a private question, ret
   expect(await ask.handle?.({ ...question, text: 'anchor' }, family, ctx)).toBe(false);
   expect(await ask.handle?.({ ...question, chat: 'private' }, family, ctx)).toBe(false);
   expect(await ask.handle?.({ ...question, familyId: undefined }, undefined, ctx)).toBe(false);
+  expect(await ask.handle?.({ ...question, forwarded: true }, family, ctx)).toBe(false);
 
   expect(transport.sent).toEqual([]);
   expect(gemini.ask).not.toHaveBeenCalled();

@@ -7,8 +7,8 @@ export const fastforward: Feature = {
     if (event.chat !== 'group' || !family || !event.text || !/^\/fastforward(\s|$)/.test(event.text)) return false;
     if (!(await ctx.transport(family.id).isAdmin(event.chatId, event.sender.id))) return true;
     const match = event.text.match(/^\/fastforward\s+(\d+)\s*$/);
-    const days = match ? Number(match[1]) : NaN;
-    if (!match || days < 1 || days > 400) {
+    const days = Number(match?.[1]);
+    if (!(days >= 1 && days <= 400)) {
       await ctx.transport(family.id).send(event.chatId, { text: lines.fastforwardUsage, replyTo: event.messageId });
       return true;
     }
