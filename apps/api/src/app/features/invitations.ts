@@ -109,9 +109,9 @@ async function deliver(family: Family, member: Member, moment: Moment, at: numbe
   };
   const text = lines.invitation(moment);
   const buttons = [
+    { label: lines.buttons.whatIsThis, data: `inv:what:${moment.id}` },
     { label: lines.buttons.notNow, data: `inv:later:${moment.id}` },
     { label: lines.buttons.dontBringBack, data: `inv:never:${moment.id}` },
-    { label: lines.buttons.whatIsThis, data: `inv:what:${moment.id}` },
   ];
   try {
     const picture = pictureOf(moment);

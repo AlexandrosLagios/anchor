@@ -94,7 +94,11 @@ test('the welcome, stop, and just-ask lines read as the design writes them', () 
   expect(lines.tellDirectly("Maria's first day at school", '25 September 2026', 'Sofia')).toBe(
     "This is Maria's first day at school, from 25 September 2026. Sofia shared it 💛",
   );
-  expect(lines.buttons.whatIsThis).toBe('What is this?');
+  expect([lines.buttons.whatIsThis, lines.buttons.notNow, lines.buttons.dontBringBack]).toEqual([
+    'Tell me about it',
+    'Later, please',
+    "Don't show me this again",
+  ]);
 });
 
 test('intro points to the choices button instead of /private', () => {
