@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { dayIndex, slotIn } from '../core/clock';
 import { dateOf, lines } from '../core/lines';
 import { byPriority } from '../core/priority';
-import { tell } from '../core/tell';
+import { tell, VOICE_STYLE } from '../core/tell';
 import {
   Blocked,
   type Context,
@@ -25,7 +25,6 @@ import { isCommand, pictureOf, wordCount } from './capture/filter';
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];
 export const MAX_RETURNS = 7;
 const THREE_HOURS = 3 * 3_600_000;
-const VOICE_STYLE = 'warm, calm and slow, like a kind family friend talking to a grandparent';
 const KINDS = ['story', 'unsure', 'question', 'other'] as const;
 const REPLY_SCHEMA = {
   type: 'object',

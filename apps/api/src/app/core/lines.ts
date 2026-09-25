@@ -102,13 +102,12 @@ export const lines = {
     group: [{ command: 'memory', description: 'Share a family memory in the group now' }],
     admins: [
       { command: 'memory', description: 'Share a family memory in the group now' },
-      { command: 'private', description: 'Reply to a message: that person gets family moments in private' },
-      { command: 'send', description: 'Send a family moment now to each person who gets them in private' },
-      { command: 'fastforward', description: 'Move the family clock forward, for example /fastforward 7' },
+      // v2: an ephemeral command, so only the presenter sees it
+      { command: 'fastforward', description: 'Move the family clock, for example /fastforward 7 or /fastforward 08:05', is_ephemeral: true },
     ],
     private: [
-      { command: 'start', description: 'Get family moments from me' },
-      { command: 'stop', description: 'Stop getting family moments' },
+      { command: 'start', description: 'Choose what I send you' },
+      { command: 'stop', description: 'Stop everything I send you' },
     ],
   },
   buttons: {
