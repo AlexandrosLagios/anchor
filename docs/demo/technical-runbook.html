@@ -44,7 +44,7 @@
     <li><input type="checkbox" id="d4"><label for="d4">Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.</label></li>
   </ol>
 
-  <h2>2 · The call gate for beat 7</h2>
+  <h2>2 · The call gate for beat 6</h2>
   <div class="warn"><b>Caution:</b> set <code>ANCHOR_BOT_ONLY=true</code> before the service opens. Without it, a public <code>anchor-bot</code> serves the website API and the WhatsApp webhook, and the webhook sends the Twilio key to any media URL. The commands are in "Phone calls" in <code>DEPLOY.md</code>, and each step needs the user's go.</div>
   <ol class="check">
     <li><input type="checkbox" id="g1"><label for="g1">Store the Twilio key secret <code>anchor-twilio-api-key-secret</code>, and give the service account read access to the secret.</label></li>
@@ -60,7 +60,8 @@
   <h2>3 · Reset and prepare</h2>
   <ol class="check">
     <li><input type="checkbox" id="r1"><label for="r1">Remove the moments of the rehearsals. Reply "Anchor, forget this" to each rehearsal photo.</label></li>
-    <li><input type="checkbox" id="r2"><label for="r2">Let Sofia send "stop" to Anchor in private. Every choice goes off, so Sofia can join again on stage.</label></li>
+    <li><input type="checkbox" id="r2"><label for="r2">Let Sofia send "stop" to Anchor in private. Every choice goes off, so Sofia can join again on stage. Her phone number stays stored.</label></li>
+    <li><input type="checkbox" id="r5"><label for="r5">Let Eleni post a second staged photo in the group with the caption "Sunday lunch at the beach with the whole family!". The call in beat 6 reads this moment.</label></li>
     <li><input type="checkbox" id="r3"><label for="r3">Put a staged photo of a child's first day at school on Eleni's phone.</label></li>
     <li><input type="checkbox" id="r4"><label for="r4">Keep a screen recording of the best rehearsal ready. Play the recording if the live bot fails.</label></li>
   </ol>
@@ -73,10 +74,10 @@
   <ol class="check">
     <li><input type="checkbox" id="h1"><label for="h1">Before each rehearsal, do steps 1 and 2 of "Reset and prepare".</label></li>
     <li><input type="checkbox" id="h2"><label for="h2">Run the full script on the dev bot with a stopwatch. Write down the time of each beat.</label></li>
-    <li><input type="checkbox" id="h3"><label for="h3">If the run takes more than 3 minutes without beat 7, shorten the narration first.</label></li>
+    <li><input type="checkbox" id="h3"><label for="h3">If the run takes more than 4:30 without the call, shorten the spoken lines first.</label></li>
     <li><input type="checkbox" id="h4"><label for="h4">After the deploy of the v2 build, run beats 1 to 5 once on the live bot, without beat 6. Then do steps 1 and 2 of "Reset and prepare" again.</label></li>
     <li><input type="checkbox" id="h5"><label for="h5">On the live bot, never run /fastforward before the demo. Beat 6 on stage is the only jump.</label></li>
-    <li><input type="checkbox" id="h6"><label for="h6">Rehearse beat 7 on the live bot after the call gate. On the dev bot, a call needs a public tunnel: run <code>ngrok http 3000</code>, and set <code>ANCHOR_PUBLIC_URL</code> to the ngrok URL in <code>apps/api/.env.local</code>.</label></li>
+    <li><input type="checkbox" id="h6"><label for="h6">Rehearse the call of beat 6 on the live bot with a reminder in real time, because /fastforward stays off the live bot. Eleni replies to Sofia's message with "Mum, remember to take your pills at 10:45", a few minutes ahead, and Sofia taps the offered time. At 10:45, the reminder arrives and the phone rings. The dev bot cannot ring a phone without a public tunnel (<code>ngrok http 3000</code>, then <code>ANCHOR_PUBLIC_URL</code> in <code>apps/api/.env.local</code>).</label></li>
   </ol>
 
   <h2>6 · Deploy a fix</h2>
@@ -94,7 +95,7 @@ pnpm deploy:bot</pre>
     <tr><td>No ❤ on a photo</td><td>The model is slow, or the bot is down</td><td>Wait 15 s. Then check the logs.</td></tr>
     <tr><td>No reply to anything</td><td>No family in the record: the bot never saw itself join</td><td>Remove Anchor from the group, add it again, promote it.</td></tr>
     <tr><td>409 lines keep coming</td><td>A second process polls the same token</td><td>Stop every local run that uses that token.</td></tr>
-    <tr><td>No ring in beat 7, or "I couldn't ring you just now"</td><td>No phone or "Call me" off for Sofia, a missing <code>TWILIO_FROM</code> or <code>ANCHOR_PUBLIC_URL</code>, the Twilio geo permissions, or no <code>allUsers</code> binding</td><td>Walk the call gate checklist, then check the logs.</td></tr>
+    <tr><td>No ring in beat 6</td><td>No phone or "Call me" off for Sofia, a missing <code>TWILIO_FROM</code> or <code>ANCHOR_PUBLIC_URL</code>, the Twilio geo permissions, or no <code>allUsers</code> binding</td><td>Walk the call gate checklist, then check the logs.</td></tr>
     <tr><td>The call rings, but Anchor stays silent</td><td>The Realtime session failed before the opener, or Twilio cannot reach <code>wss://</code> on <code>ANCHOR_PUBLIC_URL</code></td><td>Anchor hangs up on a Realtime error. Check the logs for "Refused a call stream".</td></tr>
   </table>
 

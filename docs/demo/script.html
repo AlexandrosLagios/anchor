@@ -41,7 +41,7 @@
 <body>
 <main>
   <h1>Anchor · Demo script</h1>
-  <p class="sub">The 6-minute presentation as one story: the problem, a day in Sofia's family with Anchor, and the close. Four people speak. Beat 7, the phone call, is the stretch goal.</p>
+  <p class="sub">The 6-minute presentation as one story: the problem, a day in Sofia's family with Anchor, and the close. Four people speak. In beat 6, the reminder rings Sofia's phone, and the call brings back a second family moment.</p>
 
   <h2>Cast</h2>
   <div class="cast">
@@ -57,7 +57,8 @@
     <li>Eleni's phone shows the family group throughout. Sofia's phone shows the family group, then her private chat with Anchor.</li>
     <li>The Operator shows both phones side by side on the screen, and starts the stopwatch at the Narrator's first word.</li>
     <li>Eleni has the staged photo of a child's first day at school ready, with its caption.</li>
-    <li>For beat 7, Sofia's phone is ready to answer on speaker, and it has the "Anchor" contact saved, because Anchor calls from a US number.</li>
+    <li>For beat 6, Sofia's phone is ready to answer on speaker, and it has the "Anchor" contact saved, because Anchor calls from a US number.</li>
+    <li>Eleni posted a second staged photo in the group before the demo, with the caption "Sunday lunch at the beach with the whole family!". The call in beat 6 reads this moment.</li>
     <li>The technical checks are done (see <a href="technical-runbook.html">the technical runbook</a>).</li>
   </ul>
 
@@ -80,7 +81,7 @@
 
   <div class="beat">
     <div class="top"><span class="time">1:00</span><span class="who nikos">Sofia</span></div>
-    <div class="do">Tap <b>"Choose what I send you"</b>, then Start. Tap <b>"Family moments now and then"</b> and <b>"Talk to me by voice"</b>, then <b>"Done"</b>.</div>
+    <div class="do">Tap <b>"Choose what I send you"</b>, then Start. Tap <b>"Family moments now and then"</b>, <b>"Talk to me by voice"</b>, and <b>"Call me on the phone"</b>, then <b>"Done"</b>.</div>
     <p class="say nikos"><span>Sofia:</span> <q>Voice? Good. I'd rather talk than type.</q></p>
     <div class="see"><span>The audience sees:</span> Anchor says that it is not a person, and each choice turns ✅ in place. After "Done", Anchor answers with a voice note: "All set 💛".</div>
   </div>
@@ -108,27 +109,23 @@
   </div>
 
   <div class="beat">
-    <div class="top"><span class="time">3:20</span><span class="who eleni">Eleni</span></div>
+    <div class="top"><span class="time">3:20</span><span class="who eleni">Eleni</span><span class="who nikos">Sofia</span></div>
     <p class="say narrator"><span>Narrator:</span> <q>Let's jump to tomorrow morning.</q></p>
-    <div class="do">Send <b>/fastforward 08:05</b> in the group.</div>
-    <div class="see"><span>The audience sees:</span> Only Eleni sees "⏩ It's now … 08:05 on the family clock." A few seconds later, Sofia gets her reminder in private as a voice note: "⏰ Your reminder. Eleni wrote: «…»".</div>
-  </div>
-
-  <div class="beat">
-    <div class="top"><span class="time">3:40</span><span class="who nikos">Sofia</span><span class="who eleni">Eleni</span></div>
-    <div class="do"><b>Stretch goal.</b> Run this beat only when the call gate passed and the clock shows 3:50 or less. In private, say <b>"Call me"</b> in a voice note. Answer the phone on speaker. Answer Anchor in one sentence, say <b>"No, thanks"</b> to the share question, and <b>"Yes"</b> to the question about Eleni.</div>
-    <div class="see"><span>The audience sees:</span> Sofia's phone rings. Anchor opens with "Hello Sofia, this is Anchor, the family's record keeper. I'm not a person." and reads Eleni's moment in Eleni's words. Sofia answers in one sentence. Anchor asks "Shall I tell Eleni you'd love a call?". Sofia says yes, and the group gets "Eleni, Sofia would love a call from you 💛".</div>
-    <p class="say eleni"><span>Eleni:</span> <q>I'll call you tonight, Mum.</q></p>
+    <div class="do">Eleni sends <b>/fastforward 08:05</b> in the group. Sofia answers the phone on speaker, tells a short story about the beach photo, says <b>"Yes"</b> to the share question, and says <b>"Yes"</b> to the question about Eleni.</div>
+    <p class="say nikos"><span>Sofia, on the phone:</span> <q>We went to that beach every summer. Your father grilled the fish.</q></p>
+    <div class="see"><span>The audience sees:</span> Only Eleni sees "⏩ It's now … 08:05 on the family clock." A few seconds later, Sofia gets her reminder in private as a voice note, and her phone rings. Anchor opens with "Hello Sofia, this is Anchor, the family's record keeper. I'm not a person.", reads Eleni's reminder in Eleni's words, then reads the beach moment: "Eleni shared: «Sunday lunch at the beach with the whole family!» What does it remind you of?". Anchor asks at most one follow-up, then "Shall I share what you told me with the family?" and "Shall I tell Eleni you'd love a call?". In the group: "Sofia added a story to Eleni's moment 🎙️", then "Eleni, Sofia would love a call from you 💛". Anchor says goodbye and hangs up.</div>
+    <p class="say eleni"><span>Eleni, after the group message:</span> <q>I'll call you tonight, Mum.</q></p>
+    <p class="say closer" style="color:var(--muted)">In development: one call that reads the reminder and then the moment. Until it lands, the call reads only the reminder and says goodbye.</p>
   </div>
 
   <h2>3 · The close</h2>
   <div class="beat">
     <div class="top"><span class="time">4:40</span><span class="who closer">Closer</span></div>
-    <p class="speech" style="margin-top:0">"Sofia asked in her own words, chose what Anchor sends her, added her story by voice, and got her reminder in private. Nobody acted for her. The family saw a ❤ and a ✍.</p>
+    <p class="speech" style="margin-top:0">"Sofia asked in her own words, chose what Anchor sends her, added her story by voice, and got her reminder in a phone call. Nobody acted for her. The family saw a ❤ and a ✍.</p>
     <p class="speech">Anchor says it is not a person. It shares nothing without a yes, and it keeps a painful memory without ever bringing it back on its own.</p>
     <p class="speech">Anchor runs live today, in the group chat the family already uses. Anchor keeps the family's story, so nobody drops out of it."</p>
     <div class="see"><span>The audience sees:</span> Both screens stay on the group.</div>
-    <p class="say closer" style="color:var(--muted)">Without beat 7, the close starts at 3:40.</p>
+    <p class="say closer" style="color:var(--muted)">When the phone does not ring, the close starts at 3:40.</p>
   </div>
 
   <h2>If a beat fails</h2>
@@ -136,15 +133,14 @@
     <p><b>No answer for Sofia in beat 1 after 10 seconds:</b> Sofia writes "Anchor, settings". The same button arrives.</p>
     <p><b>No share offer for Eleni in beat 3 after 15 seconds:</b> check that Sofia turned on "Family moments" in beat 2. Sofia then says "Send me a moment" to Anchor in private, and the photo arrives.</p>
     <p><b>"Thank you 💛" instead of the share question in beat 4:</b> Anchor closed the invitation. Sofia says "Send me a moment" in private, and repeats beat 4.</p>
-    <p><b>No reminder offer for Sofia in beat 5 after 10 seconds:</b> Eleni writes "Mum, don't forget your pills tomorrow at 8." With no offer again, the Narrator tells beats 5 and 6 in one sentence each, and the story continues with beat 7 or the close.</p>
+    <p><b>No reminder offer for Sofia in beat 5 after 10 seconds:</b> Eleni writes "Mum, don't forget your pills tomorrow at 8." With no offer again, the Narrator tells beats 5 and 6 in one sentence each, and the story continues with the close.</p>
     <p><b>No reminder after /fastforward in beat 6 after 10 seconds:</b> the Narrator tells the reminder, and the story continues.</p>
-    <p><b>The voice note "Call me" in beat 7 gets another answer:</b> Sofia types "Call me". A typed "Call me" never goes to the model.</p>
-    <p><b>"I couldn't ring you just now" in beat 7, or no ring after 15 seconds:</b> the Narrator says "The phone call is our next step," and the Closer starts the close.</p>
+    <p><b>No ring in beat 6 after 15 seconds:</b> the Narrator says "The phone call is our next step," and the Closer starts the close.</p>
     <p><b>The call rings, but Anchor stays silent for 5 seconds:</b> Sofia hangs up. The Narrator says "The phone call is our next step," and the Closer starts the close.</p>
     <p><b>Two beats fail:</b> the Operator stops the live demo and plays the screen recording. The speakers say their lines over the recording.</p>
   </div>
 
-  <footer>Rehearse twice with a stopwatch. The run must end before 6:00. With beat 7, it ends at about 5:25. Without beat 7, it ends at about 4:25.</footer>
+  <footer>Rehearse twice with a stopwatch. The run must end before 6:00. With the call, it ends at about 5:25. Without the call, it ends at about 4:25.</footer>
 </main>
 </body>
 </html>
