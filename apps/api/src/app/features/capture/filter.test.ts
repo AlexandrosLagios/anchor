@@ -53,6 +53,12 @@ test('isClosed is true at once for a sealed bundle, which a newer picture from t
   expect(isClosed({ ...bundle([event({ photo: { id: 'p1' } })]), sealed: true }, 0)).toBe(true);
 });
 
+test('isClosed waits 3 seconds after an album message for the rest of the album, even with a picture and words', () => {
+  const album = bundle([event({ text: 'Maria', photo: { id: 'p1' }, albumId: 'a1' })]);
+  expect(isClosed(album, 2999)).toBe(false);
+  expect(isClosed(album, 3000)).toBe(true);
+});
+
 test('isClosed is true at once for a captioned photo, and for a captioned video', () => {
   expect(isClosed(bundle([event({ text: 'Maria', photo: { id: 'p1' } })]), 0)).toBe(true);
   expect(isClosed(bundle([event({ text: 'Maria', video: { id: 'v1' } })]), 0)).toBe(true);

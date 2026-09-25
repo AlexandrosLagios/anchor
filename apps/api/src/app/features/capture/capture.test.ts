@@ -345,6 +345,26 @@ test('a 3-photo album with one caption is one moment with the first photo and th
   expect(bundles[0].events[0].photo).toEqual({ id: 'photo-4' });
 });
 
+test('a tick between two messages of a captioned album keeps them in one bundle, and a tick after the grace closes it', async () => {
+  (ask as Mock).mockResolvedValue(classification);
+  transport.files.set('photo-1', { data: Buffer.from('1'), mimeType: 'image/jpeg' });
+  const first = event({ photo: { id: 'photo-1' }, albumId: 'album-1', text: 'Maria on her first day' });
+  await capture.handle(first, family, ctx);
+
+  advance(1000);
+  await tick();
+  expect(ask).not.toHaveBeenCalled();
+  const second = event({ photo: { id: 'photo-2' }, albumId: 'album-1' });
+  await capture.handle(second, family, ctx);
+  expect(bundles).toHaveLength(1);
+
+  advance(3000);
+  await tick();
+  expect(ask).toHaveBeenCalledTimes(1);
+  expect(family.moments).toHaveLength(1);
+  expect(family.moments[0]).toMatchObject({ messageIds: [first.messageId, second.messageId], photo: { id: 'photo-1' }, text: 'Maria on her first day' });
+});
+
 test('two texts 5 minutes apart from the same sender join one bundle, and a second more opens another', async () => {
   await capture.handle(event({ text: 'first message here' }), family, ctx);
   advance(5 * 60_000);

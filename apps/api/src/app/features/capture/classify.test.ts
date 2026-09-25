@@ -133,6 +133,9 @@ test('classify sends a bare photo, and the prompt says the moment may have no wo
 
   const [prompt, , options] = (ask as Mock).mock.calls[0];
   expect(prompt).toContain('The moment may have no words. Then classify it and give it a title from the photo or the video frame.');
+  expect(prompt).toContain(
+    'The title names what the moment shows, never the sharer, and never starts with "Photo of" or "A photo of", for example "Mapo tofu at home".',
+  );
   expect(options.media).toEqual([{ data: Buffer.from('photo'), mimeType: 'image/jpeg' }]);
 });
 

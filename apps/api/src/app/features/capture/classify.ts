@@ -53,6 +53,7 @@ function prompt(bundle: Bundle): string {
     typedText(bundle) || '(no typed words)',
     '',
     'The moment may have no words. Then classify it and give it a title from the photo or the video frame.',
+    'The title names what the moment shows, never the sharer, and never starts with "Photo of" or "A photo of", for example "Mapo tofu at home".',
     'Classify it as one of these verdicts:',
     '- family_moment: a moment worth keeping.',
     '- sensitive: a moment worth keeping that can hurt to see again, such as a loss, grief, or illness.',

@@ -14,7 +14,7 @@ export type Incoming = {
   video?: Media;
   thumbnail?: Media; // the preview frame of the video, for the classification
   voice?: Media;
-  albumId?: string; // the media group of an album
+  albumId?: string; // Telegram media_group_id: photos of one album share it
   forwarded?: boolean;
   unsupported?: boolean; // sticker, GIF, video note, document, poll, service message
   replyTo?: string;

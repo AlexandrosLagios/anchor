@@ -7,6 +7,7 @@ export function wordCount(text: string | undefined): number {
 }
 
 export const BUNDLE_GAP_MS = 5 * 60_000;
+export const ALBUM_GRACE_MS = 3000; // Telegram delivers album items one update apart, and `at` has 1 s resolution
 
 export type Bundle = {
   family: Family; // a reference, so the bundle still matches after a migration changes family.id
@@ -30,6 +31,7 @@ export function isClosed(bundle: Bundle, realNow: number): boolean {
   if (bundle.sealed) return true;
   const last = bundle.events[bundle.events.length - 1];
   if (realNow - last.at >= BUNDLE_GAP_MS) return true;
+  if (last.albumId !== undefined && realNow - last.at < ALBUM_GRACE_MS) return false;
   const hasWords = bundle.events.some((event) => event.voice || wordCount(event.text) > 0);
   return bundle.events.some(hasPicture) && hasWords;
 }
