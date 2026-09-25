@@ -1,6 +1,6 @@
 ---
 name: ensure-pr-readiness
-description: Use when verifying a branch or PR is ready to open or undraft, or when asked for a PR-readiness review. Runs the typecheck and lint gate, a correctness review, a conventions walk over AGENTS.md with file:line evidence, the Expo-specific escalations, then reports READY or NOT READY. Not for opening the PR or writing its title and description, which is manage-pr.
+description: Use when verifying a branch or PR is ready to open or undraft, or when asked for a PR-readiness review. Runs the typecheck and lint gate, a correctness review, a conventions walk over AGENTS.md with file:line evidence, the api, web, and Expo escalations, then reports READY or NOT READY. Not for opening the PR or writing its title and description, which is manage-pr.
 ---
 
 # ensure-pr-readiness
@@ -22,7 +22,7 @@ Pick a tier from the diff before you start. Steps 1 and 5 always run. Steps 2 to
 |------|------|--------------|
 | Small | 5 files or fewer, additive or mechanical, no step-4 trigger: a rename, a guard, a constant, a style tweak. | Step 2 at the lowest effort. Step 3 only for the AGENTS.md sections whose subject changed. Skip step 4. |
 | Standard | Neither Small nor Deep. | As written. |
-| Deep | A step-4 trigger fires, or the diff changes `app.json`, `package.json` dependencies, or navigation structure. | As written, at raised effort. |
+| Deep | A step-4 trigger fires, or the diff changes `package.json` dependencies, `apps/api/project.json`, `nx.json`, or a deploy config (`vercel.json`, `Dockerfile`). | As written, at raised effort. |
 
 Promote the tier when the diff surprises you. Never demote the tier to avoid a trigger.
 
@@ -30,16 +30,16 @@ Promote the tier when the diff surprises you. Never demote the tier to avoid a t
 
 Do not reorder the steps. A review on a red gate is wasted effort.
 
-1. **Mechanical gate.** Run `npm run typecheck` and `npm run lint`. If either command fails, stop and report. Do not continue to the review.
+1. **Mechanical gate.** Run `pnpm typecheck` and `pnpm lint` from the repository root. They cover `api` and `web`. When the diff touches `apps/mobile`, also run `npm run typecheck` and `npm run lint` from `apps/mobile`. If a command fails, stop and report. Do not continue to the review.
 2. **Correctness review.** Invoke the `code-review` skill on the diff. Map Small to `low`, Standard to `medium`, and Deep to `high`.
 3. **Conventions walk.** Apply each [AGENTS.md](../../../AGENTS.md) section whose subject the diff changes. Each verdict is pass or fail and cites `file:line` evidence. A bare assertion is not a verdict.
 4. **Conditional escalations.** Skip this step at Small. Otherwise, run each escalation that the diff triggers:
-   - The diff changes an auth, token, or PII mechanism: invoke the `security-review` skill before you open the PR.
-   - The diff adds or upgrades a dependency: confirm that `npx expo install` pinned the version, and run `npx expo-doctor`. For a library with native code, confirm that the PR description says Expo Go cannot load the library and a development build is necessary.
-   - The diff changes `app.json` or adds a config plugin: confirm that no file in `ios/` or `android/` is committed.
-   - The diff introduces an env var: confirm that the PR description states where each value lives.
-   - The diff changes rendered UI: check each changed `Pressable`, `TouchableOpacity`, `Button`, and icon for an `accessibilityLabel` and an `accessibilityRole`. Check that each touch target is at least 44 by 44 points. Report a failure as blocking.
-5. **Tests.** Run `npm run e2e` once, after the fixes from steps 2 to 4. The Maestro flows need the emulator and Metro to run: use the `run-android` skill to start them.
+   - The diff changes an auth, JWT, or PII mechanism (`/api/auth/*`, `AUTH_JWT_SECRET`, the accounts table): invoke the `security-review` skill before you open the PR.
+   - The diff introduces an env var: confirm that `apps/api/.env.example` or `apps/web/.env.example` lists it, and that the PR description states where each value lives (Vercel project, Neon, local).
+   - The diff changes the Neon schema or Blob storage paths: confirm that the PR description states the migration step.
+   - The diff changes rendered UI in `apps/web`: run `web-design-guidelines` over the changed files. Report accessibility failures as blocking and stylistic notes as suggestions.
+   - The diff touches `apps/mobile`: apply the Expo rules in AGENTS.md. A dependency needs `npx expo install` and `npx expo-doctor`. A change to `app.json` must not commit `ios/` or `android/`. A changed `Pressable`, `TouchableOpacity`, `Button`, or icon needs an `accessibilityLabel`, an `accessibilityRole`, and a 44 by 44 point touch target.
+5. **Tests.** Run `pnpm nx test api` once, after the fixes from steps 2 to 4. `web` has no test target. When the diff touches `apps/mobile`, run `npm run e2e` from `apps/mobile`, and use the `run-android` skill to start the emulator and Metro.
 
 ## Report format
 
