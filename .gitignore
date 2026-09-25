@@ -43,6 +43,13 @@ yarn-error.*
 # Gemini answer and voice cache
 tmp/
 
+# Astro
+apps/web/dist/
+apps/web/.astro/
+
+# Firebase
+.firebase/
+
 # nx
 .nx/cache
 .nx/workspace-data

@@ -1,0 +1,10 @@
+# Ignore everything except what the API build needs.
+# Build from repo root: docker build -f apps/api/Dockerfile .
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!nx.json
+!tsconfig.base.json
+!apps/api
+!apps/api/**

@@ -472,7 +472,7 @@
   }
 
   async function refresh() {
-    const state = window.DEMO ?? await (await fetch('state')).json();
+    const state = window.DEMO ?? await (await fetch('/api/state')).json();
     const snapshot = JSON.stringify(state);
     if (snapshot === last) return;
     last = snapshot;
@@ -555,13 +555,13 @@
       <h2>Saved moments</h2>
       ${list}
       ${moments?.length && !window.DEMO
-        ? `<h2>Share</h2><p><a class="btn btn-secondary" href="demo.html" download="anchor-demo.html">Download offline demo</a></p>`
+        ? `<h2>Share</h2><p><a class="btn btn-secondary" href="/api/demo.html" download="anchor-demo.html">Download offline demo</a></p>`
         : ''}
     `;
 
     document.getElementById('bring')?.addEventListener('click', async () => {
       setStatus('Bringing a moment back…');
-      await fetch('bring-back', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+      await fetch('/api/bring-back', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
       last = '';
       await refresh();
       setStatus('Anchor asked Athina a question in the chat.');
@@ -571,7 +571,7 @@
       const first = moments.find((m) => m.phase === 'idle');
       if (!first) return;
       setStatus('Starting practice for the next moment…');
-      await fetch('bring-back', {
+      await fetch('/api/bring-back', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ momentId: first.id }),
@@ -600,7 +600,7 @@
 
   async function sendReply(text) {
     setStatus('Sending Athina\'s reply…');
-    await fetch('reply', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) });
+    await fetch('/api/reply', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) });
     last = '';
     await refresh();
   }
@@ -613,7 +613,7 @@
     const from = document.getElementById('from').value;
     input.value = '';
     setStatus('Saving moment…');
-    await fetch('moment', {
+    await fetch('/api/moment', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ text, from }),

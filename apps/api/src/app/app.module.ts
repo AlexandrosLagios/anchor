@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AnchorController } from './anchor.controller';
+import { AnchorController, RootController } from './anchor.controller';
 import { AnchorService } from './anchor.service';
 
 @Module({
-  controllers: [AnchorController],
+  controllers: [RootController, AnchorController],
   providers: [AnchorService],
 })
 export class AppModule {}

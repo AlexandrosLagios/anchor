@@ -1,4 +1,16 @@
-import { BadRequestException, Body, Controller, Get, Header, HttpCode, Logger, NotFoundException, Param, Post, StreamableFile } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Header,
+  HttpCode,
+  Logger,
+  NotFoundException,
+  Param,
+  Post,
+  StreamableFile,
+} from '@nestjs/common';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { AnchorService, Role } from './anchor.service';
@@ -14,18 +26,62 @@ type MomentBody = {
   mediaMimeType?: string;
 };
 
-// ponytail: no X-Twilio-Signature check yet — add before real family data flows through here
 @Controller()
-export class AnchorController {
-  private readonly logger = new Logger(AnchorController.name);
+export class RootController {
+  private readonly logger = new Logger(RootController.name);
 
   constructor(private readonly anchor: AnchorService) {}
 
   @Get()
-  @Header('content-type', 'text/html; charset=utf-8')
-  page() {
-    return readFileSync(join(__dirname, 'assets', 'index.html'), 'utf8');
+  health() {
+    return { ok: true, service: 'anchor-api' };
   }
+
+  @Post('whatsapp')
+  @HttpCode(200)
+  @Header('content-type', 'text/xml')
+  whatsapp(@Body() body: TwilioForm) {
+    const from = body.From ?? '';
+    const isAudio = body.MediaContentType0?.startsWith('audio/');
+    const isImage = body.MediaContentType0?.startsWith('image/');
+    const text = (body.Body ?? '').trim();
+
+    (async () => {
+      const state = this.anchor.state();
+      const waiting = state.moments.some((moment) => moment.phase === 'awaiting' || moment.phase === 'hinted');
+
+      if (waiting) {
+        const audio =
+          isAudio && body.MediaUrl0
+            ? { data: await download(body.MediaUrl0), mimeType: body.MediaContentType0 ?? '' }
+            : undefined;
+        await this.anchor.replyAsAthina({ text: text || undefined, audio });
+        return;
+      }
+
+      const media =
+        body.MediaUrl0 && (isAudio || isImage)
+          ? { data: await download(body.MediaUrl0), mimeType: body.MediaContentType0 ?? '' }
+          : undefined;
+      const ack = await this.anchor.addMoment(
+        {
+          text: text || undefined,
+          audio: isAudio ? media : undefined,
+          image: isImage ? media : undefined,
+        },
+        from,
+      );
+      await sendWhatsApp(from, ack);
+    })().catch((error) => this.logger.error(error));
+
+    return twiml();
+  }
+}
+
+// ponytail: no X-Twilio-Signature check yet — add before real family data flows through here
+@Controller('api')
+export class AnchorController {
+  constructor(private readonly anchor: AnchorService) {}
 
   @Get('state')
   state() {
@@ -69,43 +125,6 @@ export class AnchorController {
     return result;
   }
 
-  @Post('whatsapp')
-  @HttpCode(200)
-  @Header('content-type', 'text/xml')
-  whatsapp(@Body() body: TwilioForm) {
-    const from = body.From ?? '';
-    const isAudio = body.MediaContentType0?.startsWith('audio/');
-    const isImage = body.MediaContentType0?.startsWith('image/');
-    const text = (body.Body ?? '').trim();
-
-    (async () => {
-      const state = this.anchor.state();
-      const waiting = state.moments.some((moment) => moment.phase === 'awaiting' || moment.phase === 'hinted');
-
-      if (waiting) {
-        const audio = isAudio && body.MediaUrl0 ? { data: await download(body.MediaUrl0), mimeType: body.MediaContentType0 ?? '' } : undefined;
-        await this.anchor.replyAsAthina({ text: text || undefined, audio });
-        return;
-      }
-
-      const media =
-        body.MediaUrl0 && (isAudio || isImage)
-          ? { data: await download(body.MediaUrl0), mimeType: body.MediaContentType0 ?? '' }
-          : undefined;
-      const ack = await this.anchor.addMoment(
-        {
-          text: text || undefined,
-          audio: isAudio ? media : undefined,
-          image: isImage ? media : undefined,
-        },
-        from,
-      );
-      await sendWhatsApp(from, ack);
-    })().catch((error) => this.logger.error(error));
-
-    return twiml();
-  }
-
   @Get('audio/:file')
   audio(@Param('file') file: string) {
     return this.file(file);
@@ -120,8 +139,9 @@ export class AnchorController {
   @Header('content-type', 'text/html; charset=utf-8')
   @Header('content-disposition', 'attachment; filename="anchor-demo.html"')
   demo() {
+    const page = readFileSync(join(__dirname, 'assets', 'index.html'), 'utf8');
     const demo = JSON.stringify(this.anchor.demo()).replace(/</g, '\\u003c');
-    return this.page().replace('<script>', () => `<script>window.DEMO = ${demo};</script>\n<script>`);
+    return page.replace('<script>', () => `<script>window.DEMO = ${demo};</script>\n<script>`);
   }
 
   private file(file: string) {

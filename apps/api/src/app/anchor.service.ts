@@ -119,8 +119,8 @@ export class AnchorService {
 
   demo() {
     const embed = (url?: string) => {
-      if (!url?.startsWith('media/') && !url?.startsWith('audio/')) return url;
-      const id = url.replace(/\.(wav|bin)$/, '').replace(/^(media|audio)\//, '');
+      if (!url?.includes('media/') && !url?.includes('audio/')) return url;
+      const id = url.replace(/\.(wav|bin)$/, '').replace(/^\/?(api\/)?(media|audio)\//, '');
       const clip = this.audio.get(id) ?? this.media.get(id);
       return clip ? `data:${clip.mimeType};base64,${clip.data.toString('base64')}` : undefined;
     };
@@ -143,12 +143,12 @@ export class AnchorService {
     if (input.image) {
       const id = randomUUID();
       this.media.set(id, input.image);
-      mediaUrl = `media/${id}.bin`;
+      mediaUrl = `/api/media/${id}.bin`;
       mediaType = input.image.mimeType;
     } else if (input.audio) {
       const id = randomUUID();
       this.media.set(id, input.audio);
-      mediaUrl = `media/${id}.bin`;
+      mediaUrl = `/api/media/${id}.bin`;
       mediaType = input.audio.mimeType;
     }
 
@@ -229,7 +229,7 @@ export class AnchorService {
     if (input.audio) {
       const id = randomUUID();
       this.media.set(id, input.audio);
-      mediaUrl = `media/${id}.bin`;
+      mediaUrl = `/api/media/${id}.bin`;
       speech = await this.transcribe(input.audio.data, input.audio.mimeType);
     }
     this.push('athina', speech || '…', mediaUrl);

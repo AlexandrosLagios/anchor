@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Privacy"
+  description="How Anchor handles family chat data, media, and AI processing for the Athina prototype."
+  currentPath="/privacy"
+>
+  <article class="prose">
+    <h1>Privacy</h1>
+    <p class="lede">
+      Anchor is a hackathon prototype. This page explains what the demo collects and how it is used.
+    </p>
+
+    <h2>What we process</h2>
+    <p>
+      When you use the web demo or connect WhatsApp via Twilio, Anchor may process message text, photos, and voice notes
+      you send so it can store family moments and run spaced-retrieval practice.
+    </p>
+
+    <h2>Why</h2>
+    <p>
+      Content is sent to Google Gemini to extract a recallable moment (who, what, when, a practice question) and optionally
+      to synthesise speech. Twilio delivers WhatsApp messages when that channel is connected.
+    </p>
+
+    <h2>Retention</h2>
+    <p>
+      The current prototype keeps state in memory on the API server. Restarting the server clears the demo conversation.
+      Do not send real medical records or secrets you cannot afford to lose.
+    </p>
+
+    <h2>Your rights</h2>
+    <p>
+      For a production deployment you would get access, deletion, and export controls. In this prototype, clear the session
+      by restarting the API or stop sending messages.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions about this prototype: use the project repository maintainers.
+    </p>
+  </article>
+</BaseLayout>

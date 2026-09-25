@@ -1,0 +1,11 @@
+# Used when building the API image from the repo root.
+node_modules
+dist
+.nx
+.firebase
+.astro
+apps/web
+apps/mobile
+.git
+tmp
+**/.env*.local

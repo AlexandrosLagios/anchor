@@ -1,0 +1,62 @@
+---
+import '../styles/tokens.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  currentPath?: string;
+}
+
+const {
+  title,
+  description = 'Anchor brings family memories back in the group chat — spaced retrieval, gentle cues, no new app to learn.',
+  currentPath = '/',
+} = Astro.props;
+
+const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : `${title} · Anchor`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0f3d3a" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <title>{fullTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <header class="site-header">
+      <a class="brand" href="/">Anchor</a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/how-it-works" aria-current={currentPath === '/how-it-works' ? 'page' : undefined}>How it works</a>
+        <a href="/app" aria-current={currentPath === '/app' ? 'page' : undefined}>Try the demo</a>
+        <a href="/privacy" aria-current={currentPath === '/privacy' ? 'page' : undefined}>Privacy</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <p>Built on spaced retrieval: the family's own stories, returning gently so Athina keeps her place in family life.</p>
+      <nav aria-label="Footer">
+        <a href="/how-it-works">How it works</a>
+        <a href="/app">Try the demo</a>
+        <a href="/privacy">Privacy</a>
+      </nav>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,256 @@
+:root {
+  --bg: #f2f0eb;
+  --bg-elevated: #fffcf7;
+  --ink: #14201f;
+  --ink-muted: #4a5553;
+  --brand: #0f3d3a;
+  --brand-soft: #d7ebe7;
+  --accent: #c45c26;
+  --line: #d6d1c7;
+  --focus: #0b5fff;
+  --chat-bg: #e8efe9;
+  --bubble-family: #dff3d4;
+  --bubble-athina: #fff1e4;
+  --bubble-anchor: #ffffff;
+  --ok-bg: #d8f3df;
+  --ok-ink: #14532d;
+  --cue-bg: #fdecc8;
+  --cue-ink: #7a4b00;
+  --soft-bg: #ebe8e2;
+  --soft-ink: #3f4745;
+  --radius: 1rem;
+  --space: clamp(1rem, 2.5vw, 1.75rem);
+  --font: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --display: "Fraunces", Georgia, serif;
+  --tap: 2.75rem;
+  --max: 72rem;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font: 400 1.0625rem / 1.5 var(--font);
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #d9ebe6 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #f3e2d4 0%, transparent 50%),
+    var(--bg);
+}
+
+a {
+  color: var(--brand);
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space);
+  top: 0;
+  transform: translateY(-120%);
+  z-index: 1000;
+  padding: 0.65rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--brand);
+  color: #f4fffc;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  transform: translateY(0.75rem);
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: calc(var(--space) + env(safe-area-inset-top, 0)) var(--space) var(--space);
+}
+
+.brand {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.brand:hover {
+  text-decoration: none;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+}
+
+.site-nav a {
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.site-footer {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: var(--space) var(--space) calc(var(--space) + env(safe-area-inset-bottom, 0));
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+
+.site-footer p {
+  margin: 0;
+  max-width: 40rem;
+}
+
+.site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 0.75rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: 0.55rem 1.15rem;
+  border: 1px solid transparent;
+  border-radius: 0.7rem;
+  font: 700 0.95rem / 1.2 var(--font);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: #f4fffc;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+  text-decoration: none;
+}
+
+.btn-secondary {
+  background: var(--soft-bg);
+  color: var(--ink);
+  border-color: #b9b3a8;
+}
+
+.btn-secondary:hover {
+  background: #e1ddd5;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.prose {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0 var(--space) calc(var(--space) * 2);
+}
+
+.prose h1 {
+  margin: 0 0 0.75rem;
+  font-family: var(--display);
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--brand);
+  line-height: 1.15;
+}
+
+.prose h2 {
+  margin: 2rem 0 0.65rem;
+  font-family: var(--display);
+  font-size: 1.45rem;
+  color: var(--brand);
+}
+
+.prose p,
+.prose li {
+  color: var(--ink);
+}
+
+.prose .lede {
+  color: var(--ink-muted);
+  font-size: 1.15rem;
+}
+
+@media (forced-colors: active) {
+  .btn,
+  .site-nav a {
+    border: 1px solid CanvasText;
+  }
+
+  .btn-primary {
+    background: Highlight;
+    color: HighlightText;
+  }
+}

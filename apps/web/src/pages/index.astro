@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Anchor" currentPath="/">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title" class="hero-brand">Anchor</h1>
+      <p class="hero-line">Family memories, returning in the group chat.</p>
+      <p class="hero-support">
+        Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/app">Try the demo</a>
+        <a class="btn btn-secondary" href="/how-it-works">How it works</a>
+      </div>
+    </div>
+    <div class="hero-visual" role="img" aria-label="Warm abstract scene suggesting a family chat glowing softly at dusk"></div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: calc(100dvh - 8rem);
+    display: grid;
+    align-items: end;
+    overflow: hidden;
+  }
+
+  .hero-visual {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      linear-gradient(180deg, transparent 0%, rgba(242, 240, 235, 0.55) 45%, var(--bg) 88%),
+      radial-gradient(ellipse 80% 60% at 70% 40%, #c45c2688 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 20% 60%, #0f3d3acc 0%, transparent 50%),
+      linear-gradient(135deg, #1a4a46 0%, #2a5f58 35%, #8b5a3c 70%, #d4a574 100%);
+    animation: tide 18s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-visual {
+      animation: none;
+    }
+  }
+
+  @keyframes tide {
+    from {
+      transform: scale(1) translate3d(0, 0, 0);
+      filter: saturate(1);
+    }
+    to {
+      transform: scale(1.06) translate3d(-1.5%, -1%, 0);
+      filter: saturate(1.08);
+    }
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 1;
+    max-width: var(--max);
+    width: 100%;
+    margin: 0 auto;
+    padding: clamp(3rem, 12vh, 6rem) var(--space) calc(var(--space) * 2);
+  }
+
+  .hero-brand {
+    margin: 0 0 0.65rem;
+    font-family: var(--display);
+    font-size: clamp(3.25rem, 12vw, 6.5rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    color: var(--brand);
+    animation: rise 0.9s ease-out both;
+  }
+
+  .hero-line {
+    margin: 0 0 0.75rem;
+    max-width: 18ch;
+    font-family: var(--display);
+    font-size: clamp(1.45rem, 3.5vw, 2rem);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ink);
+    animation: rise 0.9s ease-out 0.12s both;
+  }
+
+  .hero-support {
+    margin: 0 0 1.5rem;
+    max-width: 34rem;
+    color: var(--ink-muted);
+    font-size: 1.1rem;
+    animation: rise 0.9s ease-out 0.22s both;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    animation: rise 0.9s ease-out 0.32s both;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.85rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-brand,
+    .hero-line,
+    .hero-support,
+    .hero-actions {
+      animation: none;
+    }
+  }
+</style>

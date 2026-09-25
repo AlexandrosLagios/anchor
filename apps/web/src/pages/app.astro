@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Dashboard } from '../components/Dashboard';
+---
+
+<BaseLayout
+  title="Demo"
+  description="Interactive Anchor demo — share a family moment, practise spaced retrieval, see the chat."
+  currentPath="/app"
+>
+  <div class="app-wrap">
+    <Dashboard client:load />
+  </div>
+</BaseLayout>
+
+<style>
+  .app-wrap {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 var(--space) calc(var(--space) * 2);
+  }
+</style>

@@ -1,6 +1,7 @@
 This is an Nx monorepo for the OpenConf hackathon. Optimize for iteration speed.
 
-- `apps/api`: the NestJS backend for the app-less Anchor. It serves the dashboard, the Twilio call and WhatsApp webhooks, and calls Gemini. The root uses pnpm and Nx: `pnpm dev:api`, `pnpm lint`, `pnpm typecheck`, `pnpm nx test api`. Secrets live in `apps/api/.env.local`; `apps/api/.env.example` lists them.
+- `apps/api`: the NestJS backend. It serves `/api/*` (state, moments, spaced retrieval), Twilio WhatsApp at `/whatsapp`, and calls Gemini. Cloud Run deploy: see `DEPLOY.md`. Secrets live in `apps/api/.env.local`; `apps/api/.env.example` lists them. Root uses pnpm and Nx: `pnpm dev:api`, `pnpm dev:web`, `pnpm lint`, `pnpm typecheck`, `pnpm nx test api`.
+- `apps/web`: the Astro + React website (landing, how-it-works, privacy, interactive `/app` demo). Static build deploys to Firebase Hosting. Local: `pnpm dev:web` (proxies `/api` to the API).
 - `apps/mobile`: the Expo/React Native app. Android is the only target platform. The app is on hold, `.nxignore` hides it from Nx, and it keeps its own npm `package.json`. Run every command in the sections below from `apps/mobile`.
 
 ## Expo has changed — do not trust your training data

@@ -21,9 +21,17 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useBodyParser('json', { limit: '12mb' });
   app.useBodyParser('urlencoded', { extended: true, limit: '12mb' });
+  app.enableCors({
+    origin: [
+      'http://localhost:4321',
+      'http://127.0.0.1:4321',
+      ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()) : []),
+    ],
+    methods: ['GET', 'POST', 'OPTIONS'],
+  });
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  Logger.log(`Anchor is running on http://localhost:${port}`);
+  Logger.log(`Anchor API is running on http://localhost:${port}`);
 }
 
 bootstrap();

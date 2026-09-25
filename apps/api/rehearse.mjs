@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 const base = process.argv[2] ?? 'http://localhost:3000';
 
 async function post(path, body) {
-  const response = await fetch(`${base}/${path}`, {
+  const response = await fetch(`${base}/api/${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
@@ -16,7 +16,7 @@ async function post(path, body) {
 }
 
 async function state() {
-  return (await fetch(`${base}/state`)).json();
+  return (await fetch(`${base}/api/state`)).json();
 }
 
 console.log('moment:', (await post('moment', {
