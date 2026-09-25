@@ -120,7 +120,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - `/start` in private, from a registered storyteller, gets `welcome(name)` with the buttons "Yes, I'd like that" and "Not now" (user story 1, "Say yes myself"). Only "Yes, I'd like that" sets `started` and sends `agreed(name)`. "Not now" sends `notNow`. Nothing comes back to a storyteller before that yes. Moments shared before the yes come back after it.
 - `/stop`, or the single word "stop" in private, sets `started` to false, closes the open invitation silently, and sends `stopped`. Nothing more comes back until `/start` and a new yes. The family is not told.
 - "Anchor, forget this", sent as a reply, deletes the moment or the story that owns the replied-to message. Anchor reacts with 👌. An Ask Anchor answer belongs to its moment, because `ask` adds the answer post to `memoryPostIds`.
-- A forget that replies to a then-and-now post deletes neither moment, sends no 👌, and gets `forgetWhich`. One reply never deletes two moments on a guess. `echoes` stores the post id as `Moment.echoPostId` on the newer moment.
+- A forget that replies to a then-and-now post deletes neither moment, sends no 👌, and gets `forgetWhich`. "Anchor, don't bring this back" on that post changes nothing and gets `quietWhich`. One reply never deletes two moments on a guess. `echoes` stores the post id as `Moment.echoPostId` on the newer moment.
 - "Anchor, don't bring this back", sent as a reply, sets `sensitive` on the moment that owns the replied-to message. The moment stays in the record, and Anchor reacts with 👌.
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
 - `/memory` and `/invite` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
@@ -162,6 +162,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
 | `notJoined` | Thank you 🙂 If you'd like family moments from me, send /start. |
 | `forgetWhich` | This post shows two moments. Reply "Anchor, forget this" to the photo you want me to forget. |
+| `quietWhich` | This post shows two moments. Reply "Anchor, don't bring this back" to the photo you don't want me to bring back. |
 | `voiceNote` | 🎤 voice note |
 | `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
 | `nothingToInvite(name)` | {name} has seen every moment so far. |
