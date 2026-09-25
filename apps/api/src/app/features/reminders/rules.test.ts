@@ -34,6 +34,8 @@ test.each([
   ['a voice note with a caption', group('remember this', { voice: { id: 'v' } })],
   ['a private message', group('remember the pills', { chat: 'private', familyId: undefined })],
   ['a photo with no caption', group(undefined, { photo: { id: 'p' } })],
+  ['a forwarded message', group('Remember your pickup tomorrow', { forwarded: true })],
+  ['a price', group('The cake was 12.50')],
 ])('%s does not pass the gate', (_, event) => {
   expect(passesGate(event)).toBe(false);
 });

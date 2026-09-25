@@ -145,7 +145,7 @@ export const reminders: Feature = {
     if (due.length) ctx.store.save();
     for (const reminder of due) {
       const member = family.members.find((person) => person.id === reminder.to);
-      if (member?.started) await tell(family, member, { text: lines.reminder(who(reminder), reminder.text) }, ctx);
+      if (member?.choices.reminders) await tell(family, member, { text: lines.reminder(who(reminder), reminder.text) }, ctx);
     }
 
     const faded = new Set((await fadeOffers(family, 'reminder', window.to, ctx)).map((offer) => offer.ref));

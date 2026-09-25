@@ -298,10 +298,10 @@ test('a reminder to a member who blocked Anchor counts as sent', async () => {
   expect(nikos().started).toBe(false);
 });
 
-test('a member who stopped gets no reminder', async () => {
+test('a member who turned reminders off gets no reminder', async () => {
   const id = await offer();
   await router.route(tap(`rem:${id}:08:00`));
-  nikos().started = false;
+  nikos().choices.reminders = false;
   now = at(26, 8);
   await tick();
   expect(transport.sent).toHaveLength(1);
