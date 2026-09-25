@@ -454,6 +454,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 
 - `transcribe(media)` (step 1) returns the transcript of a voice note, or an empty string. The schema is `{ transcript: string }`, and the call uses the fast models. Group voice stories use this call.
 - The reply call (step 2, in `features/invitations.ts`) reads one private reply, text or voice, next to the moment's title and the sender's words. The schema is `{ transcript: string, kind: story | unsure | question | other }`.
+- A text reply of at most 4 words that ends with "?" is decided in code, with no model call. It is `question` when it starts with who, what, where, when, which, or why, and `unsure` otherwise, so "a school?" always gets the gentle help. Voice replies and longer texts go to the model.
 - The kinds are `story | unsure | question | other`. `story` is a detail, a feeling, or a memory. `unsure` is a hesitation, for example "a school?". `question` asks what the moment is, for example "who is that?". `other` is an acknowledgement, for example "ok" or an emoji.
 
 ### 6.4 Find a moment (step 2b)
