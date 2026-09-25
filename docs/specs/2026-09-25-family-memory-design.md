@@ -123,7 +123,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - "Anchor, don't bring this back", sent as a reply, sets `sensitive` on the moment that owns the replied-to message. The moment stays in the record, and Anchor reacts with 👌.
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
 - `/memory` and `/invite` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
-- A private message that no feature handles gets `noInvitation` from a storyteller, and `pointer` from any other person.
+- A private message that no feature handles gets `noInvitation` from a started storyteller, and `notJoined` from a storyteller who has not said yes or who stopped. Any other person gets `pointer`.
 
 ### 4.8 Clock
 
@@ -159,6 +159,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `notFound` | I couldn't find that in the family record yet. |
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
+| `notJoined` | Thank you 🙂 If you'd like family moments from me, send /start. |
 | `voiceNote` | 🎤 voice note |
 | `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
 | `nothingToInvite(name)` | {name} has seen every moment so far. |
@@ -360,7 +361,7 @@ export interface Feature {
 
 - `route(event)` finds the family. For a group event, the router uses `event.familyId`. For a private event without `familyId`, the router uses `store.familyOfStoryteller(sender.id)`.
 - The router offers the event to each feature in `FEATURES` order until a feature returns `true`.
-- An unhandled private event gets `noInvitation` when the sender is a storyteller, and `pointer` otherwise. The router drops an unhandled group event.
+- An unhandled private event gets `noInvitation` when the sender is a started storyteller, `notJoined` when the sender is a storyteller who is not started, and `pointer` otherwise. The router drops an unhandled group event.
 - `tick(window)` calls `feature.tick(family, window, ctx)` for every family and every feature, each call in its own try/catch.
 
 `FEATURES` in `family.service.ts` keeps this order:
@@ -439,7 +440,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 ### 6.3 Transcribe and read a reply
 
 - `transcribe(media)` (step 1) returns the transcript of a voice note, or an empty string. The schema is `{ transcript: string }`, and the call uses the fast models. Group voice stories use this call.
-- The reply call (step 2, in `features/invitations.ts`) reads one private reply, text or voice, next to the moment's title and the sender's words. The schema is `{ transcript: string, kind: story | unsure | other }`.
+- The reply call (step 2, in `features/invitations.ts`) reads one private reply, text or voice, next to the moment's title and the sender's words. The schema is `{ transcript: string, kind: story | unsure | question | other }`.
 - The kinds are `story | unsure | question | other`. `story` is a detail, a feeling, or a memory. `unsure` is a hesitation, for example "a school?". `question` asks what the moment is, for example "who is that?". `other` is an acknowledgement, for example "ok" or an emoji.
 
 ### 6.4 Find a moment (step 2b)
@@ -478,6 +479,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - `isAdmin` uses `getChatMember`. The statuses `creator` and `administrator` mean an admin.
 - `startLink` returns `https://t.me/<bot username>?start=<payload>`, with the username from `getMe`. The payload holds at most 64 characters from `A-Z`, `a-z`, `0-9`, `_`, and `-`.
 - Button data holds 1 to 64 bytes. A URL button works in a group and in a private chat.
+- Each button sits in its own `inline_keyboard` row, so an older reader gets large tap targets.
 - A callback query always gets `answerCallbackQuery`, also when no feature acts on the query.
 - Only one process may poll one token. Each developer creates a dev bot in BotFather for local work.
 
@@ -529,7 +531,7 @@ Each step is one session, one branch, and one PR. Each step uses TDD, then `/cod
 | 1b Demo contract | from the step 1 session | 1 | `Outgoing.album`, `Outgoing.mention`, `react` with `big`, `State.clockOffset`, `Moment.echo`, and the new lines of section 4.9. | Each addition has a test through `FakeTransport` and `toIncoming`. |
 | 2 Memory features | `feat/family-memory-features` | 1, and 1b for the sharer change | Capture and forget, memories and stories, and invitations: sections 4.1 to 4.5, 4.7, 6.2, and the sharer change of 4.10. | The flow tests of section 9 pass for every feature. |
 | 2b Demo features | `feat/family-demo-features` | 1b | `ask`, `echoes`, and `fastforward`: sections 4.6, 4.10, 6.4, and 6.6. | The flow tests of section 9 pass for the three features. |
-| 3 Team test | `fix/v1-team-test` | 2 and 2b | The team test, the fixes, the demo script, and section 11. The deploy prep is already PR 2 (`chore/anchor-bot-deploy`). | The team walks the checklist and the demo script in a Telegram group without a blocker. |
+| 3 Team test | `fix/v1-team-test` | 2 and 2b | The deploy of `anchor-bot` to Cloud Run, the team test against the live bot, the fixes, the demo script, and section 11. A second dev bot token serves the local fix loop. | The team walks the checklist and the demo script against the live bot without a blocker. |
 
 Inside steps 2 and 2b, the features touch separate files, so subagents can build them in parallel. One session owns each file. The step 1 session owns `core/` and `transports/`, including every line in `core/lines.ts`. Steps 2 and 2b own only their feature files and their `FEATURES` lines.
 
