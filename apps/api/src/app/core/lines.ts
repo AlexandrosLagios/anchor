@@ -62,7 +62,6 @@ export const lines = {
   unclear: "I'm not sure I understood 🙂 Here is what I can do:",
   missed: (count: number) => `The family shared ${count} moments since we last talked 💛`,
   nothingNew: "You're up to date 💛 Nothing new since we last talked.",
-  calling: "I'm ringing you now 📞",
   callFailed: "I couldn't ring you just now. Shall I send you a moment here instead?",
   sharedBy,
   invitation: (moment: Moment) => `${sharedBy(moment)}\nWhat does it remind you of?`,
