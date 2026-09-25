@@ -400,6 +400,8 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 
 ### 6.1 Shared rules
 
+- The model seam: every feature calls only the exports of `gemini.ts`, which are `ask`, `transcribe`, `speak`, and `valid`. Every test mocks that module. A teammate is moving the provider from Gemini to OpenAI, and the seam lets that change land without an edit to a feature.
+- The seam contract: `ask<T>(prompt, schema, { audio?, media?, fast?, timeoutMs? })` returns JSON that matches the schema, and `media` holds images and audio clips. `transcribe(clip)` returns a transcript or an empty string. `speak(text, style?)` returns WAV, which `transports/voice.ts` converts for Telegram.
 - `ask` gets a `media` option, a list of `{ data, mimeType }`, next to the `audio` option that the prototype uses. An `image/*` item becomes an image input, and an `audio/*` item becomes an audio input.
 - The input items are `{ type: 'image', data, mime_type }` and `{ type: 'audio', data, mime_type }`, with base64 data (ai.google.dev/api/interactions-api).
 - The disk cache key includes a hash of every media item.
