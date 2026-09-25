@@ -167,7 +167,9 @@ These additions put journey steps 2 and 5 on stage, and they let the live demo r
 
 - **Then and now** (step 2b): on each tick, the `echoes` feature checks each moment that was saved inside the window, is not sensitive, and has no `echo`.
   - One Gemini call picks an older moment that echoes the new one, or `none` (section 6.6). The older moment must come from a different sender and must not be sensitive.
-  - On a match, Anchor posts an album of the two videos or photos, older first, with the caption `echoCaption(older sender, older text, newer sender, newer text)`. When a moment has no picture, the album holds the other picture. When neither has one, the post is the caption as text.
+  - On a match, Anchor posts an album of the two videos or photos, with the earlier life event first, and the caption `echoCaption(earlier sender, earlier text, later sender, later text)`. The album caption is cut at 1024 characters.
+  - The earlier life event is the moment with the older `eventDate` when both moments have one. Otherwise, the echo call decides (section 6.6), and the fallback is the older `savedAt`.
+  - When only one moment has a picture, the post is that single photo or video with the caption. When neither has one, the post is the caption as text.
   - The code sets `echo` on the new moment, so each new moment gets at most one echo post.
 - **The story reaches the sharer** (step 2): the group post of a shared story is `storyAdded(name, sender, story)`, with `mention` set to the sender of the moment. The post quotes the story, clipped to 600 characters. Anchor reacts with a big ❤ on the post.
 - **Stage time travel** (step 2b): an admin sends `/fastforward <days>`, with 1 to 400 days. The `fastforward` feature adds the days to `State.clockOffset`, saves, and replies `fastforwarded(date)`. The next tick sees the jump as one window, so each slot feature fires at most once. An invalid argument gets `fastforwardUsage`.
@@ -432,7 +434,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 
 - The prompt holds the question and one line per moment: id, title, date, people, and the first 200 characters of each story.
 - The schema is `{ momentId: enum }`, with the moment ids of the family and `none`.
-- A voice question goes in as audio in the same call.
+- A voice question goes in as audio in the same call. A voice question needs a caption that starts with "Anchor,". A spoken "Anchor, …" without a caption goes to capture, because detecting it would cost one transcription per group voice note.
 
 ### 6.5 Speak (existing)
 
@@ -442,7 +444,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 ### 6.6 Find an echo (step 2b)
 
 - The prompt holds the new moment (title, text, people, and date) and one line per older moment (id, title, date, sender, and people).
-- The schema is `{ momentId: enum }`, with the ids of the older moments that qualify and `none`.
+- The schema is `{ momentId: enum, earlier: 'new' | 'match' }`, with the ids of the older moments that qualify and `none`. `earlier` names the moment whose life event happened first, for example the grandfather's 1958 photo that he shared after Maria's.
 - An echo is the same kind of life event across the family, for example two first days at school or two weddings.
 - A failed call counts as `none`.
 
