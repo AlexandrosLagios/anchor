@@ -801,7 +801,7 @@ v2 additions (step 5). The Bot API docs of Bot API 10.3 are the source.
 - `toIncoming` maps `message.contact` to `contact`, with `phone_number` and `user_id`.
 - `setMyCommands` registers `/fastforward` with `is_ephemeral: true`, and drops `/private` and `/send`.
 - ✍ is U+270D in the allowed reaction list.
-- UNVERIFIED: ephemeral messages in a basic group. The edit and delete methods name "the target supergroup". The first task of step 5 sends one ephemeral test message in the test group on the dev bot.
+- Verified on the dev bot in a supergroup on 2026-09-25: `sendMessage` with `ephemeral_message_parameters` returns `message_id` 0 and an `ephemeral_message_id`, and `editEphemeralMessageReplyMarkup`, `editEphemeralMessageText`, and `deleteEphemeralMessage` each return true. UNVERIFIED: ephemeral messages in a basic group. The edit and delete methods name "the target supergroup", so the demo group must be a supergroup.
 
 BotFather setup for the team test:
 
