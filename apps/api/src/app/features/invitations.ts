@@ -145,7 +145,7 @@ async function deliver(family: Family, storyteller: Storyteller, moment: Moment,
 
 async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
   const transport = ctx.transport(family.id);
-  if (isCommand(event.text, '/storyteller')) {
+  if (isCommand(event.text, '/private')) {
     const person = event.replyToSender;
     if (!person || !(await transport.isAdmin(family.chatId, event.sender.id))) return true;
     if (!family.storytellers.some((storyteller) => storyteller.id === person.id)) {
@@ -156,7 +156,7 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
     await announce(family, { text: lines.storytellerStart(person.name), buttons: [start] }, ctx);
     return true;
   }
-  if (!isCommand(event.text, '/invite')) return false;
+  if (!isCommand(event.text, '/send')) return false;
   if (!(await transport.isAdmin(family.chatId, event.sender.id))) return true;
   for (const storyteller of family.storytellers) {
     if (!storyteller.started) continue;
