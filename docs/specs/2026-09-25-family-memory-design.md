@@ -54,7 +54,7 @@ Step 3 writes the v1 findings into section 11. Read section 11 before a v1.x cha
 
 1. The code rules drop unsupported messages (stickers, GIFs, video notes, documents, polls, service messages), forwarded messages, commands (text that starts with `/`), and texts that hold only links. A video is supported.
 2. The bundler groups the messages of one sender in one family. A message joins the newest open bundle of its sender when the message arrives within 5 minutes of the previous one. A photo or a video starts a new bundle when that bundle already holds a picture from outside its Telegram album (`Incoming.albumId`), and the older bundle closes at the next tick. A text or a voice note joins the newest open bundle.
-3. A bundle closes 5 minutes after its last message. A bundle that holds a photo or a video, and words, closes at the next tick. Words are a text, a caption, or a voice note.
+3. A bundle closes 5 minutes after its last message. A bundle that holds a photo or a video, and words, closes at the next tick. When the last message of that bundle belongs to a Telegram album, the bundle waits 3 seconds before that close, because the poller gets the album one message at a time. Words are a text, a caption, or a voice note.
 4. The code drops a closed bundle that has no photo, no video, no voice note, and fewer than 3 words. A bundle that has a picture and no words is kept: the classification sees the picture, or the video thumbnail, and gives it a title.
 5. One Gemini call classifies the bundle (section 6.2). The call gets the texts, the first photo or the thumbnail of the first video, and the voice note of the bundle. The code never downloads a video, because a bot downloads at most 20 MB.
 6. The code saves a `family_moment` and a `sensitive` moment, and drops the rest. A `sensitive` verdict sets `moment.sensitive`. Then Anchor reacts with ❤ on the first message of the bundle.
@@ -72,7 +72,7 @@ The bundler uses real time, because people type in real time. Every other rule i
 - When several keys are due for one moment, the code posts one memory. The anniversary wins, and otherwise the highest age wins. The code marks every due key as done.
 - The code skips every moment whose `sensitive` flag is true.
 - `byPriority` in `core/priority.ts` orders the due moments: anniversary first, then the higher salience, then the older `savedAt`.
-- The post is the video or the photo with the caption `memoryCaption(label, sender, text)`, which quotes the sender's own words. The video wins when the moment has both. A moment without a photo posts the caption as text. The code adds the message id of the post to `moment.memoryPostIds`.
+- The post is the video or the photo with the caption `memoryCaption(label, moment)`, which uses `sharedBy(moment)`. The video wins when the moment has both. A moment without a photo posts the caption as text. The code adds the message id of the post to `moment.memoryPostIds`.
 - An admin sends `/memory` in the group to post a memory at once. `/memory` posts the first due moment with its label.
 - When no moment is due, `/memory` posts the moment with the fewest memory posts, with the label `fromRecord`. `byPriority` breaks a tie.
 - `/memory` does not change `lastMemoryDay`. When the family has no moment, `/memory` gets `nothingToShare`.
@@ -90,7 +90,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - The 11:00 slot sends at most one invitation per started storyteller per day.
 - A moment qualifies when the storyteller did not send it, it is not sensitive, and it is at least 3 demo-clock hours old. `moment.returns[storytellerId].due` must be at or before now. A missing entry counts as due.
 - `byPriority` picks the first qualifying moment.
-- Anchor sends the video or the photo first. Then Anchor sends a voice note of `invitation(sender, text)`, with the text as the caption and the buttons "Not now", "Don't bring this back", and "What is this?". When no voice clip exists, Anchor sends the text with the buttons.
+- Anchor sends the video or the photo first. Then Anchor sends a voice note of `invitation(moment)`, with the text as the caption and the buttons "Not now", "Don't bring this back", and "What is this?". When no voice clip exists, Anchor sends the text with the buttons.
 - "What is this?", or a reply of kind `question`, gets `tellDirectly(title, date, sender)`, then the sender's voice note when the moment has one (user story 5, "Just ask"). The invitation stays open for a story, and the answer never hints that he should have known.
 - An invitation with no reply for 3 demo-clock hours gets `gentleHelp(date, title)` once, like a hesitant reply (user story 4). `Invitation.sentAt` and `Invitation.replied` drive this rule.
 - The code makes the TTS clip once per moment. The transport returns a media id for the uploaded clip, and the code stores the id in `moment.invitationVoice`.
@@ -142,8 +142,9 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `intro` | Hi, I'm Anchor 👋 I'm not a person: I keep this family's photos and stories, each one in the words of the person who shared it. When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, so it stays with all of us. An admin can reply /storyteller to a grandparent's message. Reply "Anchor, forget this" to delete a moment, or "Anchor, don't bring this back" to keep it without bringing it back. This is a test build, so please share staged photos only. |
 | `storytellerStart(name)` | {name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment. |
 | `welcome(name)` | Hello {name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. Now and then, and a little more often for you, I'll send you a moment the family shared. Seeing moments again helps them stay with us. You can answer by voice or by text. There's no right answer, I share nothing unless you say yes, and you can send /stop at any time. Would you like that? |
-| `invitation(sender, text)` | {sender} shared: «{text}» (new line) What does it remind you of? |
-| `memoryCaption(label, sender, text)` | {label} 💛 (new line) {sender} shared: «{text}» (new line) Reply with a story or a voice note to add it to the family record. |
+| `sharedBy(moment)` | {sender} shared: «{text}», or {sender} shared a photo: {title} (a video, a voice note) when the moment is wordless |
+| `invitation(moment)` | {sharedBy(moment)} (new line) What does it remind you of? |
+| `memoryCaption(label, moment)` | {label} 💛 (new line) {sharedBy(moment)} (new line) Reply with a story or a voice note to add it to the family record. |
 | labels | `7` One week ago · `30` One month ago · `365` One year ago · anniversary On this day in {year} · `fromRecord` From the family record |
 | `gentleHelp(date, title)` | No rush 🙂 This is from {date}: {title}. Any memory it brings is welcome. |
 | `warmClose` | Thank you 💛 |
@@ -156,7 +157,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `notNow` | No problem 🙂 Another time. |
 | `dontBringBack` | Of course. I'll keep it, and I won't bring it back. |
 | `storyAdded(name, sender, story)` | {name} added a story to {sender}'s moment 🎙️ (new line) «{story}» |
-| `echoCaption(olderSender, olderText, newerSender, newerText)` | Then and now 💛 (new line) {olderSender} shared: «{olderText}» (new line) {newerSender} shared: «{newerText}» |
+| `echoCaption(earlier, later)` | Then and now 💛 (new line) {sharedBy(earlier)} (new line) {sharedBy(later)} |
 | `fastforwarded(date)` | ⏩ It's now {date} on the family clock. |
 | `fastforwardUsage` | Send /fastforward and a number of days, for example /fastforward 7. |
 | `askAnswer(title, date, names)` | {title} · {date} 💛 plus "Stories from {names}" when the moment has stories |
@@ -180,7 +181,7 @@ These additions put journey steps 2 and 5 on stage, and they let the live demo r
 
 - **Then and now** (step 2b): on each tick, the `echoes` feature checks each moment that was saved inside the window, is not sensitive, and has no `echo`.
   - One Gemini call picks an older moment that echoes the new one, or `none` (section 6.6). The older moment must come from a different sender and must not be sensitive.
-  - On a match, Anchor posts an album of the two videos or photos, with the earlier life event first, and the caption `echoCaption(earlier sender, earlier text, later sender, later text)`. The album caption is cut at 1024 characters.
+  - On a match, Anchor posts an album of the two videos or photos, with the earlier life event first, and the caption `echoCaption(earlier, later)`. The album caption is cut at 1024 characters.
   - The earlier life event is the moment with the older `eventDate` when both moments have one. Otherwise, the echo call decides (section 6.6), and the fallback is the older `savedAt`.
   - When only one moment has a picture, the post is that single photo or video with the caption. When neither has one, the post is the caption as text.
   - The code sets `echo` on the new moment, so each new moment gets at most one echo post.
@@ -306,7 +307,7 @@ export type Moment = {
   people: string[];
   eventDate?: string; // YYYY-MM-DD
   title: string;
-  invitationVoice?: Media; // the TTS clip of invitation(sender, text)
+  invitationVoice?: Media; // the TTS clip of invitation(moment)
   stories: Story[];
   lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'
   memoryPostIds: string[];
@@ -437,7 +438,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 | `salience` | integer | 1 to 5. An invalid value becomes 3. |
 | `people` | string array | The names in the moment. An invalid value becomes an empty array. |
 | `eventDate` | string | `YYYY-MM-DD`, or an empty string when the date is unknown. An invalid value becomes unknown. |
-| `title` | string | A short phrase for the record, for example "Maria's first day at school". At most 100 characters. |
+| `title` | string | A short phrase that names what the moment shows, for example "Maria's first day at school". It never names the sharer and never starts with "Photo of". At most 100 characters. |
 | `transcript` | string | The words spoken in the voice note of the bundle, or an empty string. |
 
 - `family_moment` is a moment worth keeping.
