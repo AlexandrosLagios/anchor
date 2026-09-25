@@ -29,7 +29,7 @@ const speech = (audio: Buffer): HttpResponse => ({
   status: 200,
   json: async () => ({}),
   text: async () => '',
-  arrayBuffer: async () => audio.buffer.slice(audio.byteOffset, audio.byteOffset + audio.byteLength),
+  arrayBuffer: async () => Uint8Array.from(audio).buffer,
 });
 const failure: HttpResponse = { ...chat({}), ok: false, status: 500, text: async () => 'internal' };
 const body = (call: number) => fetchMock.mock.calls[call][1]?.body;
