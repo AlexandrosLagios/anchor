@@ -8,6 +8,11 @@ import { wav } from '../song';
 import { TelegramTransport, toIncoming, type Update } from './telegram';
 
 vi.mock('../http', () => ({ httpFetch: vi.fn() }));
+// the long poll has its own connection in production; the tests route it through the same fake Bot API
+vi.mock('./poll-fetch', async () => {
+  const http = await import('../http');
+  return { pollFetch: (url: string, init: RequestInit) => http.httpFetch(url, init) };
+});
 const fetchMock = vi.mocked(httpFetch);
 beforeEach(() => {
   fetchMock.mockReset();
@@ -616,4 +621,15 @@ test('edit and remove give up after 5 seconds, so a hung call never stalls the t
   expect(timeout.mock.calls).toEqual([[5000], [5000]]);
   expect(signals).toHaveLength(2);
   timeout.mockRestore();
+});
+
+test('a Bot API call over 5 seconds logs its method and duration', async () => {
+  botApi(() => ok(true));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  const now = vi.spyOn(Date, 'now').mockReturnValueOnce(0).mockReturnValueOnce(29_000);
+  await telegram.react('-1001234567890', '42', '✍');
+  expect(warn).toHaveBeenCalledWith('Telegram setMessageReaction took 29.0 s');
+  now.mockRestore();
+  warn.mockRestore();
 });
