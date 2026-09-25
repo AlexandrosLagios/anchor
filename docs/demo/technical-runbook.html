@@ -34,55 +34,64 @@
   <h1>Anchor · Technical runbook</h1>
   <p class="sub">Everything the team runs around the demo. The presenter's script is <a href="script.html">a separate page</a>.</p>
 
-  <div class="status"><b>Live bot:</b> <code>@anchor_family_bot</code> on Cloud Run <code>anchor-bot</code> (<code>europe-west1</code>), revision <code>anchor-bot-00004-pw2</code>, commit <code>0b2f4eb</code>, real clock, Athens time.</div>
+  <div class="status"><b>Live bot:</b> <code>@anchor_family_bot</code> on Cloud Run <code>anchor-bot</code> (<code>europe-west1</code>) still runs v1, revision <code>anchor-bot-00004-pw2</code>, commit <code>0b2f4eb</code>. The v2 deploy follows steps 5 and 6 of the design, with the user's go.</div>
 
-  <h2>1 · The day before</h2>
+  <h2>1 · Before the demo</h2>
   <ol class="check">
-    <li><input type="checkbox" id="d1"><label for="d1">Anchor is in the rehearsal group and is an admin. A promotion can turn the group into a supergroup, which posts the intro twice, so promote a day early.</label></li>
-    <li><input type="checkbox" id="d2"><label for="d2">Every admin has "Remain anonymous" off. An anonymous admin gets "Only a group admin can do that".</label></li>
-    <li><input type="checkbox" id="d3"><label for="d3">The demo accounts' first names are "Eleni" and "Nikos". Anchor takes names from Telegram.</label></li>
-    <li><input type="checkbox" id="d4"><label for="d4">Use the same group for every rehearsal and the demo. A person is a storyteller in one family only.</label></li>
-    <li><input type="checkbox" id="d5"><label for="d5">Code freeze: no deploy in the last hours, and never within an hour of the demo.</label></li>
+    <li><input type="checkbox" id="d1"><label for="d1">The live bot runs the v2 build: steps 5 and 6, merged and deployed with the user's go. See the status above for the current revision.</label></li>
+    <li><input type="checkbox" id="d2"><label for="d2">Use the group of the demo. A person is a member in one family only, so a new group sends Nikos's private replies to the old family.</label></li>
+    <li><input type="checkbox" id="d3"><label for="d3">Anchor is an admin in the group. Anchor sends an ephemeral message only as an admin. Promote Anchor at least one day before, because a move to a supergroup posts <code>intro</code> a second time.</label></li>
+    <li><input type="checkbox" id="d4"><label for="d4">Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.</label></li>
   </ol>
 
-  <h2>2 · Reset before each run</h2>
+  <h2>2 · The call gate for beat 7</h2>
   <ol class="check">
-    <li><input type="checkbox" id="r1"><label for="r1">Reply "Anchor, forget this" to each rehearsal photo.</label></li>
-    <li><input type="checkbox" id="r2"><label for="r2">Nikos sends "stop" to Anchor in private, so he can say yes again on stage.</label></li>
-    <li><input type="checkbox" id="r3"><label for="r3">Nikos posts one message in the group, for example "Good morning everyone 🙂", for Eleni to reply <code>/private</code> to.</label></li>
-    <li><input type="checkbox" id="r4"><label for="r4">The screen recording of the best rehearsal is on the presenter's laptop.</label></li>
+    <li><input type="checkbox" id="g1"><label for="g1">Greece is on in the Twilio dialing permissions.</label></li>
+    <li><input type="checkbox" id="g2"><label for="g2"><code>anchor-bot</code> is public for the call stream, with the user's go for <code>--allow-unauthenticated</code>.</label></li>
+    <li><input type="checkbox" id="g3"><label for="g3">Nikos turned on "Call me on the phone" and shared his phone number.</label></li>
+    <li><input type="checkbox" id="g4"><label for="g4">A test call rang his phone after the last deploy.</label></li>
   </ol>
 
-  <h2>3 · Rules that keep the live bot healthy</h2>
-  <div class="warn"><b>One poller per token.</b> Never run the bot locally with the <code>@anchor_family_bot</code> token. Local runs use the dev bot <code>@anchor_family_dev_bot</code>, whose token is in <code>apps/api/.env.local</code>.</div>
-  <div class="warn"><b>No <code>/fastforward</code> on the live bot before the demo.</b> It moves every family's clock for good, and dates in the gentle help shift with it.</div>
-  <div class="warn"><b><code>/private</code> must be a reply</b> to the person's message. From the "/" menu it gets a how-to line.</div>
+  <h2>3 · Reset and prepare</h2>
+  <ol class="check">
+    <li><input type="checkbox" id="r1"><label for="r1">Remove the moments of the rehearsals. Reply "Anchor, forget this" to each rehearsal photo.</label></li>
+    <li><input type="checkbox" id="r2"><label for="r2">Let Nikos send "stop" to Anchor in private. Every choice goes off, so Nikos can join again on stage.</label></li>
+    <li><input type="checkbox" id="r3"><label for="r3">Put a staged photo of a child's first day at school on Eleni's phone.</label></li>
+    <li><input type="checkbox" id="r4"><label for="r4">Keep a screen recording of the best rehearsal ready. Play the recording if the live bot fails.</label></li>
+  </ol>
 
-  <h2>4 · Deploy a fix</h2>
+  <h2>4 · Rules that keep the live bot healthy</h2>
+  <div class="warn"><b>One poller per token.</b> The dev bot runs locally with <code>pnpm dev:api</code>, from a worktree whose <code>apps/api/.env.local</code> holds the dev bot token, <code>OPENAI_API_KEY</code>, and <code>TZ=Europe/Athens</code>. Only one process may poll one token.</div>
+
+  <h2>5 · Rehearse twice</h2>
+  <div class="warn"><b>/fastforward moves the clock of the whole bot for good.</b> The rehearsals run on the dev bot <code>@anchor_family_dev_bot</code>, in its own group. On the live bot, the only jump is beat 6 on stage.</div>
+  <ol class="check">
+    <li><input type="checkbox" id="h1"><label for="h1">Before each rehearsal, do steps 1 and 2 of "Reset and prepare".</label></li>
+    <li><input type="checkbox" id="h2"><label for="h2">Run the full script on the dev bot with a stopwatch. Write down the time of each beat.</label></li>
+    <li><input type="checkbox" id="h3"><label for="h3">If the run takes more than 3 minutes without beat 7, shorten the narration first.</label></li>
+    <li><input type="checkbox" id="h4"><label for="h4">After the deploy of the v2 build, run beats 1 to 5 once on the live bot, without beat 6. Then do steps 1 and 2 of "Reset and prepare" again.</label></li>
+    <li><input type="checkbox" id="h5"><label for="h5">On the live bot, never run /fastforward before the demo. Beat 6 on stage is the only jump.</label></li>
+  </ol>
+
+  <h2>6 · Deploy a fix</h2>
   <p>From a clean checkout of <code>origin/main</code>, after the fix PR merges. The script tests, builds, pushes, and rolls out.</p>
   <pre>git switch --detach origin/main
 pnpm deploy:bot</pre>
   <p class="sub">A few 409 lines in the first seconds are the old revision shutting down.</p>
 
-  <h2>5 · See what the bot did</h2>
+  <h2>7 · See what the bot did</h2>
   <pre>gcloud run services logs read anchor-bot --project=a11y-hack26ath-267 --region=europe-west1 --limit=50</pre>
 
-  <h2>6 · If the demo breaks</h2>
+  <h2>8 · If the bot behaves oddly</h2>
   <table>
     <tr><th>Symptom</th><th>Likely cause</th><th>Action</th></tr>
     <tr><td>No ❤ on a photo</td><td>The model is slow, or the bot is down</td><td>Wait 15 s. Then check the logs.</td></tr>
-    <tr><td>Nothing after <code>/send</code></td><td>Nikos did not tap "Yes, I'd like that"</td><td>He taps it, then <code>/send</code> again.</td></tr>
     <tr><td>No reply to anything</td><td>No family in the record: the bot never saw itself join</td><td>Remove Anchor from the group, add it again, promote it.</td></tr>
-    <tr><td>409 lines keep coming</td><td>A second process polls the live token</td><td>Stop every local run that uses the live token.</td></tr>
+    <tr><td>409 lines keep coming</td><td>A second process polls the same token</td><td>Stop every local run that uses that token.</td></tr>
+    <tr><td>No ring in beat 7</td><td>Twilio permissions, or <code>anchor-bot</code> not public for the stream</td><td>Check the call gate checklist, then check the logs.</td></tr>
   </table>
 
-  <h2>7 · After the hackathon</h2>
-  <ol class="check">
-    <li><input type="checkbox" id="a1"><label for="a1">Delete the service to stop its cost (about 1.64 USD per day): <code>gcloud run services delete anchor-bot --project=a11y-hack26ath-267 --region=europe-west1</code>. The bucket keeps the record.</label></li>
-    <li><input type="checkbox" id="a2"><label for="a2">Revoke the <code>@anchor_family_bot</code> token in BotFather, because it was shared in a chat.</label></li>
-  </ol>
-
-  <footer>Sources: <code>docs/demo-runbook.md</code> and <code>DEPLOY.md</code> on <code>main</code>.</footer>
+  <footer>Sources: <code>docs/demo-runbook.md</code>, <code>docs/specs/2026-09-25-family-memory-design.md</code>, and <code>DEPLOY.md</code> on <code>main</code>.</footer>
 </main>
 <script>
   const key='anchor-tech-runbook'; const s=JSON.parse(localStorage.getItem(key)||'{}');
