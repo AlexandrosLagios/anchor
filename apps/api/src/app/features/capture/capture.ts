@@ -23,9 +23,9 @@ function removeBundle(bundle: Bundle) {
   if (index >= 0) bundles.splice(index, 1);
 }
 
-async function react(ctx: Context, family: Family, chatId: string, messageId: string, emoji: string) {
+export async function react(ctx: Context, family: Family, chatId: string, messageId: string, emoji: string, big?: boolean) {
   try {
-    await ctx.transport(family.id).react(chatId, messageId, emoji);
+    await ctx.transport(family.id).react(chatId, messageId, emoji, big);
   } catch (error) {
     logger.warn(`react on ${chatId}/${messageId} failed: ${error}`);
   }
@@ -37,10 +37,6 @@ function findMoment(family: Family, messageId: string): Moment | undefined {
 
 function findMomentOfStory(family: Family, messageId: string): Moment | undefined {
   return family.moments.find((moment) => moment.stories.some((story) => story.messageIds.includes(messageId)));
-}
-
-function findMomentOfEchoPost(family: Family, messageId: string): Moment | undefined {
-  return family.moments.find((moment) => moment.echoPostId === messageId);
 }
 
 export const forget: Feature = {
@@ -55,7 +51,7 @@ export const forget: Feature = {
 
     const replyTo = event.replyTo;
 
-    if (findMomentOfEchoPost(family, replyTo)) {
+    if (family.moments.some((moment) => moment.echoPostId === replyTo)) {
       try {
         await ctx.transport(family.id).send(event.chatId, { text: isForget ? lines.forgetWhich : lines.quietWhich, replyTo: event.messageId });
       } catch (error) {
@@ -111,7 +107,6 @@ async function close(bundle: Bundle, family: Family, ctx: Context) {
     classification = await classify(bundle, ctx.transport(family.id));
   } catch (error) {
     logger.warn(`classification failed for family ${family.id}: ${error}`);
-    classification = undefined;
   }
 
   if (!bundles.includes(bundle)) return; // a forget deleted it while the classification was in flight

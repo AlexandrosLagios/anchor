@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { dayIndex, slotIn } from '../core/clock';
-import { lines } from '../core/lines';
+import { dateOf, lines } from '../core/lines';
 import { byPriority } from '../core/priority';
 import {
   Blocked,
@@ -16,10 +16,12 @@ import {
   type Transport,
 } from '../core/types';
 import { ask, speak, valid } from '../model/model';
-import { wordCount } from './capture/filter';
+import { react } from './capture/capture';
+import { isCommand, pictureOf, wordCount } from './capture/filter';
 
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];
 export const MAX_RETURNS = 7;
+const THREE_HOURS = 3 * 3_600_000;
 const VOICE_STYLE = 'warm, calm and slow, like a kind family friend talking to a grandparent';
 const KINDS = ['story', 'unsure', 'question', 'other'] as const;
 const REPLY_SCHEMA = {
@@ -38,17 +40,15 @@ export function qualifies(moment: Moment, storytellerId: string, now: number): b
   return (
     moment.by.id !== storytellerId &&
     !moment.sensitive &&
-    now - moment.savedAt >= 3 * 3_600_000 &&
+    now - moment.savedAt >= THREE_HOURS &&
     (back?.due ?? 0) <= now &&
     (back?.count ?? 0) < MAX_RETURNS
   );
 }
 
 export function nextSlot(now: number): number {
-  const slot = new Date(now);
-  slot.setHours(11, 0, 0, 0);
-  if (slot.getTime() <= now) slot.setDate(slot.getDate() + 1);
-  return slot.getTime();
+  const slot = elevenOn(now);
+  return slot > now ? slot : afterDays(slot, 1);
 }
 
 function afterDays(time: number, days: number) {
@@ -62,8 +62,6 @@ function elevenOn(time: number): number {
   date.setHours(11, 0, 0, 0);
   return date.getTime();
 }
-
-const isCommand = (text: string | undefined, command: string) => text === command || !!text?.startsWith(`${command} `);
 
 function warnUnlessBlocked(error: unknown, what: string): undefined {
   if (error instanceof Blocked) throw error;
@@ -123,7 +121,7 @@ async function deliver(family: Family, storyteller: Storyteller, moment: Moment,
     { label: lines.buttons.whatIsThis, data: `inv:what:${moment.id}` },
   ];
   try {
-    const picture = moment.video ? { video: moment.video } : moment.photo && { photo: moment.photo };
+    const picture = pictureOf(moment);
     if (picture) await post(picture).catch((error) => warnUnlessBlocked(error, `The picture of moment ${moment.id}`));
     if (!open()) return;
     try {
@@ -276,13 +274,7 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
       { text: lines.storyAdded(storyteller.name, moment.by.name, story.text), replyTo: moment.messageIds[0], mention: moment.by },
       ctx,
     );
-    if (added) {
-      try {
-        await ctx.transport(family.id).react(family.chatId, added.messageId, '\u2764', true);
-      } catch (error) {
-        logger.warn(`The story reaction on moment ${moment.id} failed: ${error}`);
-      }
-    }
+    if (added) await react(ctx, family, family.chatId, added.messageId, '\u2764', true);
     const spoken = story.voice ? await announce(family, { voice: story.voice }, ctx) : undefined;
     if (family.moments.includes(moment)) {
       moment.stories.push({
@@ -333,14 +325,9 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
   await tell(storyteller, { text: lines.warmClose }, family, ctx);
 }
 
-function dateOf(moment: Moment) {
-  const date = moment.eventDate ? new Date(`${moment.eventDate}T12:00`) : new Date(moment.savedAt);
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
 async function helpIfSilent(family: Family, storyteller: Storyteller, now: number, ctx: Context) {
   const invitation = storyteller.invitation;
-  if (!storyteller.started || !invitation || invitation.replied || invitation.helped || !(now - invitation.sentAt >= 3 * 3_600_000)) return;
+  if (!storyteller.started || !invitation || invitation.replied || invitation.helped || !(now - invitation.sentAt >= THREE_HOURS)) return;
   const moment = family.moments.find((item) => item.id === invitation.momentId);
   if (!moment || moment.sensitive) {
     storyteller.invitation = undefined;

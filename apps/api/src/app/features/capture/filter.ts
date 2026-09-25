@@ -1,4 +1,4 @@
-import type { Family, Incoming, Person } from '../../core/types';
+import type { Family, Incoming, Media, Moment, Person } from '../../core/types';
 
 const LINK = /\b(?:https?:\/\/|www\.)\S+/gi;
 
@@ -20,11 +20,19 @@ export type Bundle = {
 
 export const hasPicture = (event: Incoming) => Boolean(event.photo || event.video);
 
+export const ADDRESS = /^anchor\b[,:]?\s+/i;
+
+export const isCommand = (text: string | undefined, command: string) => text === command || !!text?.startsWith(`${command} `);
+
+export function pictureOf(moment: Moment): { photo: Media } | { video: Media } | undefined {
+  return moment.video ? { video: moment.video } : moment.photo ? { photo: moment.photo } : undefined;
+}
+
 export function passesRules(event: Incoming): boolean {
   if (event.unsupported || event.forwarded) return false;
   if (event.button !== undefined || event.joined || event.migratedTo !== undefined) return false;
   if (event.text?.startsWith('/')) return false;
-  return Boolean(event.photo || event.video || event.voice || wordCount(event.text) > 0);
+  return hasPicture(event) || Boolean(event.voice) || wordCount(event.text) > 0;
 }
 
 export function isClosed(bundle: Bundle, realNow: number): boolean {

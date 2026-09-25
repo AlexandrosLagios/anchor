@@ -1,20 +1,12 @@
 import { Logger } from '@nestjs/common';
-import { cut, lines } from '../core/lines';
-import type { Context, Family, Feature, Media, Moment } from '../core/types';
+import { cut, dateOf, lines } from '../core/lines';
+import type { Context, Family, Feature, Moment } from '../core/types';
 import { ask, valid } from '../model/model';
+import { pictureOf } from './capture/filter';
 
 const logger = new Logger('Echoes');
 
 type Answer = { momentId: string; earlier: string };
-
-function dateOf(moment: Moment) {
-  const date = moment.eventDate ? new Date(`${moment.eventDate}T12:00`) : new Date(moment.savedAt);
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-function pictureOf(moment: Moment): { photo: Media } | { video: Media } | undefined {
-  return moment.video ? { video: moment.video } : moment.photo ? { photo: moment.photo } : undefined;
-}
 
 function thenNow(newMoment: Moment, matchMoment: Moment, earlier: string) {
   if (newMoment.eventDate && matchMoment.eventDate && newMoment.eventDate !== matchMoment.eventDate) {

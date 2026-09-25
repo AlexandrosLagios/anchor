@@ -4,8 +4,8 @@ import { ask, valid } from '../../model/model';
 import type { Bundle } from './filter';
 import { typedText } from './filter';
 
-export type Verdict = 'family_moment' | 'sensitive' | 'logistics' | 'small_talk';
-const VERDICTS: readonly Verdict[] = ['family_moment', 'sensitive', 'logistics', 'small_talk'];
+const VERDICTS = ['family_moment', 'sensitive', 'logistics', 'small_talk'] as const;
+export type Verdict = (typeof VERDICTS)[number];
 
 export type Classification = {
   verdict: Verdict;
@@ -70,10 +70,8 @@ export async function classify(bundle: Bundle, transport: Transport): Promise<Cl
   const videoEvent = !photoEvent && bundle.events.find((event) => event.video && event.thumbnail);
   const voiceEvent = bundle.events.find((event) => event.voice);
 
-  const media = [];
-  if (photoEvent?.photo) media.push(await transport.download(photoEvent.photo));
-  else if (videoEvent && videoEvent.thumbnail) media.push(await transport.download(videoEvent.thumbnail));
-  if (voiceEvent?.voice) media.push(await transport.download(voiceEvent.voice));
+  const picture = photoEvent?.photo ?? (videoEvent ? videoEvent.thumbnail : undefined);
+  const media = await Promise.all([picture, voiceEvent?.voice].filter(Boolean).map((item) => transport.download(item)));
 
   const raw = await ask<unknown>(prompt(bundle), SCHEMA, { media });
   return validate(raw);

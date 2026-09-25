@@ -5,11 +5,11 @@ import { lines } from '../core/lines';
 import { byPriority, isAnniversary } from '../core/priority';
 import type { Context, Family, Feature, Incoming, Media, Moment } from '../core/types';
 import { transcribe } from '../model/model';
-import { wordCount } from './capture/filter';
+import { react } from './capture/capture';
+import { ADDRESS, isCommand, pictureOf, wordCount } from './capture/filter';
 
 const logger = new Logger('Memories');
 const AGES = ['7', '30', '365'] as const;
-const ANCHOR_ADDRESS = /^anchor\b[,:]?\s+/i;
 
 export function dueKeys(moment: Moment, now: number): string[] {
   if (moment.sensitive) return [];
@@ -29,10 +29,18 @@ export function labelFor(moment: Moment, keys: string[]): string {
   return lines.labels[age];
 }
 
+function firstDue(moments: Moment[], now: number) {
+  const priority = byPriority(now);
+  return moments
+    .map((moment) => ({ moment, keys: dueKeys(moment, now) }))
+    .filter((item) => item.keys.length > 0)
+    .sort((a, b) => priority(a.moment, b.moment))[0];
+}
+
 async function post(family: Family, moment: Moment, label: string, keys: string[], ctx: Context) {
   moment.lookbacks.push(...keys);
   const text = lines.memoryCaption(label, moment);
-  const message = moment.video ? { video: moment.video, text } : moment.photo ? { photo: moment.photo, text } : { text };
+  const message = { ...pictureOf(moment), text };
   try {
     const { messageId } = await ctx.transport(family.id).send(family.chatId, message);
     moment.memoryPostIds.push(messageId);
@@ -50,11 +58,9 @@ async function handleMemoryCommand(event: Incoming, family: Family, ctx: Context
     return true;
   }
   const now = ctx.now();
-  const due = shareable.filter((moment) => dueKeys(moment, now).length > 0).sort(byPriority(now));
-  if (due.length > 0) {
-    const moment = due[0];
-    const keys = dueKeys(moment, now);
-    await post(family, moment, labelFor(moment, keys), keys, ctx);
+  const due = firstDue(shareable, now);
+  if (due) {
+    await post(family, due.moment, labelFor(due.moment, due.keys), due.keys, ctx);
     return true;
   }
   const fewest = [...shareable].sort((a, b) => a.memoryPostIds.length - b.memoryPostIds.length || byPriority(now)(a, b))[0];
@@ -75,7 +81,7 @@ async function transcribeVoice(voice: Media, family: Family, ctx: Context): Prom
 async function handleStory(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
   const replyTo = event.replyTo;
   if (!replyTo) return false;
-  if (ANCHOR_ADDRESS.test(event.text ?? '')) return false;
+  if (ADDRESS.test(event.text ?? '')) return false;
   if (event.text?.startsWith('/')) return false;
   const moment = family.moments.find((item) => item.memoryPostIds.includes(replyTo));
   if (!moment || event.unsupported || event.forwarded) return false;
@@ -87,11 +93,7 @@ async function handleStory(event: Incoming, family: Family, ctx: Context): Promi
 
   moment.stories.push({ id: randomUUID(), by: event.sender, at: ctx.now(), text, voice: event.voice, messageIds: [event.messageId] });
   ctx.store.save();
-  try {
-    await ctx.transport(family.id).react(event.chatId, event.messageId, '\u2764');
-  } catch (error) {
-    logger.warn(`failed to react to a story for family ${family.id}: ${error}`);
-  }
+  await react(ctx, family, event.chatId, event.messageId, '\u2764');
   return true;
 }
 
@@ -102,19 +104,17 @@ export const memories: Feature = {
     const slot = slotIn(window, 18);
     if (slot === undefined || family.lastMemoryDay === dayIndex(slot)) return;
     family.lastMemoryDay = dayIndex(slot);
-    const due = family.moments.filter((moment) => dueKeys(moment, slot).length > 0).sort(byPriority(slot));
-    if (due.length === 0) {
+    const due = firstDue(family.moments, slot);
+    if (!due) {
       ctx.store.save();
       return;
     }
-    const moment = due[0];
-    const keys = dueKeys(moment, slot);
-    await post(family, moment, labelFor(moment, keys), keys, ctx);
+    await post(family, due.moment, labelFor(due.moment, due.keys), due.keys, ctx);
   },
 
   async handle(event, family, ctx) {
     if (event.chat !== 'group' || !family) return false;
-    if (event.text === '/memory' || event.text?.startsWith('/memory ')) return handleMemoryCommand(event, family, ctx);
+    if (isCommand(event.text, '/memory')) return handleMemoryCommand(event, family, ctx);
     return handleStory(event, family, ctx);
   },
 };

@@ -16,6 +16,11 @@ export function cut(text: string, max: number): string {
 // keeps every caption under the Telegram limit of 1024 characters and the invitation voice note short
 const clip = (text: string, max = 600) => (text.length > max ? `${cut(text, max - 1)}…` : text);
 
+export function dateOf(moment: Moment): string {
+  const date = moment.eventDate ? new Date(`${moment.eventDate}T12:00`) : new Date(moment.savedAt);
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 // a wordless moment names what was shared, so the model's title never reads as the sharer's words
 function sharedBy(moment: Moment, max = 600): string {
   if (!moment.wordless) return `${moment.by.name} shared: «${clip(moment.text, max)}»`;
