@@ -40,8 +40,6 @@ export const lines = {
     'Tap the button to choose what I send you in private. ' +
     'Reply "Anchor, forget this" to delete a moment, or "Anchor, don\'t bring this back" to keep it without bringing it back. ' +
     'This is a test build, so please share staged photos only.',
-  memberStart: (name: string) =>
-    `${name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment.`,
   welcome: (name: string) =>
     `Hello ${name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. ` +
     'I can send you family moments now and then, remind you of things, and talk to you by voice. ' +
@@ -59,7 +57,6 @@ export const lines = {
   // v2, section 4.12: the share offers
   shareOffer: (names: string[]) => `Shall I send this to ${and(names)} now?`,
   shareSent: (names: string[]) => `Sent to ${and(names)} 💛`,
-  offersOff: 'Of course. I won\'t offer that again. Say "settings" to change this.',
   // v2, section 4.6: the intents
   unclear: "I'm not sure I understood 🙂 Here is what I can do:",
   missed: (count: number) => `The family shared ${count} moments since we last talked 💛`,
@@ -79,7 +76,6 @@ export const lines = {
   },
   gentleHelp: (date: string, title: string) => `No rush 🙂 This is from ${date}: ${title}. Any memory it brings is welcome.`,
   warmClose: 'Thank you 💛',
-  agreed: (name: string) => `Wonderful, ${name} 💛 I'll send you the first moment soon.`,
   stopped: 'Of course. I won\'t send you anything more. If you\'d like moments again, say "settings".',
   tellDirectly: (title: string, date: string, sender: string) => `This is ${title}, from ${date}. ${sender} shared it 💛`,
   thanks: 'Thank you for the story 💛 Shall I share it with the family?',
@@ -110,18 +106,13 @@ export const lines = {
   askAnswer: (title: string, date: string, names: string[]) =>
     `${title} · ${date} 💛${names.length ? `\nStories from ${names.join(', ')}` : ''}`,
   notFound: "I couldn't find that in the family record yet.",
-  noInvitation: "Thank you 🙂 I'll bring you a family moment soon.",
-  notJoined: "Thank you 🙂 If you'd like family moments from me, send /start.",
   pointer: "Hi! I keep your family's record. Talk to me in your family group 🙂",
   forgetWhich: 'This post shows two moments. Which one should I forget?',
   quietWhich: 'This post shows two moments. Which one should I stop bringing back?',
   whichMoment: (moment: Moment) => clip(`${moment.by.name}: ${moment.title}`, 40),
   voiceNote: '🎤 voice note',
   nothingToShare: 'The family record is empty so far. Share a photo with a few words 🙂',
-  nothingToInvite: (name: string) => `${name} has seen every moment so far.`,
   adminOnly: 'Only a group admin can do that 🙂',
-  privateHow: 'Reply /private to a message from the person who should get family moments in private.',
-  nobodyPrivate: "Nobody gets family moments in private yet. Reply /private to a grandparent's message first.",
   // the menu that Telegram shows when someone types "/"; an admin sees only the admin list, so it repeats /memory
   commands: {
     group: [{ command: 'memory', description: 'Share a family memory in the group now' }],
@@ -137,7 +128,6 @@ export const lines = {
   },
   buttons: {
     start: 'Start',
-    agree: "Yes, I'd like that",
     notNow: 'Not now',
     dontBringBack: "Don't bring this back",
     whatIsThis: 'What is this?',
