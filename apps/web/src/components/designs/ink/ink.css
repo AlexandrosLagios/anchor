@@ -1,0 +1,348 @@
+/* Ink — Swiss / international typographic style */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --ink: #0a0a0a;
+  --paper: #ffffff;
+  --rule: #0a0a0a;
+  --space: clamp(1rem, 4vw, 2rem);
+  --max: 72rem;
+  --col-gap: clamp(0.75rem, 2vw, 1.5rem);
+  --row-gap: clamp(1.25rem, 3vw, 2rem);
+  --hairline: 1px;
+  --focus-width: 2px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+}
+
+html {
+  color-scheme: only light;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body.ink {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* —— Skip link —— */
+.ink-skip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transform: translateY(-120%);
+}
+
+.ink-skip:focus {
+  transform: translateY(0);
+  outline: var(--focus-width) solid var(--ink);
+  outline-offset: var(--focus-width);
+}
+
+/* —— Focus —— */
+.ink a:focus-visible,
+.ink button:focus-visible {
+  outline: var(--focus-width) solid var(--ink);
+  outline-offset: 3px;
+}
+
+.ink a:focus:not(:focus-visible),
+.ink button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* —— Layout shell —— */
+.ink-shell {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--space);
+}
+
+.ink-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--col-gap);
+  row-gap: var(--row-gap);
+}
+
+/* —— Header —— */
+.ink-header {
+  border-bottom: var(--hairline) solid var(--rule);
+  padding-block: 1rem;
+}
+
+.ink-header-inner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ink-mark {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.ink-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ink-nav a {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.ink-nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+/* —— Main —— */
+.ink-main {
+  flex: 1;
+  padding-block: clamp(2.5rem, 10vh, 5.5rem) clamp(2rem, 6vh, 4rem);
+}
+
+.ink-hero-brand {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-bottom: clamp(1rem, 3vw, 1.75rem);
+  border-bottom: var(--hairline) solid var(--rule);
+  font-size: clamp(3rem, 14vw, 7.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.ink-hero-line {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: clamp(1.125rem, 3.2vw, 1.75rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  max-width: 28ch;
+}
+
+@media (min-width: 640px) {
+  .ink-hero-line {
+    grid-column: 1 / span 7;
+  }
+}
+
+.ink-hero-support {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  max-width: 36ch;
+  color: var(--ink);
+}
+
+@media (min-width: 640px) {
+  .ink-hero-support {
+    grid-column: 8 / -1;
+    align-self: end;
+  }
+}
+
+.ink-rule {
+  grid-column: 1 / -1;
+  height: 0;
+  margin: 0;
+  border: 0;
+  border-top: var(--hairline) solid var(--rule);
+}
+
+.ink-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: var(--hairline) solid var(--rule);
+  border-bottom: var(--hairline) solid var(--rule);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .ink-actions {
+    flex-direction: row;
+  }
+}
+
+.ink-actions li {
+  flex: 1;
+  margin: 0;
+  border-bottom: var(--hairline) solid var(--rule);
+}
+
+.ink-actions li:last-child {
+  border-bottom: 0;
+}
+
+@media (min-width: 640px) {
+  .ink-actions li {
+    border-bottom: 0;
+    border-right: var(--hairline) solid var(--rule);
+  }
+
+  .ink-actions li:last-child {
+    border-right: 0;
+  }
+}
+
+.ink-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.125rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-action {
+    transition: none;
+  }
+}
+
+.ink-action:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ink-action:focus-visible {
+  outline-offset: -2px;
+}
+
+.ink-action-index {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+}
+
+.ink-meta {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem 2rem;
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 480px) {
+  .ink-meta {
+    grid-template-columns: auto 1fr;
+  }
+}
+
+.ink-meta dt {
+  margin: 0;
+  font-weight: 600;
+}
+
+.ink-meta dd {
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+/* —— Footer —— */
+.ink-footer {
+  border-top: var(--hairline) solid var(--rule);
+  padding-block: 1.25rem 1.75rem;
+  margin-top: auto;
+}
+
+.ink-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.ink-footer p {
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ink-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ink-footer-links a {
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.ink-footer-links a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}

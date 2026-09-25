@@ -1,0 +1,45 @@
+---
+import '../../components/designs/slate/slate.css';
+
+const title = 'Anchor · Slate';
+const description =
+  'Family memories, returning in the group chat. Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#1a1a1a" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Figtree:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="slate">
+    <a class="slate-skip" href="#main">Skip to content</a>
+
+    <main id="main" class="slate-main">
+      <section class="slate-hero" aria-labelledby="slate-brand">
+        <h1 id="slate-brand" class="slate-brand">Anchor</h1>
+        <p class="slate-line">Family memories, returning in the group chat.</p>
+        <p class="slate-support">
+          Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.
+        </p>
+        <div class="slate-actions">
+          <a class="slate-btn slate-btn-primary" href="/app">Try the demo</a>
+          <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
+          <a class="slate-link" href="/signup">Create account</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

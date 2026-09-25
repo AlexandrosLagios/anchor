@@ -1,0 +1,189 @@
+/* Quiet — paper & ink, asymmetric wordmark layout */
+
+:root {
+  --quiet-paper: #f2efe8;
+  --quiet-paper-deep: #e8e4db;
+  --quiet-ink: #1a1917;
+  --quiet-ink-soft: #4a4742;
+  --quiet-rule: #1a1917;
+  --quiet-focus: #1a1917;
+  --quiet-font-display: "Iowan Old Style", "Palatino Linotype", Palatino,
+    "Book Antiqua", Georgia, serif;
+  --quiet-font-body: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --quiet-space: clamp(1.25rem, 4vw, 3rem);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+body.quiet {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background:
+    radial-gradient(
+      ellipse 120% 80% at 10% 0%,
+      #f7f4ed 0%,
+      transparent 55%
+    ),
+    linear-gradient(165deg, var(--quiet-paper) 0%, var(--quiet-paper-deep) 100%);
+  color: var(--quiet-ink);
+  font-family: var(--quiet-font-body);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.quiet-skip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: 0.65rem 1rem;
+  background: var(--quiet-ink);
+  color: var(--quiet-paper);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transform: translateY(-120%);
+  transition: transform 0.15s ease;
+}
+
+.quiet-skip:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--quiet-paper);
+  outline-offset: 2px;
+}
+
+.quiet-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: var(--quiet-space);
+  padding-left: 0;
+}
+
+.quiet-brand {
+  margin: 0;
+  padding-left: max(0.15rem, env(safe-area-inset-left, 0px));
+  font-family: var(--quiet-font-display);
+  font-size: clamp(4.5rem, 18vw, 11rem);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  writing-mode: horizontal-tb;
+  overflow-wrap: anywhere;
+}
+
+.quiet-rule {
+  display: block;
+  width: 1px;
+  align-self: stretch;
+  min-height: 12rem;
+  margin-inline: clamp(1.25rem, 4vw, 3.5rem);
+  background: var(--quiet-rule);
+  opacity: 0.35;
+}
+
+.quiet-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-width: 28rem;
+  padding-block: 1rem;
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.quiet-line {
+  margin: 0;
+  font-family: var(--quiet-font-display);
+  font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--quiet-ink);
+}
+
+.quiet-support {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--quiet-ink-soft);
+}
+
+.quiet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiet-actions a {
+  color: var(--quiet-ink);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+  text-decoration-color: color-mix(in srgb, var(--quiet-ink) 35%, transparent);
+  transition: text-decoration-color 0.15s ease, color 0.15s ease;
+}
+
+.quiet-actions a:hover {
+  text-decoration-color: var(--quiet-ink);
+}
+
+.quiet-actions a:focus-visible {
+  outline: 2px solid var(--quiet-focus);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+@media (max-width: 720px) {
+  .quiet-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+    align-items: start;
+    padding: clamp(1.5rem, 6vw, 2.5rem);
+    padding-top: clamp(2rem, 8vw, 3.5rem);
+    gap: 0;
+  }
+
+  .quiet-brand {
+    padding-left: 0;
+    font-size: clamp(3.75rem, 22vw, 6.5rem);
+  }
+
+  .quiet-rule {
+    width: 100%;
+    height: 1px;
+    min-height: 0;
+    margin: 1.75rem 0 1.5rem;
+    align-self: auto;
+  }
+
+  .quiet-copy {
+    max-width: none;
+    padding-block: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiet-skip,
+  .quiet-actions a {
+    transition: none;
+  }
+}

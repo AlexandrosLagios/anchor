@@ -1,0 +1,160 @@
+/* Mist — cool gray, soft panels, muted blue, airy centered column */
+
+.mist {
+  --mist-bg: #e8eaed;
+  --mist-panel: #f4f5f7;
+  --mist-ink: #2a2e35;
+  --mist-muted: #4f5863;
+  --mist-accent: #4a6d8c;
+  --mist-accent-ink: #f4f5f7;
+  --mist-ring: #3d5a78;
+  --mist-radius: 1.25rem;
+  --mist-font: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--mist-bg);
+  color: var(--mist-ink);
+  font-family: var(--mist-font);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mist *,
+.mist *::before,
+.mist *::after {
+  box-sizing: border-box;
+}
+
+.mist-skip {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 10;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.5rem;
+  background: var(--mist-panel);
+  color: var(--mist-ink);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.mist-skip:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--mist-ring);
+  outline-offset: 3px;
+}
+
+.mist-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+}
+
+.mist-panel {
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+  padding: clamp(1.75rem, 4vw, 2.75rem);
+  border-radius: var(--mist-radius);
+  background: var(--mist-panel);
+  text-align: center;
+}
+
+.mist-brand {
+  margin: 0 0 1.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.125rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--mist-ink);
+}
+
+.mist-line {
+  margin: 0 0 1.1rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+  color: var(--mist-accent);
+}
+
+.mist-support {
+  margin: 0 0 2.25rem;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--mist-muted);
+}
+
+.mist-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.65rem;
+}
+
+.mist-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: 0.75rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: none;
+}
+
+.mist-btn--primary {
+  background: var(--mist-accent);
+  color: var(--mist-accent-ink);
+}
+
+.mist-btn--ghost {
+  background: transparent;
+  color: var(--mist-ink);
+  box-shadow: inset 0 0 0 1px #c5cad1;
+}
+
+.mist-btn:focus-visible {
+  outline: 2px solid var(--mist-ring);
+  outline-offset: 3px;
+}
+
+.mist-btn:hover {
+  filter: brightness(0.97);
+}
+
+@media (min-width: 40rem) {
+  .mist-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .mist-btn {
+    flex: 0 1 auto;
+    min-width: 8.5rem;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .mist {
+    --mist-bg: #d8dde3;
+    --mist-panel: #ffffff;
+    --mist-ink: #12151a;
+    --mist-muted: #3a424c;
+    --mist-accent: #3a5f82;
+  }
+
+  .mist-btn--ghost {
+    box-shadow: inset 0 0 0 2px #6b7380;
+  }
+}

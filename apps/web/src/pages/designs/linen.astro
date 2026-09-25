@@ -1,0 +1,59 @@
+---
+import '../../components/designs/linen/linen.css';
+
+const title = 'Anchor — Linen';
+const description =
+  'Family memories, returning in the group chat. Spaced retrieval for Athina.';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f4f0e8" />
+  </head>
+  <body class="linen">
+    <a class="linen-skip" href="#main">Skip to content</a>
+
+    <header class="linen-header">
+      <div class="linen-header-inner">
+        <a class="linen-logo" href="/designs/linen">Anchor</a>
+        <nav class="linen-nav" aria-label="Primary">
+          <a href="/app">Demo</a>
+          <a href="/how-it-works">How it works</a>
+          <a href="/signup">Sign up</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="linen-main">
+      <section class="linen-hero" aria-labelledby="linen-title">
+        <h1 id="linen-title" class="linen-brand">Anchor</h1>
+        <p class="linen-line">Family memories, returning in the group chat.</p>
+        <p class="linen-support">
+          Spaced retrieval for Athina — gentle cues at the right time, without a
+          new app to learn.
+        </p>
+        <div class="linen-actions">
+          <a class="linen-btn linen-btn-primary" href="/app">Try the demo</a>
+          <a class="linen-btn linen-btn-ghost" href="/how-it-works">How it works</a>
+          <a class="linen-link-text" href="/signup">Create account</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="linen-footer">
+      <div class="linen-footer-inner">
+        <p>Anchor · Linen</p>
+        <nav aria-label="Footer">
+          <a href="/privacy">Privacy</a>
+          {' · '}
+          <a href="/terms">Terms</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>
