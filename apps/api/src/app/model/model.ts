@@ -89,12 +89,10 @@ export async function transcribe(clip: Clip): Promise<string> {
 
 export async function speak(text: string, style = PROTOTYPE_STYLE): Promise<Buffer> {
   const provider = selected();
-  // ponytail: the prototype key predates the style and the seam, so the prototype keeps its cached clips; drop the branch with the prototype
-  const key =
-    provider.name === 'gemini' && style === PROTOTYPE_STYLE
-      ? `speak:${provider.voice}:${text}`
-      : `${provider.name}:speak:${provider.voice}:${style}:${text}`;
-  const audio = await cached(key, () => provider.speak(text, style));
-  // ponytail: a clip cached before the seam can hold the raw 24 kHz PCM of Gemini; drop the branch with the prototype
-  return audio.subarray(0, 4).toString() === 'RIFF' ? audio : wav(audio, 24000);
+  // ponytail: the prototype key predates the style and the seam, and its clips can hold the raw 24 kHz PCM of Gemini; drop the branch with the prototype
+  if (provider.name === 'gemini' && style === PROTOTYPE_STYLE) {
+    const audio = await cached(`speak:${provider.voice}:${text}`, () => provider.speak(text, style));
+    return audio.subarray(0, 4).toString() === 'RIFF' ? audio : wav(audio, 24000);
+  }
+  return cached(`${provider.name}:speak:${provider.voice}:${style}:${text}`, () => provider.speak(text, style));
 }
