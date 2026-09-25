@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Anchor · Demo script</title>
 <style>
-  :root { --bg:#fbfaf7; --card:#fff; --ink:#1d1d1f; --muted:#6b6b6b; --line:#e8e4dc; --accent:#b5462f; --soft:#fbeae5; --eleni:#7b3fa0; --nikos:#1f6f8b; --host:#555; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#151515; --card:#1f1f1f; --ink:#f1efe9; --muted:#a8a49b; --line:#33312d; --accent:#f08a6c; --soft:#3a241e; --eleni:#d0a2ee; --nikos:#8ccde3; --host:#bbb; } }
+  :root { --bg:#fbfaf7; --card:#fff; --ink:#1d1d1f; --muted:#6b6b6b; --line:#e8e4dc; --accent:#b5462f; --soft:#fbeae5; --eleni:#7b3fa0; --nikos:#1f6f8b; --narrator:#8a5a00; --closer:#2f7d4f; --host:#555; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151515; --card:#1f1f1f; --ink:#f1efe9; --muted:#a8a49b; --line:#33312d; --accent:#f08a6c; --soft:#3a241e; --eleni:#d0a2ee; --nikos:#8ccde3; --narrator:#e6b85c; --closer:#86d3a3; --host:#bbb; } }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:19px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; }
   main { max-width:760px; margin:0 auto; padding:40px 22px 72px; }
@@ -15,7 +15,7 @@
   h2 { font-size:1.35rem; margin:40px 0 12px; }
   .cast { display:flex; flex-wrap:wrap; gap:10px; }
   .who { font-weight:700; border:2px solid currentColor; border-radius:999px; padding:4px 14px; font-size:0.95rem; }
-  .eleni { color:var(--eleni); } .nikos { color:var(--nikos); } .host { color:var(--host); }
+  .eleni { color:var(--eleni); } .nikos { color:var(--nikos); } .narrator { color:var(--narrator); } .closer { color:var(--closer); } .host { color:var(--host); }
   .cast .who { font-size:1rem; }
   .cast small { display:block; font-weight:400; color:var(--muted); }
   ul.plain { padding-left:1.1em; margin:8px 0; }
@@ -25,9 +25,12 @@
   .time { font-size:1.35rem; font-weight:800; font-variant-numeric:tabular-nums; min-width:3.2em; }
   .do { font-size:1.12rem; }
   .do b { color:var(--accent); }
+  .say { margin:10px 0 0; padding-left:14px; border-left:4px solid currentColor; }
+  .say span { font-weight:700; }
+  .say q { color:var(--ink); font-style:italic; }
+  .speech { color:var(--ink); font-size:1.12rem; font-style:italic; margin:10px 0 0; }
   .see { margin-top:10px; background:var(--soft); border-radius:12px; padding:10px 14px; }
   .see span { font-weight:700; color:var(--accent); }
-  .line { margin-top:8px; font-style:italic; }
   .fail { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px 18px; }
   .fail p { margin:10px 0; }
   .fail b { color:var(--accent); }
@@ -38,70 +41,92 @@
 <body>
 <main>
   <h1>Anchor · Demo script</h1>
-  <p class="sub">About 3 minutes of the 6-minute presentation. Beat 7, the phone call, is the stretch goal.</p>
+  <p class="sub">The 6-minute presentation as one story: the problem, a day in Nikos's family with Anchor, and the close. Four people speak. Beat 7, the phone call, is the stretch goal.</p>
 
   <h2>Cast</h2>
   <div class="cast">
-    <span class="who eleni">Eleni<small>the daughter · group admin · the family group</small></span>
-    <span class="who nikos">Nikos<small>the grandfather · the family group, then his private chat</small></span>
-    <span class="who host">Presenter<small>narrates · shows both phones side by side</small></span>
+    <span class="who narrator">Narrator<small>tells the problem · links the beats</small></span>
+    <span class="who eleni">Eleni<small>the daughter · group admin · phone 1</small></span>
+    <span class="who nikos">Nikos<small>the grandfather · phone 2</small></span>
+    <span class="who closer">Closer<small>closes the story · takes the Q&amp;A</small></span>
+    <span class="who host">Operator<small>shows both phones · keeps the stopwatch · silent</small></span>
   </div>
 
   <h2>Before you start</h2>
   <ul class="plain">
     <li>Eleni's phone shows the family group throughout. Nikos's phone shows the family group, then his private chat with Anchor.</li>
+    <li>The Operator shows both phones side by side on the screen, and starts the stopwatch at the Narrator's first word.</li>
     <li>Eleni has the staged photo of a child's first day at school ready, with its caption.</li>
     <li>For beat 7, Nikos's phone is ready to answer on speaker, and it has the "Anchor" contact saved, because Anchor calls from a US number.</li>
     <li>The technical checks are done (see <a href="technical-runbook.html">the technical runbook</a>).</li>
   </ul>
 
-  <h2>The script</h2>
+  <h2>1 · The problem</h2>
+  <div class="beat">
+    <div class="top"><span class="time">0:00</span><span class="who narrator">Narrator</span></div>
+    <p class="speech" style="margin-top:0">"This is Nikos. He lives on his own, and he likes it that way. His family lives in a group chat: photos, plans, and jokes, all day long. By the time Nikos finds his glasses, the photos of his granddaughter are buried under forty new messages. He doesn't type well, and he doesn't want to be a burden, so he stops asking. Slowly, he drops out of his own family's story.</p>
+    <p class="speech">Living independently isn't only about safety. It also means staying part of your family's life from your own home. Meet Anchor."</p>
+  </div>
+
+  <h2>2 · The story, live</h2>
 
   <div class="beat">
-    <div class="top"><span class="time">0:00</span><span class="who nikos">Nikos</span></div>
+    <div class="top"><span class="time">0:40</span><span class="who nikos">Nikos</span></div>
+    <p class="say nikos"><span>Nikos:</span> <q>Where are Maria's photos? I'll just ask.</q></p>
     <div class="do">In the group, write <b>"Anchor, can you send me family photos?"</b></div>
+    <p class="say narrator"><span>Narrator:</span> <q>No command, no new app. Nikos asks in his own words, and only he sees the answer.</q></p>
     <div class="see"><span>The audience sees:</span> Only Nikos sees Anchor's answer: "Nikos, I can send you family moments, reminders, and voice notes in private. Tap to choose 🙂", with the button "Choose what I send you". Eleni's screen shows only his question.</div>
   </div>
 
   <div class="beat">
-    <div class="top"><span class="time">0:20</span><span class="who nikos">Nikos</span></div>
+    <div class="top"><span class="time">1:00</span><span class="who nikos">Nikos</span></div>
     <div class="do">Tap <b>"Choose what I send you"</b>, then Start. Tap <b>"Family moments now and then"</b> and <b>"Talk to me by voice"</b>, then <b>"Done"</b>.</div>
+    <p class="say nikos"><span>Nikos:</span> <q>Voice? Good. I'd rather talk than type.</q></p>
     <div class="see"><span>The audience sees:</span> Anchor says that it is not a person, and each choice turns ✅ in place. After "Done", Anchor answers with a voice note: "All set 💛".</div>
   </div>
 
   <div class="beat">
-    <div class="top"><span class="time">0:50</span><span class="who eleni">Eleni</span></div>
+    <div class="top"><span class="time">1:35</span><span class="who eleni">Eleni</span></div>
+    <p class="say eleni"><span>Eleni:</span> <q>Maria's first day of school. Dad has to see this.</q></p>
     <div class="do">Post the photo with the caption <b>"Maria's first day of school! She wore her new red backpack."</b></div>
     <div class="see"><span>The audience sees:</span> Anchor reacts with ❤. Only Eleni sees "Shall I send this to Nikos now?". She taps "Yes, send it", and the offer turns into "Sent to Nikos 💛".</div>
   </div>
 
   <div class="beat">
-    <div class="top"><span class="time">1:10</span><span class="who nikos">Nikos</span></div>
+    <div class="top"><span class="time">2:00</span><span class="who nikos">Nikos</span><span class="who eleni">Eleni</span></div>
     <div class="do">In private, play the voice note. Answer with a voice note of about 10 seconds: <b>"My first day was in 1958. My mother walked me to the village school, and I cried at the gate."</b> Tap <b>"Yes, share it"</b>.</div>
     <div class="see"><span>The audience sees:</span> Nikos gets the photo, then a voice note: "Eleni shared: «Maria's first day of school! …» What does it remind you of?". Anchor thanks him by voice. In the group: "Nikos added a story to Eleni's moment 🎙️", with his words, his voice note, and a big ❤.</div>
+    <p class="say eleni"><span>Eleni:</span> <q>Dad, you never told me that. Maria has to hear this.</q></p>
+    <p class="say narrator"><span>Narrator:</span> <q>Nikos isn't the one being helped here. He gives the family a story only he can tell.</q></p>
   </div>
 
   <div class="beat">
-    <div class="top"><span class="time">1:50</span><span class="who eleni">Eleni</span></div>
+    <div class="top"><span class="time">2:50</span><span class="who eleni">Eleni</span></div>
     <div class="do">In the group, reply to Nikos's message of beat 1 with <b>"Dad, remember to take your pills with you when we leave in the morning."</b></div>
     <div class="see"><span>The audience sees:</span> Only Nikos sees "⏰ Eleni wrote: «Dad, remember to take your pills…» Shall I remind you?", with "Yes, at 08:00", "Another time", "No thanks", and "Stop offering reminders". He taps "Yes, at 08:00". The offer turns into "Done ✍ I'll remind you at 08:00 in our private chat.", and Eleni's message gets a ✍. The family sees only the ✍.</div>
+    <p class="say eleni"><span>Eleni:</span> <q>And I don't have to nag him in front of everyone.</q></p>
   </div>
 
   <div class="beat">
-    <div class="top"><span class="time">2:15</span><span class="who eleni">Eleni</span></div>
+    <div class="top"><span class="time">3:20</span><span class="who eleni">Eleni</span></div>
+    <p class="say narrator"><span>Narrator:</span> <q>Let's jump to tomorrow morning.</q></p>
     <div class="do">Send <b>/fastforward 08:05</b> in the group.</div>
     <div class="see"><span>The audience sees:</span> Only Eleni sees "⏩ It's now … 08:05 on the family clock." A few seconds later, Nikos gets his reminder in private as a voice note: "⏰ Your reminder. Eleni wrote: «…»".</div>
   </div>
 
   <div class="beat">
-    <div class="top"><span class="time">2:35</span><span class="who nikos">Nikos</span></div>
-    <div class="do"><b>Stretch goal.</b> Run this beat only when the call gate passed and the clock shows 2:35 or less. In private, say <b>"Call me"</b> in a voice note. Answer the phone on speaker. Answer Anchor in one sentence, say <b>"No, thanks"</b> to the share question, and <b>"Yes"</b> to the question about Eleni.</div>
+    <div class="top"><span class="time">3:40</span><span class="who nikos">Nikos</span><span class="who eleni">Eleni</span></div>
+    <div class="do"><b>Stretch goal.</b> Run this beat only when the call gate passed and the clock shows 3:50 or less. In private, say <b>"Call me"</b> in a voice note. Answer the phone on speaker. Answer Anchor in one sentence, say <b>"No, thanks"</b> to the share question, and <b>"Yes"</b> to the question about Eleni.</div>
     <div class="see"><span>The audience sees:</span> Nikos's phone rings. Anchor opens with "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person." and reads Eleni's moment in her words. Nikos answers in one sentence. Anchor asks "Shall I tell Eleni you'd love a call?". He says yes, and the group gets "Eleni, Nikos would love a call from you 💛".</div>
+    <p class="say eleni"><span>Eleni:</span> <q>I'll call you tonight, Dad.</q></p>
   </div>
 
+  <h2>3 · The close</h2>
   <div class="beat">
-    <div class="top"><span class="time">2:40 or 3:15</span><span class="who host">Presenter</span></div>
-    <div class="line" style="margin-top:0">"No commands. Nikos chose what he gets, heard Eleni's moment in her words, added his story by voice, and got his reminder in private. The family saw a ❤ and a ✍."</div>
+    <div class="top"><span class="time">4:40 or 3:40</span><span class="who closer">Closer</span></div>
+    <p class="speech" style="margin-top:0">"Nikos asked in his own words, chose what Anchor sends him, added his story by voice, and got his reminder in private. Nobody acted for him. The family saw a ❤ and a ✍.</p>
+    <p class="speech">Anchor says it is not a person. It shares nothing without a yes, and it keeps a painful memory without ever bringing it back on its own. For a grandparent whose memory is starting to slip, seeing family moments again also helps them stay.</p>
+    <p class="speech">Anchor runs live today, in the group chat the family already uses. Anchor keeps the family's story, so nobody drops out of it."</p>
     <div class="see"><span>The audience sees:</span> Both screens stay on the group.</div>
   </div>
 
@@ -110,15 +135,15 @@
     <p><b>No answer for Nikos in beat 1 after 10 seconds:</b> Nikos writes "Anchor, settings". The same button arrives.</p>
     <p><b>No share offer for Eleni in beat 3 after 15 seconds:</b> check that Nikos turned on "Family moments" in beat 2. Nikos then says "Send me a moment" to Anchor in private, and the photo arrives.</p>
     <p><b>"Thank you 💛" instead of the share question in beat 4:</b> Anchor closed the invitation. Nikos says "Send me a moment" in private, and repeats beat 4.</p>
-    <p><b>No reminder offer for Nikos in beat 5 after 10 seconds:</b> Eleni writes "Dad, don't forget your pills tomorrow at 8." With no offer again, narrate beats 5 and 6, and continue with beat 7 or 8.</p>
-    <p><b>No reminder after /fastforward in beat 6 after 10 seconds:</b> narrate the reminder, and continue.</p>
+    <p><b>No reminder offer for Nikos in beat 5 after 10 seconds:</b> Eleni writes "Dad, don't forget your pills tomorrow at 8." With no offer again, the Narrator tells beats 5 and 6 in one sentence each, and the story continues with beat 7 or the close.</p>
+    <p><b>No reminder after /fastforward in beat 6 after 10 seconds:</b> the Narrator tells the reminder, and the story continues.</p>
     <p><b>The voice note "Call me" in beat 7 gets another answer:</b> Nikos types "Call me". A typed "Call me" never goes to the model.</p>
-    <p><b>"I couldn't ring you just now" in beat 7, or no ring after 15 seconds:</b> say "The phone call is our next step," and close with beat 8.</p>
-    <p><b>The call rings, but Anchor stays silent for 5 seconds:</b> Nikos hangs up. Say "The phone call is our next step," and close with beat 8.</p>
-    <p><b>Two beats fail:</b> stop the live demo and play the screen recording.</p>
+    <p><b>"I couldn't ring you just now" in beat 7, or no ring after 15 seconds:</b> the Narrator says "The phone call is our next step," and the Closer starts the close.</p>
+    <p><b>The call rings, but Anchor stays silent for 5 seconds:</b> Nikos hangs up. The Narrator says "The phone call is our next step," and the Closer starts the close.</p>
+    <p><b>Two beats fail:</b> the Operator stops the live demo and plays the screen recording. The speakers say their lines over the recording.</p>
   </div>
 
-  <footer>Rehearse twice with a stopwatch. Keep the script under 3 minutes without beat 7.</footer>
+  <footer>Rehearse twice with a stopwatch. The run must end before 6:00. With beat 7, it ends at about 5:25. Without beat 7, it ends at about 4:25.</footer>
 </main>
 </body>
 </html>
