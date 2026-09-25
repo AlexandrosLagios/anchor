@@ -18,8 +18,6 @@ COPY --from=build /app/dist/apps/api ./
 # importHelpers makes main.js require tslib, and the generated package.json omits tslib
 RUN npm pkg set dependencies.tslib=^2.3.0
 RUN pnpm install --prod --ignore-workspace
-# ponytail: the Gemini cache in tmp/ uses instance memory on Cloud Run, move the cache to a volume if the cache nears the memory limit
-RUN mkdir tmp && chown node:node tmp
 EXPOSE 8080
 USER node
 CMD ["node", "main.js"]
