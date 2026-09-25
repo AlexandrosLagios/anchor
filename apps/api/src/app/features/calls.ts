@@ -34,7 +34,9 @@ export const withoutLapses = (text: string) =>
     .join(' ');
 
 const newestMoment = (family: Family, member: Member) =>
-  family.moments.filter((moment) => moment.by.id !== member.id && !moment.sensitive).sort((a, b) => b.savedAt - a.savedAt)[0];
+  family.moments
+    .filter((moment) => moment.by.id !== member.id && !moment.sensitive && !moment.stories.some((story) => story.by.id === member.id))
+    .sort((a, b) => b.savedAt - a.savedAt)[0];
 
 function reminderInstructions(member: Member, reminder: Reminder) {
   return [
@@ -47,11 +49,11 @@ function reminderInstructions(member: Member, reminder: Reminder) {
   ].join('\n');
 }
 
-function instructions(member: Member, moment: Moment) {
+function instructions(member: Member, moment: Moment, reminder?: Reminder) {
   return [
     `You are Anchor, the family's record keeper, on a phone call with ${member.name}, a member of the family.`,
     'You are not a person. Never claim feelings or a shared past of your own.',
-    `You have already said the opening line. It quoted a moment that ${moment.by.name} shared in the family chat, and asked what it reminds ${member.name} of: ${spoken(lines.sharedBy(moment))}`,
+    `You have already said the opening line.${reminder ? ` It read a reminder that ${reminder.from.name} wrote: «${spoken(reminder.text)}» If ${member.name} asks about the reminder, answer in one short sentence, then go back to the moment.` : ''} It quoted a moment that ${moment.by.name} shared in the family chat, and asked what it reminds ${member.name} of: ${spoken(lines.sharedBy(moment))}`,
     "Take one step per turn, and wait for the person's answer before the next step:",
     `1. Listen, and let ${member.name} talk as long as they like. Answer warmly in one short sentence. Ask at most one short follow-up question about what they told you, or skip it when they have said enough. The follow-up invites and never tests: ask how it felt or who was there, and never ask for a name, a date, or a fact. When ${member.name} does not remember something, say that it does not matter, and move on.`,
     `2. Ask: "${lines.call.askShare}"`,
@@ -96,19 +98,22 @@ async function follow(sid: string, call: ReturnType<typeof expectCall>, family: 
 }
 
 /**
- * Rings the member with a reminder, or about the newest moment that someone else shared. Resolves once Twilio accepts the
+ * Rings the member with a reminder, then about the newest moment that someone else shared and the member has no story for. Resolves once Twilio accepts the
  * call, because the poll awaits each update; the answer, the conversation, and the share run in the background.
  */
 export async function callMember(family: Family, member: Member, ctx: Context, reminder?: Reminder): Promise<boolean> {
   const base = process.env.ANCHOR_PUBLIC_URL;
-  const moment = reminder ? undefined : newestMoment(family, member);
+  const moment = newestMoment(family, member);
   if (!member.phone || !process.env.TWILIO_FROM || !base || (!reminder && !moment)) return false;
-  const opening = spoken(lines.call.opening(member.name));
   const goodbye = spoken(lines.call.goodbye(member.name));
+  const opener = [lines.call.opening(member.name), reminder && lines.reminder(reminder.from.name, reminder.text), moment && lines.invitation(moment)]
+    .filter(Boolean)
+    .map(spoken)
+    .join(' ');
   const call = expectCall(
     moment
-      ? { instructions: instructions(member, moment), opener: `${opening} ${spoken(lines.invitation(moment))}`, askShare: lines.call.askShare, goodbye }
-      : { instructions: reminderInstructions(member, reminder), opener: `${opening} ${spoken(lines.reminder(reminder.from.name, reminder.text))}`, goodbye },
+      ? { instructions: instructions(member, moment, reminder), opener, askShare: lines.call.askShare, goodbye }
+      : { instructions: reminderInstructions(member, reminder), opener, goodbye },
   );
   let sid: string;
   try {

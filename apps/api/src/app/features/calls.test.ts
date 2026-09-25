@@ -151,7 +151,8 @@ const reminder = (overrides: Partial<Reminder>): Reminder => ({
 
 const tick = (from: number, to: number) => calls.tick?.(family, { from, to }, ctx);
 
-test('a reminder call reads the reminder in the sender’s words and shares nothing', async () => {
+test('a reminder call without a moment to talk about reads the reminder in the sender’s words and shares nothing', async () => {
+  family.moments = family.moments.filter((m) => m.by.id === '7');
   expect(await callMember(family, nikos, ctx, reminder({}))).toBe(true);
   expect(script().opener).toBe(
     "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person. Your reminder. Eleni wrote: «Take your pills with you when we leave»",
@@ -161,6 +162,26 @@ test('a reminder call reads the reminder in the sender’s words and shares noth
   endCall(record({ share: 'words', tellSender: true, transcript: [{ speaker: 'person', text: 'Thanks.' }] }));
   await new Promise((done) => setTimeout(done, 10));
   expect(texts()).toEqual([['7', lines.calling]]);
+});
+
+test('a reminder call reads the reminder, then the newest moment, and shares the story', async () => {
+  expect(await callMember(family, nikos, ctx, reminder({}))).toBe(true);
+  expect(script().opener).toBe(
+    "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person. Your reminder. Eleni wrote: «Take your pills with you when we leave» Eleni shared: «Maria's first day of school!» What does it remind you of?",
+  );
+  expect(script().askShare).toBe(lines.call.askShare);
+  expect(script().instructions).toContain('Take your pills with you when we leave');
+  expect(script().instructions).toContain(lines.call.reachPerson('Eleni'));
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(record({ share: 'words', shareAsked: { ms: 0, line: 1 }, transcript: [{ speaker: 'person', text: 'Kostas held his dad’s hand.' }] }));
+  await expect.poll(() => family.moments[1].stories.length).toBe(1);
+  expect(texts()).toContainEqual(['-100', lines.storyAdded('Nikos', 'Eleni', 'Kostas held his dad’s hand.')]);
+});
+
+test('a call skips a moment that already holds a story by the member', async () => {
+  family.moments[1].stories.push({ id: 's1', by: { id: '7', name: 'Nikos' }, at: NOW, text: 'We cried.', messageIds: ['60'] });
+  await callMember(family, nikos, ctx);
+  expect(script().opener).toContain('Eleni shared: «An older moment»');
 });
 
 test('the calls tick rings a member who chose calls for a reminder sent in the window', async () => {
