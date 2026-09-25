@@ -133,6 +133,16 @@ test('latency runs from the end of the speech to the first Anchor audio', () => 
   expect(call.record.latencies).toEqual([1300]);
 });
 
+test('latency restarts when the caller speaks again before Anchor answers', () => {
+  const { call, tick } = connected();
+  for (let i = 0; i < 50; i++) call.twilio({ event: 'media', media: { payload: payload(160, 1), timestamp: String(i * 20) } });
+  call.realtime({ type: 'input_audio_buffer.speech_stopped', audio_end_ms: 400 });
+  tick(300);
+  call.realtime({ type: 'input_audio_buffer.speech_started', audio_start_ms: 900 });
+  call.realtime({ type: 'response.output_audio.delta', item_id: 'item2', delta: payload(160, 9) });
+  expect(call.record.latencies).toEqual([]);
+});
+
 test('speechOf cuts the caller audio to the detected speech, once per overlap', () => {
   const { call } = connected();
   for (let i = 0; i < 50; i++) call.twilio({ event: 'media', media: { payload: payload(160, i), timestamp: String(i * 20) } });

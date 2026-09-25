@@ -147,10 +147,10 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, voi
           break;
         case 'input_audio_buffer.speech_started':
           speechStart = event.audio_start_ms ?? heardMs;
+          speechEndedAt = undefined;
           if (pendingMarks > 0 && playing) {
             toRealtime({ type: 'conversation.item.truncate', item_id: playing.item, content_index: 0, audio_end_ms: latestTimestamp - playing.start });
             toTwilio({ event: 'clear', streamSid });
-            pendingMarks = 0;
             playing = undefined;
           }
           break;

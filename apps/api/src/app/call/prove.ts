@@ -103,8 +103,8 @@ server.once('connection', (twilio) => {
     const stamp = new Date(startedAt).toISOString().replace(/[:.]/g, '-');
     const base = `tmp/call-${stamp}`;
     mkdirSync('tmp', { recursive: true });
-    writeFileSync(`${base}.ogg`, toOgg(speechOf(call.record)));
-    writeFileSync(`${base}-full.ogg`, toOgg(Buffer.concat(call.record.audio)));
+    if (call.record.speech.length) writeFileSync(`${base}.ogg`, toOgg(speechOf(call.record)));
+    if (call.record.audio.length) writeFileSync(`${base}-full.ogg`, toOgg(Buffer.concat(call.record.audio)));
     const { callSid: sid, share, transcript, speech, latencies, usage } = call.record;
     writeFileSync(`${base}.json`, JSON.stringify({ sid, model: MODEL, durationMs: Date.now() - startedAt, share, transcript, speech, latencies, usage }, null, 2));
     console.log(`wrote ${base}.ogg, ${base}-full.ogg, and ${base}.json`);
