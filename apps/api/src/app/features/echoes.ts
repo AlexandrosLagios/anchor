@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { lines } from '../core/lines';
+import { cut, lines } from '../core/lines';
 import type { Context, Family, Feature, Media, Moment } from '../core/types';
 import { ask, valid } from '../gemini';
 
@@ -69,7 +69,7 @@ async function checkOne(family: Family, momentId: string, ctx: Context) {
   ctx.store.save();
 
   const [then, now] = thenNow(newMoment, matchMoment, earlier);
-  const caption = lines.echoCaption(then.by.name, then.text, now.by.name, now.text);
+  const caption = cut(lines.echoCaption(then.by.name, then.text, now.by.name, now.text), 1024);
   const pictures = [pictureOf(then), pictureOf(now)].filter((picture) => picture !== undefined);
   const message =
     pictures.length === 2
