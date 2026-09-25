@@ -74,6 +74,7 @@ export const lines = {
   offersOff: `Of course. I won't offer that again. Say "settings" to change this.`,
   reminder: (who: string, text: string) => `⏰ Your reminder. ${who} wrote: «${clip(text)}»`,
   fastforwardUsage: 'Send /fastforward and a number of days or a time, for example /fastforward 7 or /fastforward 08:05.',
+  calling: "I'm ringing you now 📞",
   // v2, section 4.15: the phone call
   call: {
     opening: (name: string) => `Hello ${name}, this is Anchor, the family's record keeper. I'm not a person.`,
