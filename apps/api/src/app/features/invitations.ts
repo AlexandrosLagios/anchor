@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { dayIndex, slotIn } from '../core/clock';
 import { dateOf, lines } from '../core/lines';
 import { byPriority } from '../core/priority';
+import { tell } from '../core/tell';
 import {
   Blocked,
   type Context,
@@ -68,17 +69,6 @@ function warnUnlessBlocked(error: unknown, what: string): undefined {
   if (error instanceof Blocked) throw error;
   logger.warn(`${what} failed: ${error}`);
   return undefined;
-}
-
-async function tell(member: Member, message: Outgoing, family: Family, ctx: Context) {
-  try {
-    await ctx.transport(family.id).send(member.id, message);
-  } catch (error) {
-    if (error instanceof Blocked) {
-      member.started = false;
-      ctx.store.save();
-    } else logger.warn(`A message to member ${member.id} failed: ${error}`);
-  }
 }
 
 async function announce(family: Family, message: Outgoing, ctx: Context) {
@@ -192,7 +182,7 @@ async function inPrivate(event: Incoming, family: Family, member: Member, ctx: C
       { label: lines.buttons.agree, data: 'inv:agree' },
       { label: lines.buttons.notNow, data: 'inv:decline' },
     ];
-    await tell(member, { text: lines.welcome(member.name), buttons }, family, ctx);
+    await tell(family, member, { text: lines.welcome(member.name), buttons }, ctx);
     return true;
   }
   if (isCommand(event.text, '/stop') || STOP.test(event.text?.trim() ?? '')) {
@@ -201,7 +191,7 @@ async function inPrivate(event: Incoming, family: Family, member: Member, ctx: C
       member.invitation = undefined;
       ctx.store.save();
     }
-    await tell(member, { text: lines.stopped }, family, ctx);
+    await tell(family, member, { text: lines.stopped }, ctx);
     return true;
   }
   if (event.button === 'inv:agree') {
@@ -209,11 +199,11 @@ async function inPrivate(event: Incoming, family: Family, member: Member, ctx: C
       member.started = true;
       ctx.store.save();
     }
-    await tell(member, { text: lines.agreed(member.name) }, family, ctx);
+    await tell(family, member, { text: lines.agreed(member.name) }, ctx);
     return true;
   }
   if (event.button === 'inv:decline') {
-    await tell(member, { text: lines.notNow }, family, ctx);
+    await tell(family, member, { text: lines.notNow }, ctx);
     return true;
   }
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
@@ -230,7 +220,7 @@ async function inPrivate(event: Incoming, family: Family, member: Member, ctx: C
       changed = true;
     }
     if (changed) ctx.store.save();
-    await tell(member, { text: lines.dontBringBack }, family, ctx);
+    await tell(family, member, { text: lines.dontBringBack }, ctx);
     return true;
   }
   const invitation = member.invitation;
@@ -260,8 +250,8 @@ const gentleHelp = (moment: Moment) => lines.gentleHelp(dateOf(moment), moment.t
 const tellDirectly = (moment: Moment) => lines.tellDirectly(moment.title, dateOf(moment), moment.by.name);
 
 async function explain(text: string, invitation: Invitation, moment: Moment, family: Family, member: Member, ctx: Context) {
-  await tell(member, { text }, family, ctx);
-  if (moment.voice && isOpen(family, member, invitation, moment)) await tell(member, { voice: moment.voice }, family, ctx);
+  await tell(family, member, { text }, ctx);
+  if (moment.voice && isOpen(family, member, invitation, moment)) await tell(family, member, { voice: moment.voice }, ctx);
 }
 
 async function settle(action: string, invitation: Invitation, moment: Moment, family: Family, member: Member, ctx: Context) {
@@ -271,10 +261,10 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
   if (action === 'later') {
     (moment.returns[member.id] ??= { count: 0, due: 0 }).due = nextSlot(ctx.now());
     ctx.store.save();
-    await tell(member, { text: lines.notNow }, family, ctx);
+    await tell(family, member, { text: lines.notNow }, ctx);
   } else if (action === 'keep') {
     ctx.store.save();
-    await tell(member, { text: lines.notShared }, family, ctx);
+    await tell(family, member, { text: lines.notShared }, ctx);
   } else {
     const added = await announce(
       family,
@@ -294,7 +284,7 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
       });
     }
     ctx.store.save();
-    await tell(member, { text: lines.shared }, family, ctx);
+    await tell(family, member, { text: lines.shared }, ctx);
   }
 }
 
@@ -318,7 +308,7 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
       { label: lines.buttons.share, data: `inv:share:${moment.id}` },
       { label: lines.buttons.dontShare, data: `inv:keep:${moment.id}` },
     ];
-    await tell(member, { text: lines.thanks, buttons }, family, ctx);
+    await tell(family, member, { text: lines.thanks, buttons }, ctx);
     return;
   }
   if (reading.kind === 'question') return explain(tellDirectly(moment), invitation, moment, family, member, ctx);
@@ -331,7 +321,7 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
   }
   member.invitation = undefined;
   ctx.store.save();
-  await tell(member, { text: lines.warmClose }, family, ctx);
+  await tell(family, member, { text: lines.warmClose }, ctx);
 }
 
 async function helpIfSilent(family: Family, member: Member, now: number, ctx: Context) {
