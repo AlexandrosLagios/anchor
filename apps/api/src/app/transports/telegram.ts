@@ -203,6 +203,15 @@ export class TelegramTransport implements Transport {
     return { messageId: String(sent.message_id), voice: sent.voice && { id: sent.voice.file_id, mimeType: sent.voice.mime_type } };
   }
 
+  // ponytail: step 5 lands the Telegram ephemeral-message edit and delete calls of section 7
+  async edit(): Promise<void> {
+    throw new Error('Transport.edit lands in step 5');
+  }
+
+  async remove(): Promise<void> {
+    throw new Error('Transport.remove lands in step 5');
+  }
+
   async react(chatId: string, messageId: string, emoji: string, big?: boolean) {
     const reaction = [{ type: 'emoji', emoji: emoji.replace(/\uFE0F/g, '') }];
     await call(this.token, 'setMessageReaction', { chat_id: chatId, message_id: Number(messageId), reaction, is_big: big });

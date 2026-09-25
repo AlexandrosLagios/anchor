@@ -35,7 +35,7 @@ export const lines = {
     "An admin can reply /private to a grandparent's message, and I'll send them family moments in private. " +
     'Reply "Anchor, forget this" to delete a moment, or "Anchor, don\'t bring this back" to keep it without bringing it back. ' +
     'This is a test build, so please share staged photos only.',
-  storytellerStart: (name: string) =>
+  memberStart: (name: string) =>
     `${name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment.`,
   welcome: (name: string) =>
     `Hello ${name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. ` +
@@ -66,7 +66,21 @@ export const lines = {
   storyAdded: (name: string, sender: string, story: string) => `${name} added a story to ${sender}'s moment 🎙️\n«${clip(story)}»`,
   echoCaption: (then: Moment, now: Moment) => `Then and now 💛\n${sharedBy(then, 450)}\n${sharedBy(now, 450)}`,
   fastforwarded: (date: string) => `⏩ It's now ${date} on the family clock.`,
-  fastforwardUsage: 'Send /fastforward and a number of days, for example /fastforward 7.',
+  // v2, section 4.13: who is "You" when the sender gets the reminder
+  reminderOffer: (who: string, text: string) => `⏰ ${who} wrote: «${clip(text)}»\nShall I remind you?`,
+  reminderSet: (time: string) => `Done ✍ I'll remind you at ${time} in our private chat.`,
+  reminderStart: (time: string) => `Tap Start, and I'll remind you at ${time} in our private chat 🙂`,
+  reminderConfirmed: (time: string) => `Done ✍ I'll remind you here at ${time}.`,
+  reminder: (who: string, text: string) => `⏰ Your reminder. ${who} wrote: «${clip(text)}»`,
+  fastforwardUsage: 'Send /fastforward and a number of days or a time, for example /fastforward 7 or /fastforward 08:05.',
+  // v2, section 4.15: the phone call
+  call: {
+    opening: (name: string) => `Hello ${name}, this is Anchor, the family's record keeper. I'm not a person.`,
+    askShare: 'Shall I share what you told me with the family?',
+    reachPerson: (sender: string) => `Shall I tell ${sender} you'd love a call?`,
+    goodbye: (name: string) => `Thank you, ${name}. Goodbye 💛`,
+  },
+  wouldLoveCall: (name: string, sender: string) => `${sender}, ${name} would love a call from you 💛`,
   askAnswer: (title: string, date: string, names: string[]) =>
     `${title} · ${date} 💛${names.length ? `\nStories from ${names.join(', ')}` : ''}`,
   notFound: "I couldn't find that in the family record yet.",
@@ -104,5 +118,10 @@ export const lines = {
     whatIsThis: 'What is this?',
     share: 'Yes, share it',
     dontShare: 'No, thanks',
+    // v2, section 4.13: the reminder offer buttons
+    remindAt: (time: string) => `Yes, at ${time}`,
+    anotherTime: 'Another time',
+    noThanks: 'No thanks',
+    stopReminders: 'Stop offering reminders',
   },
 };

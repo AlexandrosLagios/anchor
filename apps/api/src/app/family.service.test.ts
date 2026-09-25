@@ -7,7 +7,7 @@ import { lines } from './core/lines';
 import { createRouter } from './core/router';
 import { openStore } from './core/store';
 import type { Incoming } from './core/types';
-import { FamilyService, FEATURES } from './family.service';
+import { FamilyService, FEATURES, nextWindow } from './family.service';
 import { bundles } from './features/capture/capture';
 import { httpFetch, type HttpResponse } from './http';
 import { ask } from './model/model';
@@ -91,12 +91,30 @@ test('with a token the host polls Telegram, introduces Anchor to a new group, an
   host.onApplicationShutdown();
 
   expect(JSON.parse(readFileSync(file, 'utf8')).families).toEqual([
-    { id: '-1001234567890', chatId: '-1001234567890', storytellers: [], moments: [], counters: {} },
+    { id: '-1001234567890', chatId: '-1001234567890', members: [], moments: [], offers: [], reminders: [], counters: {} },
   ]);
 });
 
 test('FEATURES keeps the order of spec 5.4', () => {
-  expect(FEATURES.map((feature) => feature.name)).toEqual(['intro', 'fastforward', 'forget', 'invitations', 'memories', 'ask', 'capture', 'echoes']);
+  expect(FEATURES.map((feature) => feature.name)).toEqual([
+    'intro',
+    'fastforward',
+    'forget',
+    'reminders',
+    'members',
+    'invitations',
+    'memories',
+    'intents',
+    'capture',
+    'shares',
+    'echoes',
+    'calls',
+  ]);
+});
+
+test('nextWindow starts an empty window at to when restart is set, and keeps the running window otherwise', () => {
+  expect(nextWindow(100, 200, false)).toEqual({ from: 100, to: 200 });
+  expect(nextWindow(100, 200, true)).toEqual({ from: 200, to: 200 });
 });
 
 test('through FEATURES, a captioned photo gets a heart and "Anchor, forget this" reaches forget before ask and capture', async () => {

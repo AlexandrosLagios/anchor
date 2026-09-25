@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { dayIndex, slotIn } from '../core/clock';
 import { dateOf, lines } from '../core/lines';
 import { byPriority } from '../core/priority';
+import { tell } from '../core/tell';
 import {
   Blocked,
   type Context,
@@ -10,9 +11,11 @@ import {
   type Feature,
   type Incoming,
   type Invitation,
+  type Media,
   type Moment,
   type Outgoing,
-  type Storyteller,
+  type Member,
+  type Person,
   type Transport,
 } from '../core/types';
 import { ask, speak, valid } from '../model/model';
@@ -36,10 +39,10 @@ const logger = new Logger('Invitations');
 
 type Reading = { kind: (typeof KINDS)[number]; transcript: string };
 
-export function qualifies(moment: Moment, storytellerId: string, now: number): boolean {
-  const back = moment.returns[storytellerId];
+export function qualifies(moment: Moment, memberId: string, now: number): boolean {
+  const back = moment.returns[memberId];
   return (
-    moment.by.id !== storytellerId &&
+    moment.by.id !== memberId &&
     !moment.sensitive &&
     now - moment.savedAt >= THREE_HOURS &&
     (back?.due ?? 0) <= now &&
@@ -70,17 +73,6 @@ function warnUnlessBlocked(error: unknown, what: string): undefined {
   return undefined;
 }
 
-async function tell(storyteller: Storyteller, message: Outgoing, family: Family, ctx: Context) {
-  try {
-    await ctx.transport(family.id).send(storyteller.id, message);
-  } catch (error) {
-    if (error instanceof Blocked) {
-      storyteller.started = false;
-      ctx.store.save();
-    } else logger.warn(`A message to storyteller ${storyteller.id} failed: ${error}`);
-  }
-}
-
 async function announce(family: Family, message: Outgoing, ctx: Context) {
   try {
     return await ctx.transport(family.id).send(family.chatId, message);
@@ -90,10 +82,10 @@ async function announce(family: Family, message: Outgoing, ctx: Context) {
   }
 }
 
-const isOpen = (family: Family, storyteller: Storyteller, invitation: Invitation, moment: Moment) =>
-  storyteller.invitation === invitation && family.moments.includes(moment) && !moment.sensitive;
+const isOpen = (family: Family, member: Member, invitation: Invitation, moment: Moment) =>
+  member.invitation === invitation && family.moments.includes(moment) && !moment.sensitive;
 
-async function deliver(family: Family, storyteller: Storyteller, moment: Moment, at: number, ctx: Context) {
+async function deliver(family: Family, member: Member, moment: Moment, at: number, ctx: Context) {
   const invitation: Invitation = {
     momentId: moment.id,
     day: dayIndex(at),
@@ -103,15 +95,15 @@ async function deliver(family: Family, storyteller: Storyteller, moment: Moment,
     sentAt: ctx.now(),
     replied: false,
   };
-  storyteller.invitation = invitation;
-  const count = (moment.returns[storyteller.id]?.count ?? 0) + 1;
-  moment.returns[storyteller.id] = { count, due: afterDays(elevenOn(at), GAP_DAYS[count - 1] ?? 0) };
+  member.invitation = invitation;
+  const count = (moment.returns[member.id]?.count ?? 0) + 1;
+  moment.returns[member.id] = { count, due: afterDays(elevenOn(at), GAP_DAYS[count - 1] ?? 0) };
   ctx.store.save();
 
-  const open = () => isOpen(family, storyteller, invitation, moment);
+  const open = () => isOpen(family, member, invitation, moment);
   const transport = ctx.transport(family.id);
   const post = async (message: Outgoing) => {
-    const sent = await transport.send(storyteller.id, message);
+    const sent = await transport.send(member.id, message);
     invitation.messageIds.push(sent.messageId);
     return sent;
   };
@@ -138,8 +130,8 @@ async function deliver(family: Family, storyteller: Storyteller, moment: Moment,
     if (open()) ctx.store.save();
   } catch (error) {
     if (!(error instanceof Blocked)) throw error;
-    storyteller.started = false;
-    if (open()) storyteller.invitation = undefined;
+    member.started = false;
+    if (open()) member.invitation = undefined;
     ctx.store.save();
   }
 }
@@ -155,66 +147,65 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
     const person = event.replyToSender;
     if (!(await transport.isAdmin(family.chatId, event.sender.id))) return answer(event, family, lines.adminOnly, ctx);
     if (!person) return answer(event, family, lines.privateHow, ctx);
-    if (!family.storytellers.some((storyteller) => storyteller.id === person.id)) {
-      family.storytellers.push({ id: person.id, name: person.name, started: false });
-      ctx.store.save();
-    }
+    const isNew = !family.members.some((member) => member.id === person.id);
+    ctx.store.joinMember(family, person);
+    if (isNew) ctx.store.save();
     const start = { label: lines.buttons.start, url: transport.startLink(family.id) };
-    await announce(family, { text: lines.storytellerStart(person.name), buttons: [start] }, ctx);
+    await announce(family, { text: lines.memberStart(person.name), buttons: [start] }, ctx);
     return true;
   }
   if (!isCommand(event.text, '/send')) return false;
   if (!(await transport.isAdmin(family.chatId, event.sender.id))) return answer(event, family, lines.adminOnly, ctx);
-  if (!family.storytellers.some((storyteller) => storyteller.started)) return answer(event, family, lines.nobodyPrivate, ctx);
-  for (const storyteller of family.storytellers) {
-    if (!storyteller.started) continue;
+  if (!family.members.some((member) => member.started)) return answer(event, family, lines.nobodyPrivate, ctx);
+  for (const member of family.members) {
+    if (!member.started) continue;
     const now = ctx.now();
     const priority = byPriority(now);
-    const returns = (moment: Moment) => moment.returns[storyteller.id]?.count ?? 0;
+    const returns = (moment: Moment) => moment.returns[member.id]?.count ?? 0;
     const [moment] = family.moments
-      .filter((item) => !item.sensitive && item.by.id !== storyteller.id && returns(item) < MAX_RETURNS)
+      .filter((item) => !item.sensitive && item.by.id !== member.id && returns(item) < MAX_RETURNS)
       .sort((a, b) => returns(a) - returns(b) || priority(a, b));
     if (moment) {
-      await deliver(family, storyteller, moment, now, ctx);
+      await deliver(family, member, moment, now, ctx);
       continue;
     }
-    if (storyteller.invitation) {
-      storyteller.invitation = undefined;
+    if (member.invitation) {
+      member.invitation = undefined;
       ctx.store.save();
     }
-    await announce(family, { text: lines.nothingToInvite(storyteller.name) }, ctx);
+    await announce(family, { text: lines.nothingToInvite(member.name) }, ctx);
   }
   return true;
 }
 
-async function inPrivate(event: Incoming, family: Family, storyteller: Storyteller, ctx: Context): Promise<boolean> {
+async function inPrivate(event: Incoming, family: Family, member: Member, ctx: Context): Promise<boolean> {
   if (isCommand(event.text, '/start')) {
     const buttons = [
       { label: lines.buttons.agree, data: 'inv:agree' },
       { label: lines.buttons.notNow, data: 'inv:decline' },
     ];
-    await tell(storyteller, { text: lines.welcome(storyteller.name), buttons }, family, ctx);
+    await tell(family, member, { text: lines.welcome(member.name), buttons }, ctx);
     return true;
   }
   if (isCommand(event.text, '/stop') || STOP.test(event.text?.trim() ?? '')) {
-    if (storyteller.started || storyteller.invitation) {
-      storyteller.started = false;
-      storyteller.invitation = undefined;
+    if (member.started || member.invitation) {
+      member.started = false;
+      member.invitation = undefined;
       ctx.store.save();
     }
-    await tell(storyteller, { text: lines.stopped }, family, ctx);
+    await tell(family, member, { text: lines.stopped }, ctx);
     return true;
   }
   if (event.button === 'inv:agree') {
-    if (!storyteller.started) {
-      storyteller.started = true;
+    if (!member.started) {
+      member.started = true;
       ctx.store.save();
     }
-    await tell(storyteller, { text: lines.agreed(storyteller.name) }, family, ctx);
+    await tell(family, member, { text: lines.agreed(member.name) }, ctx);
     return true;
   }
   if (event.button === 'inv:decline') {
-    await tell(storyteller, { text: lines.notNow }, family, ctx);
+    await tell(family, member, { text: lines.notNow }, ctx);
     return true;
   }
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
@@ -226,28 +217,28 @@ async function inPrivate(event: Incoming, family: Family, storyteller: Storytell
       moment.sensitive = true;
       changed = true;
     }
-    if (storyteller.invitation?.momentId === momentId) {
-      storyteller.invitation = undefined;
+    if (member.invitation?.momentId === momentId) {
+      member.invitation = undefined;
       changed = true;
     }
     if (changed) ctx.store.save();
-    await tell(storyteller, { text: lines.dontBringBack }, family, ctx);
+    await tell(family, member, { text: lines.dontBringBack }, ctx);
     return true;
   }
-  const invitation = storyteller.invitation;
+  const invitation = member.invitation;
   if (action && invitation?.momentId !== momentId) return true;
   if (!invitation) return false;
   const moment = family.moments.find((item) => item.id === invitation.momentId);
   if (!moment || moment.sensitive) {
-    storyteller.invitation = undefined;
+    member.invitation = undefined;
     ctx.store.save();
     return false;
   }
   if (action === 'what') {
     markReplied(invitation, ctx);
-    await explain(tellDirectly(moment), invitation, moment, family, storyteller, ctx);
-  } else if (action) await settle(action, invitation, moment, family, storyteller, ctx);
-  else await reply(event, invitation, moment, family, storyteller, ctx);
+    await explain(tellDirectly(moment), invitation, moment, family, member, ctx);
+  } else if (action) await settle(action, invitation, moment, family, member, ctx);
+  else await reply(event, invitation, moment, family, member, ctx);
   return true;
 }
 
@@ -260,52 +251,56 @@ function markReplied(invitation: Invitation, ctx: Context) {
 const gentleHelp = (moment: Moment) => lines.gentleHelp(dateOf(moment), moment.title);
 const tellDirectly = (moment: Moment) => lines.tellDirectly(moment.title, dateOf(moment), moment.by.name);
 
-async function explain(text: string, invitation: Invitation, moment: Moment, family: Family, storyteller: Storyteller, ctx: Context) {
-  await tell(storyteller, { text }, family, ctx);
-  if (moment.voice && isOpen(family, storyteller, invitation, moment)) await tell(storyteller, { voice: moment.voice }, family, ctx);
+async function explain(text: string, invitation: Invitation, moment: Moment, family: Family, member: Member, ctx: Context) {
+  await tell(family, member, { text }, ctx);
+  if (moment.voice && isOpen(family, member, invitation, moment)) await tell(family, member, { voice: moment.voice }, ctx);
 }
 
-async function settle(action: string, invitation: Invitation, moment: Moment, family: Family, storyteller: Storyteller, ctx: Context) {
+export async function shareStory(family: Family, person: Person, moment: Moment, story: { text: string; voice?: Media }, ctx: Context) {
+  const added = await announce(
+    family,
+    { text: lines.storyAdded(person.name, moment.by.name, story.text), replyTo: moment.messageIds[0], mention: moment.by },
+    ctx,
+  );
+  if (added) await react(ctx, family, family.chatId, added.messageId, '\u2764', true);
+  const spoken = story.voice ? await announce(family, { voice: story.voice }, ctx) : undefined;
+  if (family.moments.includes(moment)) {
+    moment.stories.push({
+      id: randomUUID(),
+      by: { id: person.id, name: person.name },
+      at: ctx.now(),
+      text: story.text,
+      voice: story.voice,
+      messageIds: [added?.messageId, spoken?.messageId].filter(Boolean),
+    });
+  }
+  ctx.store.save();
+}
+
+async function settle(action: string, invitation: Invitation, moment: Moment, family: Family, member: Member, ctx: Context) {
   const story = invitation.story;
   if (action === 'share' && !story) return;
-  storyteller.invitation = undefined;
+  member.invitation = undefined;
   if (action === 'later') {
-    (moment.returns[storyteller.id] ??= { count: 0, due: 0 }).due = nextSlot(ctx.now());
+    (moment.returns[member.id] ??= { count: 0, due: 0 }).due = nextSlot(ctx.now());
     ctx.store.save();
-    await tell(storyteller, { text: lines.notNow }, family, ctx);
+    await tell(family, member, { text: lines.notNow }, ctx);
   } else if (action === 'keep') {
     ctx.store.save();
-    await tell(storyteller, { text: lines.notShared }, family, ctx);
+    await tell(family, member, { text: lines.notShared }, ctx);
   } else {
-    const added = await announce(
-      family,
-      { text: lines.storyAdded(storyteller.name, moment.by.name, story.text), replyTo: moment.messageIds[0], mention: moment.by },
-      ctx,
-    );
-    if (added) await react(ctx, family, family.chatId, added.messageId, '\u2764', true);
-    const spoken = story.voice ? await announce(family, { voice: story.voice }, ctx) : undefined;
-    if (family.moments.includes(moment)) {
-      moment.stories.push({
-        id: randomUUID(),
-        by: { id: storyteller.id, name: storyteller.name },
-        at: ctx.now(),
-        text: story.text,
-        voice: story.voice,
-        messageIds: [added?.messageId, spoken?.messageId].filter(Boolean),
-      });
-    }
-    ctx.store.save();
-    await tell(storyteller, { text: lines.shared }, family, ctx);
+    await shareStory(family, member, moment, story, ctx);
+    await tell(family, member, { text: lines.shared }, ctx);
   }
 }
 
-async function reply(event: Incoming, invitation: Invitation, moment: Moment, family: Family, storyteller: Storyteller, ctx: Context) {
+async function reply(event: Incoming, invitation: Invitation, moment: Moment, family: Family, member: Member, ctx: Context) {
   markReplied(invitation, ctx);
   const reading: Reading =
     event.unsupported || event.forwarded
       ? { kind: 'other', transcript: '' }
       : (readShortQuestion(event) ?? (await readReply(event, moment, ctx.transport(family.id))));
-  if (!isOpen(family, storyteller, invitation, moment)) return;
+  if (!isOpen(family, member, invitation, moment)) return;
   if (reading.kind === 'story') {
     const text = event.voice ? reading.transcript || lines.voiceNote : (event.text ?? '');
     invitation.story = invitation.story
@@ -319,34 +314,34 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
       { label: lines.buttons.share, data: `inv:share:${moment.id}` },
       { label: lines.buttons.dontShare, data: `inv:keep:${moment.id}` },
     ];
-    await tell(storyteller, { text: lines.thanks, buttons }, family, ctx);
+    await tell(family, member, { text: lines.thanks, buttons }, ctx);
     return;
   }
-  if (reading.kind === 'question') return explain(tellDirectly(moment), invitation, moment, family, storyteller, ctx);
+  if (reading.kind === 'question') return explain(tellDirectly(moment), invitation, moment, family, member, ctx);
   if (invitation.story) return;
   if (reading.kind === 'unsure' && !invitation.helped) {
     invitation.helped = true;
     ctx.store.save();
-    await explain(gentleHelp(moment), invitation, moment, family, storyteller, ctx);
+    await explain(gentleHelp(moment), invitation, moment, family, member, ctx);
     return;
   }
-  storyteller.invitation = undefined;
+  member.invitation = undefined;
   ctx.store.save();
-  await tell(storyteller, { text: lines.warmClose }, family, ctx);
+  await tell(family, member, { text: lines.warmClose }, ctx);
 }
 
-async function helpIfSilent(family: Family, storyteller: Storyteller, now: number, ctx: Context) {
-  const invitation = storyteller.invitation;
-  if (!storyteller.started || !invitation || invitation.replied || invitation.helped || !(now - invitation.sentAt >= THREE_HOURS)) return;
+async function helpIfSilent(family: Family, member: Member, now: number, ctx: Context) {
+  const invitation = member.invitation;
+  if (!member.started || !invitation || invitation.replied || invitation.helped || !(now - invitation.sentAt >= THREE_HOURS)) return;
   const moment = family.moments.find((item) => item.id === invitation.momentId);
   if (!moment || moment.sensitive) {
-    storyteller.invitation = undefined;
+    member.invitation = undefined;
     ctx.store.save();
     return;
   }
   invitation.helped = true;
   ctx.store.save();
-  await explain(gentleHelp(moment), invitation, moment, family, storyteller, ctx);
+  await explain(gentleHelp(moment), invitation, moment, family, member, ctx);
 }
 
 // a short text that ends with "?" is a hesitation or a question, so code decides it and the model cannot turn it into a story
@@ -372,7 +367,7 @@ async function readReply(event: Incoming, moment: Moment, transport: Transport):
 function replyPrompt(event: Incoming, moment: Moment) {
   return [
     "You read replies for Anchor, the keeper of a family's photos and stories.",
-    'Anchor sent a moment that the family shared to a grandparent, one of the family storytellers, and the grandparent replied in a private chat.',
+    'Anchor sent a moment that the family shared to a grandparent, one of the family members, and the grandparent replied in a private chat.',
     `The moment: ${moment.title}`,
     lines.sharedBy(moment),
     `The typed reply: «${event.text ?? ''}»`,
@@ -391,21 +386,21 @@ export const invitations: Feature = {
   async handle(event, family, ctx) {
     if (!family) return false;
     if (event.chat === 'group') return inGroup(event, family, ctx);
-    const storyteller = family.storytellers.find((person) => person.id === event.sender.id);
-    return storyteller ? inPrivate(event, family, storyteller, ctx) : false;
+    const member = family.members.find((person) => person.id === event.sender.id);
+    return member ? inPrivate(event, family, member, ctx) : false;
   },
 
   async tick(family, window, ctx) {
     const slot = slotIn(window, 11);
-    for (const storyteller of family.storytellers) {
-      if (slot !== undefined && storyteller.started && storyteller.lastInvitationDay !== dayIndex(slot)) {
-        storyteller.invitation = undefined;
-        storyteller.lastInvitationDay = dayIndex(slot);
-        const [moment] = family.moments.filter((item) => qualifies(item, storyteller.id, slot)).sort(byPriority(slot));
-        if (moment) await deliver(family, storyteller, moment, slot, ctx);
+    for (const member of family.members) {
+      if (slot !== undefined && member.started && member.lastInvitationDay !== dayIndex(slot)) {
+        member.invitation = undefined;
+        member.lastInvitationDay = dayIndex(slot);
+        const [moment] = family.moments.filter((item) => qualifies(item, member.id, slot)).sort(byPriority(slot));
+        if (moment) await deliver(family, member, moment, slot, ctx);
         else ctx.store.save();
       }
-      await helpIfSilent(family, storyteller, window.to, ctx);
+      await helpIfSilent(family, member, window.to, ctx);
     }
   },
 };

@@ -1,6 +1,6 @@
 export type Media = { id: string; mimeType?: string };
 
-export type Button = { label: string; data?: string; url?: string };
+export type Button = { label: string; data?: string; url?: string; contact?: boolean }; // v2 contact: a private reply-keyboard button that shares the member's phone number
 
 export type Incoming = {
   familyId?: string; // set for group events; the router resolves private events
@@ -22,23 +22,29 @@ export type Incoming = {
   migratedTo?: string; // the new chat id when the group became a supergroup
   button?: string; // the data of a pressed button
   joined?: boolean; // Anchor joined this group
+  ephemeral?: boolean; // v2: an ephemeral command, or a tap on an ephemeral message; messageId holds the ephemeral message id
+  contact?: { phone: string; userId?: string }; // v2: a shared contact; userId is set when the contact is a Telegram user
 };
 
 export type Outgoing = {
   text?: string; // the caption when photo or voice is set
-  photo?: Media; // set at most one of photo, video, voice, and album
+  photo?: Media; // set at most one of photo, video, voice, album, and contact
   video?: Media;
   voice?: Media | { wav: Buffer };
   album?: Array<{ photo: Media } | { video: Media }>; // the caption goes on the first item; no buttons
+  contact?: { phone: string; name: string }; // v2: a contact card
   mention?: Person; // mentions the first occurrence of the name in the text
   buttons?: Button[];
   replyTo?: string;
+  onlyFor?: string; // v2: the user id of the only member who sees this group message (an ephemeral message); no replyTo
 };
 
 export class Blocked extends Error {} // send throws Blocked when the person blocked Anchor
 
 export interface Transport {
   send(chatId: string, message: Outgoing): Promise<{ messageId: string; messageIds?: string[]; voice?: Media }>; // messageIds: every message of an album
+  edit(chatId: string, messageId: string, change: { text?: string; buttons?: Button[]; onlyFor?: string }): Promise<void>; // v2: text replaces the text of a text message; buttons alone replace the buttons of any message
+  remove(chatId: string, messageId: string, onlyFor?: string): Promise<void>; // v2
   react(chatId: string, messageId: string, emoji: string, big?: boolean): Promise<void>;
   download(media: Media): Promise<{ data: Buffer; mimeType: string }>;
   isAdmin(chatId: string, userId: string): Promise<boolean>;
@@ -75,7 +81,7 @@ export type Moment = {
   stories: Story[];
   lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'
   memoryPostIds: string[];
-  returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
+  returns: Record<string, { count: number; due: number }>; // private returns per member id
   echo?: string; // the id of the older moment that this moment echoes
   echoPostIds?: string[]; // the messages of the then-and-now post
 };
@@ -91,17 +97,47 @@ export type Invitation = {
   replied: boolean; // any reply, a question, or "What is this?" came
 };
 
-export type Storyteller = Person & {
+export type Choices = { moments: boolean; reminders: boolean; shares: boolean; voice: boolean; call: boolean }; // v2, section 4.11
+
+export type Member = Person & {
   started: boolean;
+  choices: Choices; // v2
+  nudged?: boolean; // v2: the one join nudge went out
+  phone?: string; // v2: E.164, from the one-tap contact share
+  seenAt?: number; // v2: demo-clock ms, the newest savedAt that Anchor sent in private
+  lastCallDay?: number; // v2: the demo-clock day index of the last daily call
   lastInvitationDay?: number;
   invitation?: Invitation;
+};
+
+export type Offer = { // v2, sections 4.12 and 4.13
+  id: string; // 8 characters, in the button data
+  kind: 'share' | 'reminder';
+  to: string; // the member id; the offer is an ephemeral message for this member
+  messageId: string; // the ephemeral message id
+  at: number; // demo-clock ms of the send
+  ref: string; // the moment id of a share offer, or the reminder id of a reminder offer
+};
+
+export type Reminder = { // v2, section 4.13
+  id: string; // 8 characters, in the button data and the start payload
+  to: string; // the member id who gets the reminder
+  from: Person; // the sender of the source message
+  text: string; // the sender's words, verbatim
+  sourceId: string; // the group message that gets the ✍ reaction
+  time: string; // HH:MM, the suggestion, then the time that the member picked
+  due?: number; // demo-clock ms, set with status 'set'
+  status: 'offered' | 'waiting' | 'set' | 'sent'; // waiting: the member picked a time and has not tapped Start
+  sentAt?: number; // demo-clock ms of the delivery
 };
 
 export type Family = {
   id: string; // the group chat id on the transport
   chatId: string; // the group chat id on the transport
-  storytellers: Storyteller[];
+  members: Member[]; // v2: renamed from storytellers
   moments: Moment[];
+  offers: Offer[]; // v2
+  reminders: Reminder[]; // v2
   lastMemoryDay?: number;
   counters: Record<string, number>;
 };
@@ -114,7 +150,8 @@ export interface Store {
   readonly state: State;
   family(id: string): Family | undefined;
   addFamily(id: string, chatId: string): Family;
-  familyOfStoryteller(userId: string): Family | undefined;
+  familyOfMember(userId: string): Family | undefined; // v2: renamed from familyOfStoryteller
+  joinMember(family: Family, person: Person): Member; // v2: adds a member with the default choices when the person is new
   save(): void;
 }
 
@@ -122,6 +159,7 @@ export type Context = {
   now(): number; // demo-clock ms
   store: Store;
   transport(familyId: string): Transport;
+  restartWindow?(): void; // v2: the next tick window starts at now, so no slot inside a clock jump fires
 };
 
 export interface Feature {

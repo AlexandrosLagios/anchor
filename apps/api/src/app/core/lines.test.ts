@@ -99,3 +99,22 @@ test('the consent, stop, and just-ask lines read as the design writes them', () 
   expect(lines.buttons.agree).toBe("Yes, I'd like that");
   expect(lines.buttons.whatIsThis).toBe('What is this?');
 });
+
+test('the v2 reminder and call lines read as the design writes them', () => {
+  expect(lines.reminderOffer('You', 'take my pills')).toBe('⏰ You wrote: «take my pills»\nShall I remind you?');
+  expect(lines.reminderOffer('Sofia', 'a'.repeat(2000))).toContain(`«${'a'.repeat(599)}…»`);
+  expect(lines.reminderSet('08:00')).toBe("Done ✍ I'll remind you at 08:00 in our private chat.");
+  expect(lines.reminderStart('08:00')).toBe("Tap Start, and I'll remind you at 08:00 in our private chat 🙂");
+  expect(lines.reminderConfirmed('08:00')).toBe("Done ✍ I'll remind you here at 08:00.");
+  expect(lines.reminder('Sofia', 'take my pills')).toBe('⏰ Your reminder. Sofia wrote: «take my pills»');
+  expect(lines.fastforwardUsage).toBe('Send /fastforward and a number of days or a time, for example /fastforward 7 or /fastforward 08:05.');
+  expect(lines.call.opening('Nikos')).toBe("Hello Nikos, this is Anchor, the family's record keeper. I'm not a person.");
+  expect(lines.call.askShare).toBe('Shall I share what you told me with the family?');
+  expect(lines.call.reachPerson('Sofia')).toBe("Shall I tell Sofia you'd love a call?");
+  expect(lines.call.goodbye('Nikos')).toBe('Thank you, Nikos. Goodbye 💛');
+  expect(lines.wouldLoveCall('Nikos', 'Sofia')).toBe('Sofia, Nikos would love a call from you 💛');
+  expect(lines.buttons.remindAt('08:00')).toBe('Yes, at 08:00');
+  expect(lines.buttons.anotherTime).toBe('Another time');
+  expect(lines.buttons.noThanks).toBe('No thanks');
+  expect(lines.buttons.stopReminders).toBe('Stop offering reminders');
+});
