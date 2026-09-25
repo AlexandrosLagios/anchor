@@ -18,7 +18,7 @@ Anchor takes every name from Telegram. Set the first name of each demo account t
 
 Check the bot and the group:
 
-1. Make sure that the live bot runs `main` at `3d96948` or later, which has `/private` and `/send`. If it does not, redeploy with `DEPLOY.md` steps 1 to 3.
+1. Make sure that the live bot runs `main` at `3d96948` or later, which has `/private` and `/send`. If it does not, redeploy from a clean checkout with `git switch --detach origin/main && pnpm deploy:bot`.
 2. Use the group of the rehearsals. A person is a storyteller in one family only, so a new group sends the grandfather's private replies to the old family.
 3. Make sure that Anchor is an admin in the group. Promote Anchor at least one day before, because a move to a supergroup posts `intro` a second time.
 4. Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.
