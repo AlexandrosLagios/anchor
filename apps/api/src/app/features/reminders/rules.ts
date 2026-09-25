@@ -8,10 +8,26 @@ export const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const DEFAULT_TIMES = ['08:00', '12:00', '18:00', '21:00'];
 
+const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+// the next local time never reaches a weekday after tomorrow, so that message gets no offer in code, whatever the model says
+function namesLaterWeekday(text: string, now: number): boolean {
+  const today = new Date(now).getDay();
+  return WEEKDAYS.some((day, index) => index !== today && index !== (today + 1) % 7 && new RegExp(`\\b${day}s?\\b`, 'i').test(text));
+}
+
 // a voice note never passes, because a gate on voice costs one transcription per group voice note
-export function passesGate(event: Incoming): boolean {
+export function passesGate(event: Incoming, now: number): boolean {
   const text = event.text ?? '';
-  return event.chat === 'group' && !event.voice && !event.forwarded && !text.startsWith('/') && !ADDRESS.test(text) && HINT.test(text);
+  return (
+    event.chat === 'group' &&
+    !event.voice &&
+    !event.forwarded &&
+    !text.startsWith('/') &&
+    !ADDRESS.test(text) &&
+    HINT.test(text) &&
+    !namesLaterWeekday(text, now)
+  );
 }
 
 /** The next local `HH:MM` after `now`. */

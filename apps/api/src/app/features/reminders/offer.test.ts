@@ -76,13 +76,39 @@ test('offer is false unless the call returns true', async () => {
   expect(await readOffer(pills, family, NOW)).toBeUndefined();
 });
 
+test('a sender who must remember comes back as the sender id', async () => {
+  answer({ offer: true, who: '7', time: '08:00' });
+  const event = message('Remember to take my pills with me when we leave in the morning');
+  expect(await readOffer(event, family, NOW)).toEqual({ to: '7', time: '08:00' });
+});
+
 test.each([
-  ['unknown', 'unknown'],
+  ['unknown, for a mention of someone who is not a member', 'unknown'],
   ['an id of nobody in the family', '99'],
   ['no who at all', undefined],
-])('%s goes to the sender', async (_, who) => {
-  answer({ offer: true, who, time: '08:00' });
-  expect(await readOffer(pills, family, NOW)).toEqual({ to: '7', time: '08:00' });
+])('%s makes no offer', async (_, who) => {
+  answer({ offer: true, who, time: '' });
+  expect(await readOffer(message('@odisseasmk , remember to receive your prize tomorrow'), family, NOW)).toBeUndefined();
+});
+
+test('the prompt asks for the sender id, unknown for a person not in the list, and no offer for a later day', async () => {
+  answer({ offer: false, who: 'unknown', time: '' });
+  await readOffer(pills, family, NOW);
+  const [prompt] = vi.mocked(ask).mock.calls[0];
+  expect(prompt).toContain('When the sender must remember, who is the id of the sender.');
+  expect(prompt).toContain('When the person who must remember is not in the list, who is "unknown".');
+  expect(prompt).toContain('A message that names a day after tomorrow, such as a weekday, a date, or "next week", gets offer false.');
+});
+
+test('"tomorrow at 8" offers 08:00', async () => {
+  answer({ offer: true, who: '42', time: '08:00' });
+  const event = message("Dad, don't forget your pills tomorrow at 8.", { replyTo: '5', replyToSender: { id: '42', name: 'Nikos' } });
+  expect(await readOffer(event, family, NOW)).toEqual({ to: '42', time: '08:00' });
+});
+
+test('"on Sunday" gets no offer when the call says no', async () => {
+  answer({ offer: false, who: 'unknown', time: '' });
+  expect(await readOffer(message('@odisseasmk , remember to receive your prize on Sunday'), family, NOW)).toBeUndefined();
 });
 
 test.each(['8:00', '8am', '24:00', '12:60', 8, undefined])('the invalid time %s counts as an empty string', async (time) => {

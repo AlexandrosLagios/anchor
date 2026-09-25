@@ -134,7 +134,7 @@ test('Nikos sets the reminder, and /fastforward 08:05 delivers it to him in priv
 });
 
 test('a reminder for the sender reads "You wrote"', async () => {
-  await offer({ offer: true, who: 'unknown', time: '08:00' });
+  await offer({ offer: true, who: '7', time: '08:00' });
   expect(transport.sent[0].message).toMatchObject({ text: `⏰ You wrote: «${PILLS}»\nShall I remind you?`, onlyFor: '7' });
   expect(family.reminders[0].to).toBe('7');
 });
@@ -316,10 +316,24 @@ test('a member with reminders off gets no offer', async () => {
 });
 
 test('the sender joins the family before the call', async () => {
-  vi.mocked(ask).mockResolvedValue({ offer: true, who: 'unknown', time: '' });
+  vi.mocked(ask).mockResolvedValue({ offer: true, who: '8', time: '' });
   await router.route(group('Remind me to call the plumber tomorrow', { id: '8', name: 'Maria' }));
   expect(family.members.map((member) => member.id)).toEqual(['42', '7', '8']);
   expect(transport.sent[0].message.onlyFor).toBe('8');
+});
+
+test('a mention of someone who is not a member gets no offer', async () => {
+  vi.mocked(ask).mockResolvedValue({ offer: true, who: 'unknown', time: '' });
+  await router.route(group('@odisseasmk , remember to receive your prize tomorrow'));
+  expect(transport.sent).toEqual([]);
+  expect(family.reminders).toEqual([]);
+});
+
+test('a weekday after tomorrow makes no call and no offer', async () => {
+  await router.route(group('@odisseasmk , remember to receive your prize on Sunday'));
+  expect(ask).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([]);
+  expect(seen).toHaveLength(1);
 });
 
 test('a message that does not pass the gate makes no call', async () => {

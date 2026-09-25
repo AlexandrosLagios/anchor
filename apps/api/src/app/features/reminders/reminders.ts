@@ -121,7 +121,7 @@ export const reminders: Feature = {
       await answer(family, tapped[1], tapped[2], event, ctx);
       return true;
     }
-    if (passesGate(event)) await makeOffer(family, event, ctx); // capture still sees the message
+    if (passesGate(event, ctx.now())) await makeOffer(family, event, ctx); // capture still sees the message
     return false;
   },
 
