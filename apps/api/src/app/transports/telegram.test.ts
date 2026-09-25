@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { beforeEach, expect, test, vi } from 'vitest';
+import { lines } from '../core/lines';
 import { Blocked } from '../core/types';
 import { httpFetch, type HttpResponse } from '../http';
 import { wav } from '../song';
@@ -95,7 +96,7 @@ test('toIncoming maps a reply with the sender of the replied-to message', () => 
 test('toIncoming leaves replyToSender unset for a reply to a bot', () => {
   const anchorBot = { id: 999, is_bot: true, first_name: 'Anchor' };
   const reply_to_message = { message_id: 41, from: anchorBot, chat: group, date, text: 'One week ago 💛' };
-  const event = toIncoming(message({ text: '/storyteller', reply_to_message }), BOT);
+  const event = toIncoming(message({ text: '/private', reply_to_message }), BOT);
   expect(event?.replyTo).toBe('41');
   expect(event?.replyToSender).toBeUndefined();
 });
@@ -265,8 +266,23 @@ test('connect retries getMe 5 seconds after a failure', { timeout: 15_000 }, asy
     return ok(anchorBot);
   });
   const telegram = await TelegramTransport.connect('TOKEN');
-  expect(attempts).toBe(2);
+  expect(attempts).toBe(4); // two getMe calls, then the two menus
   expect(telegram.startLink('abc')).toBe(`https://t.me/${BOT}?start=abc`);
+});
+
+test('connect registers the command menu for group admins and for private chats', async () => {
+  const calls = botApi(() => ok(true));
+  await TelegramTransport.connect('TOKEN');
+  expect(calls.filter(({ method }) => method === 'setMyCommands').map(({ params }) => params)).toEqual([
+    { commands: lines.commands.admins, scope: { type: 'all_chat_administrators' } },
+    { commands: lines.commands.private, scope: { type: 'all_private_chats' } },
+  ]);
+});
+
+test('a failed menu registration only logs, and connect still returns the transport', async () => {
+  botApi((method) => (method === 'setMyCommands' ? failed(400, 'Bad Request') : ok(true)));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  expect(telegram.username).toBe(BOT);
 });
 
 test('send posts a photo with a caption clipped to 1024 characters, the reply, and the buttons', async () => {
@@ -458,7 +474,7 @@ test('download fetches the file by the path that getFile returns', async () => {
 test('isAdmin is true for the creator and the administrators only', async () => {
   const statuses = ['creator', 'administrator', 'member', 'restricted', 'left', 'kicked'];
   let next = 0;
-  botApi(() => ok({ status: statuses[next++], user: nikos }));
+  botApi((method) => (method === 'getChatMember' ? ok({ status: statuses[next++], user: nikos }) : ok(true)));
   const telegram = await TelegramTransport.connect('TOKEN');
   const answers = [];
   for (let i = 0; i < statuses.length; i++) answers.push(await telegram.isAdmin('-1001234567890', '222'));

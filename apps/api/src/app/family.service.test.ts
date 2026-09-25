@@ -69,6 +69,7 @@ test('with a token the host polls Telegram, introduces Anchor to a new group, an
     const method = url.slice(url.lastIndexOf('/') + 1);
     const params = JSON.parse(String(init?.body ?? '{}'));
     if (method === 'getMe') return ok(anchorBot);
+    if (method === 'setMyCommands') return ok(true);
     if (method === 'sendMessage') {
       sent.push({ chat_id: params.chat_id, text: params.text });
       return ok({ message_id: 10 + sent.length, chat: group, date });

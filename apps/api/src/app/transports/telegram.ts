@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { cut } from '../core/lines';
+import { cut, lines } from '../core/lines';
 import { Blocked, type Button, type Incoming, type Media, type Outgoing, type Person, type Transport } from '../core/types';
 import { httpFetch } from '../http';
 import { toOgg } from './voice';
@@ -117,6 +117,15 @@ async function call<T>(token: string, method: string, params: Record<string, unk
   throw new Error(`Telegram ${method} ${reply.error_code}: ${reply.description}`);
 }
 
+async function registerMenu(token: string) {
+  try {
+    await call(token, 'setMyCommands', { commands: lines.commands.admins, scope: { type: 'all_chat_administrators' } });
+    await call(token, 'setMyCommands', { commands: lines.commands.private, scope: { type: 'all_private_chats' } });
+  } catch (error) {
+    logger.warn(`The command menu failed: ${error}`);
+  }
+}
+
 export class TelegramTransport implements Transport {
   private constructor(
     private readonly token: string,
@@ -127,6 +136,7 @@ export class TelegramTransport implements Transport {
     for (;;) {
       try {
         const me = await call<User>(token, 'getMe');
+        await registerMenu(token);
         return new TelegramTransport(token, me.username ?? '');
       } catch (error) {
         logger.error(`getMe failed, retrying in 5 s: ${error}`);

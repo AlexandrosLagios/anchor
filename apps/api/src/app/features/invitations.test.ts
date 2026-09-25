@@ -142,12 +142,12 @@ test('nextSlot is the first local 11:00 after now', () => {
   expect(nextSlot(at(25, 15))).toBe(at(26, 11));
 });
 
-test('/storyteller from an admin registers the replied-to member once and posts storytellerStart with the Start link', async () => {
+test('/private from an admin registers the replied-to member once and posts storytellerStart with the Start link', async () => {
   family.storytellers.length = 0;
   transport.admins.add('1');
   const replyTo = { replyTo: '40', replyToSender: { id: '7', name: 'Nikos' } };
-  expect(await receive(inGroup({ text: '/storyteller', ...replyTo }))).toBe(true);
-  expect(await receive(inGroup({ text: '/storyteller please', ...replyTo }))).toBe(true);
+  expect(await receive(inGroup({ text: '/private', ...replyTo }))).toBe(true);
+  expect(await receive(inGroup({ text: '/private please', ...replyTo }))).toBe(true);
 
   expect(saved()?.storytellers).toEqual([{ id: '7', name: 'Nikos', started: false }]);
   const start = { text: lines.storytellerStart('Nikos'), buttons: [{ label: lines.buttons.start, url: transport.startLink('-100') }] };
@@ -157,11 +157,11 @@ test('/storyteller from an admin registers the replied-to member once and posts 
   ]);
 });
 
-test('/storyteller from a member who is not an admin, or with no replied-to member, sends nothing', async () => {
+test('/private from a member who is not an admin, or with no replied-to member, sends nothing', async () => {
   family.storytellers.length = 0;
-  expect(await receive(inGroup({ text: '/storyteller', replyToSender: { id: '7', name: 'Nikos' } }))).toBe(true);
+  expect(await receive(inGroup({ text: '/private', replyToSender: { id: '7', name: 'Nikos' } }))).toBe(true);
   transport.admins.add('1');
-  expect(await receive(inGroup({ text: '/storyteller' }))).toBe(true);
+  expect(await receive(inGroup({ text: '/private' }))).toBe(true);
   expect(family.storytellers).toEqual([]);
   expect(transport.sent).toEqual([]);
 });
@@ -200,7 +200,7 @@ test('"Not now" on the welcome sends notNow and changes nothing, and nothing com
 
   await tickAt(at(25, 11));
   transport.admins.add('1');
-  await receive(inGroup({ text: '/invite' }));
+  await receive(inGroup({ text: '/send' }));
   expect(transport.sent).toHaveLength(1);
   expect(nikos().invitation).toBeUndefined();
 });
@@ -790,7 +790,7 @@ test('a repeated "Don\'t bring this back" tap sends dontBringBack again but save
   expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.dontBringBack, lines.dontBringBack]);
 });
 
-test('/invite from an admin closes the open invitation and invites with the fewest returns, whatever the age and the due time', async () => {
+test('/send from an admin closes the open invitation and invites with the fewest returns, whatever the age and the due time', async () => {
   transport.admins.add('1');
   const open = add({ id: 'open', returns: { '7': { count: 1, due: at(26, 11) } } });
   add({ id: 'own', by: { id: '7', name: 'Nikos' } });
@@ -800,7 +800,7 @@ test('/invite from an admin closes the open invitation and invites with the fewe
   add({ id: 'fresh', savedAt: at(25, 11, 59), salience: 4, returns: { '7': { count: 1, due: at(27, 11) } } });
   invite(open);
   nikos().lastInvitationDay = dayIndex(at(24, 11));
-  expect(await receive(inGroup({ text: '/invite' }))).toBe(true);
+  expect(await receive(inGroup({ text: '/send' }))).toBe(true);
 
   expect(nikos().invitation?.momentId).toBe('fresh');
   expect(family.moments.find(({ id }) => id === 'fresh')?.returns['7']).toEqual({ count: 2, due: at(27, 11) });
@@ -808,14 +808,14 @@ test('/invite from an admin closes the open invitation and invites with the fewe
   expect(transport.sent.map(({ chatId }) => chatId)).toEqual(['7', '7']);
 });
 
-test('/invite posts nothingToInvite for a storyteller with no moment left, and a member who is not an admin gets nothing', async () => {
+test('/send posts nothingToInvite for a storyteller with no moment left, and a member who is not an admin gets nothing', async () => {
   family.storytellers.push({ id: '8', name: 'Eleni', started: false });
   invite(add({ by: { id: '7', name: 'Nikos' } }));
-  expect(await receive(inGroup({ text: '/invite' }))).toBe(true);
+  expect(await receive(inGroup({ text: '/send' }))).toBe(true);
   expect(transport.sent).toEqual([]);
 
   transport.admins.add('1');
-  await receive(inGroup({ text: '/invite' }));
+  await receive(inGroup({ text: '/send' }));
   expect(messages()).toEqual([['-100', { text: lines.nothingToInvite('Nikos') }]]);
   expect(saved()?.storytellers[0].invitation).toBeUndefined();
 });

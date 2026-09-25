@@ -32,7 +32,7 @@ export const lines = {
   intro:
     "Hi, I'm Anchor 👋 I'm not a person: I keep this family's photos and stories, each one in the words of the person who shared it. " +
     'When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, so it stays with all of us. ' +
-    "An admin can reply /storyteller to a grandparent's message. " +
+    "An admin can reply /private to a grandparent's message, and I'll send them family moments in private. " +
     'Reply "Anchor, forget this" to delete a moment, or "Anchor, don\'t bring this back" to keep it without bringing it back. ' +
     'This is a test build, so please share staged photos only.',
   storytellerStart: (name: string) =>
@@ -79,6 +79,19 @@ export const lines = {
   voiceNote: '🎤 voice note',
   nothingToShare: 'The family record is empty so far. Share a photo with a few words 🙂',
   nothingToInvite: (name: string) => `${name} has seen every moment so far.`,
+  // the menu that Telegram shows when someone types "/": the group commands for admins only, and the private ones for everyone
+  commands: {
+    admins: [
+      { command: 'memory', description: 'Share a family memory in the group now' },
+      { command: 'private', description: 'Reply to a message: that person gets family moments in private' },
+      { command: 'send', description: 'Send a family moment now to each person who gets them in private' },
+      { command: 'fastforward', description: 'Move the family clock forward, for example /fastforward 7' },
+    ],
+    private: [
+      { command: 'start', description: 'Get family moments from me' },
+      { command: 'stop', description: 'Stop getting family moments' },
+    ],
+  },
   buttons: {
     start: 'Start',
     agree: "Yes, I'd like that",
