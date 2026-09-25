@@ -336,6 +336,35 @@ test('an invitation that is still open at the next 11:00 slot closes without a m
   expect(transport.sent).toEqual([]);
 });
 
+test('a window that spans both the 3-hour silent mark and the next 11:00 slot lets the slot win: the old invitation closes silently and the next one goes out', async () => {
+  add();
+  await tickAt(at(25, 11));
+  add({ id: 'm2', by: { id: '2', name: 'Eleni' }, photo: { id: 'photo-99' }, text: 'Sunday lunch with all the cousins', savedAt: at(20, 8), salience: 5 });
+  const sentBefore = transport.sent.length;
+
+  now = at(26, 11);
+  await invitations.tick(family, { from: at(25, 10), to: now }, ctx);
+
+  expect(messages().slice(sentBefore)).toEqual([
+    ['7', { photo: { id: 'photo-99' } }],
+    ['7', { voice: { wav }, text: lines.invitation('Eleni', 'Sunday lunch with all the cousins'), buttons: inviteButtons('m2') }],
+  ]);
+  expect(nikos().invitation?.momentId).toBe('m2');
+  expect(transport.sent.slice(sentBefore).some(({ message }) => message.text?.includes('No rush'))).toBe(false);
+});
+
+test('when that same wide window leaves no moment to qualify, the tick closes the old invitation silently and sends nothing', async () => {
+  invite(add({ returns: { '7': { count: 7, due: at(20, 11) } } }), { sentAt: at(25, 11) });
+  nikos().lastInvitationDay = dayIndex(at(25, 11));
+
+  now = at(26, 11);
+  await invitations.tick(family, { from: at(25, 10), to: now }, ctx);
+
+  expect(transport.sent).toEqual([]);
+  expect(nikos().invitation).toBeUndefined();
+  expect(saved()?.storytellers[0]).toEqual({ id: '7', name: 'Nikos', started: true, lastInvitationDay: dayIndex(at(26, 11)) });
+});
+
 test('a failed voice clip sends the invitation as text with both buttons', async () => {
   silenceWarnings();
   vi.mocked(speak).mockRejectedValue(new Error('no TTS model left'));

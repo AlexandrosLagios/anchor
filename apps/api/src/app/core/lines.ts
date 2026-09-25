@@ -57,6 +57,7 @@ export const lines = {
     `${title} · ${date} 💛${names.length ? `\nStories from ${names.join(', ')}` : ''}`,
   notFound: "I couldn't find that in the family record yet.",
   noInvitation: "Thank you 🙂 I'll bring you a family moment soon.",
+  notJoined: "Thank you 🙂 If you'd like family moments from me, send /start.",
   pointer: "Hi! I keep your family's record. Talk to me in your family group 🙂",
   voiceNote: '🎤 voice note',
   nothingToShare: 'The family record is empty so far. Share a photo with a few words 🙂',

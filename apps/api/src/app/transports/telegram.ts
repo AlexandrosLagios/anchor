@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { cut } from '../core/lines';
-import { Blocked, type Incoming, type Media, type Outgoing, type Person, type Transport } from '../core/types';
+import { Blocked, type Button, type Incoming, type Media, type Outgoing, type Person, type Transport } from '../core/types';
 import { httpFetch } from '../http';
 import { toOgg } from './voice';
 
@@ -103,6 +103,8 @@ function encode(params: Record<string, unknown>) {
   return { body: form };
 }
 
+const toButton = ({ label, data, url }: Button) => (url ? { text: label, url } : { text: label, callback_data: data });
+
 async function call<T>(token: string, method: string, params: Record<string, unknown> = {}, signal = AbortSignal.timeout(30_000)): Promise<T> {
   const response = await httpFetch(`${API}/bot${token}/${method}`, { method: 'POST', ...encode(params), signal });
   const reply = (await response.json()) as { ok: boolean; result: T; error_code?: number; description?: string };
@@ -175,9 +177,7 @@ export class TelegramTransport implements Transport {
     const params = {
       chat_id: chatId,
       reply_parameters,
-      reply_markup: buttons?.length
-        ? { inline_keyboard: [buttons.map(({ label, data, url }) => (url ? { text: label, url } : { text: label, callback_data: data }))] }
-        : undefined,
+      reply_markup: buttons?.length ? { inline_keyboard: buttons.map((button) => [toButton(button)]) } : undefined,
     };
     let sent: Message;
     if (video) sent = await call<Message>(this.token, 'sendVideo', { ...params, ...captioned, video: video.id });
