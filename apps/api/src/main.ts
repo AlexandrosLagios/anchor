@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AppModule } from './app/app.module';
+import { attachCallStream } from './app/call/stream';
 
 function loadEnv() {
   for (const file of [resolve(process.cwd(), 'apps/api/.env.local'), resolve(process.cwd(), '.env.local')]) {
@@ -33,6 +34,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Authorization', 'Content-Type'],
   });
+  attachCallStream(app.getHttpServer());
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(`Anchor API is running on http://localhost:${port}`);
