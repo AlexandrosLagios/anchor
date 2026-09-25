@@ -14,6 +14,7 @@ export const intro: Feature = {
       for (const moment of family.moments) {
         moment.messageIds = [];
         moment.memoryPostIds = [];
+        if (moment.echoPostIds) moment.echoPostIds = [];
         for (const story of moment.stories) story.messageIds = [];
       }
       ctx.store.save();

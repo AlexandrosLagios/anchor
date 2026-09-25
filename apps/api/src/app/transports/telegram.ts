@@ -173,8 +173,8 @@ export class TelegramTransport implements Transport {
         ...('video' in item ? { type: 'video', media: item.video.id } : { type: 'photo', media: item.photo.id }),
         ...(index === 0 ? captioned : {}),
       }));
-      const [first] = await call<Message[]>(this.token, 'sendMediaGroup', { chat_id: chatId, media, reply_parameters });
-      return { messageId: String(first.message_id) };
+      const sent = await call<Message[]>(this.token, 'sendMediaGroup', { chat_id: chatId, media, reply_parameters });
+      return { messageId: String(sent[0].message_id), messageIds: sent.map((item) => String(item.message_id)) };
     }
     const params = {
       chat_id: chatId,

@@ -4,7 +4,8 @@ import { FakeTransport } from './fake-transport';
 test('FakeTransport records an album, a mention, and a big reaction', async () => {
   const transport = new FakeTransport();
   const album = [{ photo: { id: 'p1' } }, { video: { id: 'v1' } }];
-  await transport.send('-100', { album, text: 'Then and now', mention: { id: '111', name: 'Sofia' } });
+  const sent = await transport.send('-100', { album, text: 'Then and now', mention: { id: '111', name: 'Sofia' } });
+  expect(sent).toEqual({ messageId: 'sent-1', messageIds: ['sent-1', 'sent-1-2'], voice: undefined });
   await transport.react('-100', 'sent-1', '❤', true);
   expect(transport.sent[0].message).toMatchObject({ album, mention: { id: '111', name: 'Sofia' } });
   expect(transport.reactions).toEqual([{ chatId: '-100', messageId: 'sent-1', emoji: '❤', big: true }]);

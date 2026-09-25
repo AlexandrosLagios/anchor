@@ -565,38 +565,93 @@ test('an open bundle survives a group migration: it saves into the family and th
   expect(transport.reactions).toEqual([{ chatId: '-1009', messageId: textEvent.messageId, emoji: '❤' }]);
 });
 
-test('a forget on an echo post asks which moment, deletes nothing, and sends no reaction', async () => {
+function echoPair() {
+  const older = moment({ id: 'm-old', by: { id: 'nikos', name: 'Nikos' }, title: 'First day at school in 1958' });
+  const newer = moment({ id: 'm-new', echo: 'm-old', echoPostIds: ['echo-1', 'echo-2'] });
+  family.moments.push(older, newer);
+  return { older, newer };
+}
+
+const whichButtons = (prefix: string) => [
+  { label: 'Nikos: First day at school in 1958', data: `${prefix}:m-old` },
+  { label: "Sofia: Maria's first day at school", data: `${prefix}:m-new` },
+];
+
+test('a forget on either photo of an echo post asks which moment, with one button per moment, and changes nothing', async () => {
   const saveSpy = vi.spyOn(ctx.store, 'save');
-  const m1 = moment({ id: 'm1', echoPostId: 'echo-1' });
-  family.moments.push(m1);
+  const { older, newer } = echoPair();
 
-  const forgetEcho = event({ text: 'Anchor, forget this', replyTo: 'echo-1' });
-  expect(await forget.handle(forgetEcho, family, ctx)).toBe(true);
+  for (const replyTo of ['echo-1', 'echo-2']) {
+    const forgetEcho = event({ text: 'Anchor, forget this', replyTo });
+    expect(await forget.handle(forgetEcho, family, ctx)).toBe(true);
+    expect(transport.sent.at(-1)?.message).toEqual({ text: lines.forgetWhich, replyTo: forgetEcho.messageId, buttons: whichButtons('fgt') });
+  }
 
-  expect(family.moments).toEqual([m1]);
+  expect(family.moments).toEqual([older, newer]);
   expect(transport.reactions).toEqual([]);
   expect(saveSpy).not.toHaveBeenCalled();
-  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.forgetWhich, replyTo: forgetEcho.messageId } }]);
 });
 
-test('a keep-quiet on an echo post asks which moment, changes nothing, and sends no reaction', async () => {
+test('a keep-quiet on an echo post asks which moment with the keep-quiet buttons, and changes nothing', async () => {
   const saveSpy = vi.spyOn(ctx.store, 'save');
-  const m1 = moment({ id: 'm1', echoPostId: 'echo-1', sensitive: false });
-  family.moments.push(m1);
+  const { older, newer } = echoPair();
 
-  const quietEcho = event({ text: "Anchor, don't bring this back", replyTo: 'echo-1' });
+  const quietEcho = event({ text: "Anchor, don't bring this back", replyTo: 'echo-2' });
   expect(await forget.handle(quietEcho, family, ctx)).toBe(true);
 
-  expect(family.moments[0].sensitive).toBe(false);
+  expect(transport.sent).toEqual([
+    { chatId: '-100', messageId: 'sent-1', message: { text: lines.quietWhich, replyTo: quietEcho.messageId, buttons: whichButtons('qt') } },
+  ]);
+  expect([older.sensitive, newer.sensitive]).toEqual([false, false]);
   expect(transport.reactions).toEqual([]);
   expect(saveSpy).not.toHaveBeenCalled();
-  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.quietWhich, replyTo: quietEcho.messageId } }]);
+});
+
+test('a which-one button forgets or quiets only its own moment, and reacts 👌 on the which-one message', async () => {
+  const saveSpy = vi.spyOn(ctx.store, 'save');
+  const { older, newer } = echoPair();
+
+  expect(await forget.handle(event({ messageId: 'which-1', button: 'qt:m-new' }), family, ctx)).toBe(true);
+  expect(newer.sensitive).toBe(true);
+  expect(older.sensitive).toBe(false);
+
+  expect(await forget.handle(event({ messageId: 'which-2', button: 'fgt:m-old' }), family, ctx)).toBe(true);
+  expect(family.moments).toEqual([newer]);
+
+  expect(transport.reactions).toEqual([
+    { chatId: '-100', messageId: 'which-1', emoji: '👌' },
+    { chatId: '-100', messageId: 'which-2', emoji: '👌' },
+  ]);
+  expect(saveSpy).toHaveBeenCalledTimes(2);
+});
+
+test('a which-one button for a moment that is gone does nothing', async () => {
+  const saveSpy = vi.spyOn(ctx.store, 'save');
+  const { older, newer } = echoPair();
+
+  expect(await forget.handle(event({ button: 'fgt:gone' }), family, ctx)).toBe(true);
+  expect(await forget.handle(event({ button: 'qt:gone' }), family, ctx)).toBe(true);
+
+  expect(family.moments).toEqual([older, newer]);
+  expect(transport.reactions).toEqual([]);
+  expect(saveSpy).not.toHaveBeenCalled();
+});
+
+test('a which-one button label is the sender and the title, clipped to 40 characters', async () => {
+  const long = moment({ id: 'm-long', title: 'The whole family at the lake house on a very long summer day' });
+  const newer = moment({ id: 'm-new', echo: 'm-long', echoPostIds: ['echo-1'] });
+  family.moments.push(long, newer);
+
+  await forget.handle(event({ text: 'Anchor, forget this', replyTo: 'echo-1' }), family, ctx);
+
+  const labels = transport.sent[0].message.buttons?.map((button) => button.label) ?? [];
+  expect(labels[0]).toBe('Sofia: The whole family at the lake hou…');
+  expect(labels.every((label) => label.length <= 40)).toBe(true);
 });
 
 test('a forget on an echo post whose reply send rejects still returns true and logs a warning', async () => {
   const warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
-  const m1 = moment({ id: 'm1', echoPostId: 'echo-1' });
-  family.moments.push(m1);
+  echoPair();
   vi.spyOn(transport, 'send').mockRejectedValue(new Error('blocked'));
 
   const forgetEcho = event({ text: 'Anchor, forget this', replyTo: 'echo-1' });
@@ -606,10 +661,9 @@ test('a forget on an echo post whose reply send rejects still returns true and l
 });
 
 test('a reply to an echo post is not a story: memories skips it, and capture bundles it as usual', async () => {
-  const m1 = moment({ id: 'm1', echoPostId: 'echo-1' });
-  family.moments.push(m1);
+  const { newer: m1 } = echoPair();
 
-  const reply = event({ text: 'That was such a lovely day', replyTo: 'echo-1' });
+  const reply = event({ text: 'That was such a lovely day', replyTo: 'echo-2' });
   expect(await memories.handle?.(reply, family, ctx)).toBe(false);
   expect(await capture.handle(reply, family, ctx)).toBe(true);
 

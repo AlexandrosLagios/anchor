@@ -15,6 +15,7 @@ export class FakeTransport implements Transport {
     const messageId = `sent-${this.sent.length + 1}`;
     this.sent.push({ chatId, messageId, message });
     const voice = message.voice && ('wav' in message.voice ? { id: `voice-${messageId}`, mimeType: 'audio/ogg' } : message.voice);
+    if (message.album) return { messageId, messageIds: message.album.map((_, index) => (index ? `${messageId}-${index + 1}` : messageId)), voice };
     return { messageId, voice };
   }
 
