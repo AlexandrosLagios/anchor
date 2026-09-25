@@ -6,7 +6,7 @@ import { FakeTransport } from '../core/fake-transport';
 import { lines } from '../core/lines';
 import { createRouter } from '../core/router';
 import { openStore } from '../core/store';
-import type { Moment, Person } from '../core/types';
+import type { Family, Moment, Person } from '../core/types';
 import { ask } from '../gemini';
 import { echoes } from './echoes';
 
@@ -41,6 +41,13 @@ function makeMoment(over: Partial<Moment> = {}): Moment {
     returns: {},
     ...over,
   };
+}
+
+function pair(family: Family, newer: Partial<Moment> = {}) {
+  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
+  const newMoment = makeMoment({ by: sofia, savedAt: NOW, ...newer });
+  family.moments.push(candidate, newMoment);
+  return { candidate, newMoment };
 }
 
 function setup() {
@@ -132,9 +139,7 @@ test('different eventDate values order the older event first, even when earlier 
 
 test('a none answer posts nothing and leaves echo unset', async () => {
   const { transport, family, router } = setup();
-  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
-  const newMoment = makeMoment({ by: sofia, savedAt: NOW });
-  family.moments.push(candidate, newMoment);
+  const { newMoment } = pair(family);
   vi.mocked(ask).mockResolvedValueOnce({ momentId: 'none', earlier: 'match' });
   await router.tick({ from: NOW - 10, to: NOW });
 
@@ -144,9 +149,7 @@ test('a none answer posts nothing and leaves echo unset', async () => {
 
 test('an id outside the candidates posts nothing and leaves echo unset', async () => {
   const { transport, family, router } = setup();
-  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
-  const newMoment = makeMoment({ by: sofia, savedAt: NOW });
-  family.moments.push(candidate, newMoment);
+  const { newMoment } = pair(family);
   vi.mocked(ask).mockResolvedValueOnce({ momentId: 'not-a-real-id', earlier: 'match' });
   await router.tick({ from: NOW - 10, to: NOW });
 
@@ -156,9 +159,7 @@ test('an id outside the candidates posts nothing and leaves echo unset', async (
 
 test('a failed call posts nothing and leaves echo unset', async () => {
   const { transport, family, router } = setup();
-  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
-  const newMoment = makeMoment({ by: sofia, savedAt: NOW });
-  family.moments.push(candidate, newMoment);
+  const { newMoment } = pair(family);
   vi.mocked(ask).mockRejectedValueOnce(new Error('boom'));
   await router.tick({ from: NOW - 10, to: NOW });
 
@@ -168,9 +169,7 @@ test('a failed call posts nothing and leaves echo unset', async () => {
 
 test('a null answer posts nothing, leaves echo unset, and does not throw', async () => {
   const { transport, family, ctx } = setup();
-  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
-  const newMoment = makeMoment({ by: sofia, savedAt: NOW });
-  family.moments.push(candidate, newMoment);
+  const { newMoment } = pair(family);
   vi.mocked(ask).mockResolvedValueOnce(null);
   await expect(echoes.tick?.(family, { from: NOW - 10, to: NOW }, ctx)).resolves.toBeUndefined();
 
@@ -180,9 +179,7 @@ test('a null answer posts nothing, leaves echo unset, and does not throw', async
 
 test('a new moment with an echo already gets no call', async () => {
   const { transport, family, router } = setup();
-  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
-  const newMoment = makeMoment({ by: sofia, savedAt: NOW, echo: 'already-echoed' });
-  family.moments.push(candidate, newMoment);
+  pair(family, { echo: 'already-echoed' });
   await router.tick({ from: NOW - 10, to: NOW });
 
   expect(ask).not.toHaveBeenCalled();
@@ -290,9 +287,7 @@ test('a moment saved outside the window gets no call', async () => {
 
 test('a moment deleted during the call posts nothing and leaves echo unset', async () => {
   const { transport, family, router } = setup();
-  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
-  const newMoment = makeMoment({ by: sofia, savedAt: NOW });
-  family.moments.push(candidate, newMoment);
+  const { candidate, newMoment } = pair(family);
   vi.mocked(ask).mockImplementationOnce(async () => {
     family.moments = family.moments.filter((moment) => moment.id !== newMoment.id);
     return { momentId: candidate.id, earlier: 'match' };
@@ -304,9 +299,7 @@ test('a moment deleted during the call posts nothing and leaves echo unset', asy
 
 test('a moment marked sensitive during the call posts nothing and leaves echo unset', async () => {
   const { transport, family, router } = setup();
-  const candidate = makeMoment({ by: dimitris, savedAt: NOW - 1000 });
-  const newMoment = makeMoment({ by: sofia, savedAt: NOW });
-  family.moments.push(candidate, newMoment);
+  const { candidate, newMoment } = pair(family);
   vi.mocked(ask).mockImplementationOnce(async () => {
     candidate.sensitive = true;
     return { momentId: candidate.id, earlier: 'match' };
@@ -355,13 +348,15 @@ test('no picture posts the caption as text', async () => {
 
 test('the caption is cut at 1024 characters, the Telegram caption limit', async () => {
   const { transport, family, router } = setup();
-  const older = makeMoment({ by: dimitris, savedAt: NOW - 2000, text: 'a'.repeat(700), photo: { id: 'photo-older' } });
-  const newer = makeMoment({ by: sofia, savedAt: NOW, text: 'b'.repeat(700), photo: { id: 'photo-newer' } });
+  const olderBy = { id: 'u-long-1', name: 'A'.repeat(128) };
+  const newerBy = { id: 'u-long-2', name: 'B'.repeat(128) };
+  const older = makeMoment({ by: olderBy, savedAt: NOW - 2000, text: 'a'.repeat(700), photo: { id: 'photo-older' } });
+  const newer = makeMoment({ by: newerBy, savedAt: NOW, text: 'b'.repeat(700), photo: { id: 'photo-newer' } });
   family.moments.push(older, newer);
   vi.mocked(ask).mockResolvedValueOnce({ momentId: older.id, earlier: 'match' });
   await router.tick({ from: NOW - 10, to: NOW });
 
   const text = transport.sent[0].message.text ?? '';
   expect(text).toHaveLength(1024);
-  expect(lines.echoCaption(dimitris.name, older.text, sofia.name, newer.text).startsWith(text)).toBe(true);
+  expect(lines.echoCaption(olderBy.name, older.text, newerBy.name, newer.text).startsWith(text)).toBe(true);
 });

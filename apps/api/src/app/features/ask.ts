@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { lines } from '../core/lines';
+import { cut, lines } from '../core/lines';
 import type { Feature, Moment } from '../core/types';
 import * as gemini from '../gemini';
 
@@ -16,11 +16,12 @@ function formatDate(date: Date) {
 }
 
 function choiceLine(moment: Moment) {
-  const stories = moment.stories.map((story) => story.text.slice(0, 200)).join(' | ');
+  const stories = moment.stories.map((story) => cut(story.text, 200)).join(' | ');
   const people = moment.people.join(', ');
   return `- id ${moment.id}: "${moment.title}", ${formatDate(momentDate(moment))}, people: ${people}, stories: ${stories}`;
 }
 
+// ponytail: every shareable moment goes into the prompt; shortlist by people or date when a record reaches thousands of moments
 function buildPrompt(question: string, choices: Moment[], hasVoice: boolean) {
   return (
     "You are Anchor, the keeper of this family's record. A family member asked a question about a moment from the family record" +
@@ -53,8 +54,8 @@ export const ask: Feature = {
     let momentId: string | undefined;
     try {
       const clip = event.voice ? await ctx.transport(family.id).download(event.voice) : undefined;
-      const options: { media?: { data: Buffer; mimeType: string }[] } = clip ? { media: [clip] } : {};
-      const answer = await gemini.ask<{ momentId: string }>(buildPrompt(question, choices, !!event.voice), schema, options);
+      const prompt = buildPrompt(question, choices, !!event.voice);
+      const answer = await gemini.ask<{ momentId: string }>(prompt, schema, clip ? { media: [clip] } : {});
       momentId = gemini.valid.oneOf(answer.momentId, choiceIds);
     } catch (error) {
       logger.warn(`ask failed: ${error}`);
