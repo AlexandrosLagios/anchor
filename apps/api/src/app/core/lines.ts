@@ -128,9 +128,10 @@ export const lines = {
   },
   buttons: {
     start: 'Start',
-    notNow: 'Not now',
-    dontBringBack: "Don't bring this back",
-    whatIsThis: 'What is this?',
+    // v2: the user's wording for the three invitation buttons
+    notNow: 'Later, please',
+    dontBringBack: "Don't show me this again",
+    whatIsThis: 'Tell me about it',
     share: 'Yes, share it',
     dontShare: 'No, thanks',
     // v2, section 4.13: the reminder offer buttons

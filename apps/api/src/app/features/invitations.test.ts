@@ -33,9 +33,9 @@ const at = (day: number, hour: number, minute = 0) => new Date(2026, 8, day, hou
 const wav = Buffer.from('RIFF clip');
 const invitationText = 'Sofia shared: «Maria on her first day at school»\nWhat does it remind you of?';
 const inviteButtons = (id: string) => [
+  { label: lines.buttons.whatIsThis, data: `inv:what:${id}` },
   { label: lines.buttons.notNow, data: `inv:later:${id}` },
   { label: lines.buttons.dontBringBack, data: `inv:never:${id}` },
-  { label: lines.buttons.whatIsThis, data: `inv:what:${id}` },
 ];
 const shareButtons = (id: string) => [
   { label: lines.buttons.share, data: `inv:share:${id}` },
