@@ -58,11 +58,12 @@ Beat 7 skips the share on the call, because Nikos shared his story in beat 4. A 
 
 ## If a beat fails
 
-- No answer only for Nikos in beat 1 after 10 seconds: Nikos writes "Anchor, settings". The same button arrives.
+- No answer only for Nikos in beat 1 after 10 seconds: Nikos writes "Anchor, settings". The same button arrives. Both phrases are decided in code, so a miss here points at the bot or the network, not the model.
 - No share offer for Eleni in beat 3 after 15 seconds: check that Nikos turned on "Family moments" in beat 2. Nikos then says "Send me a moment" to Anchor in private, and the photo arrives.
 - Nikos's voice answer in beat 4 gets "Thank you 💛" instead of the share question: Anchor closed the invitation. Nikos says "Send me a moment" in private, and repeats beat 4.
 - No reminder offer for Nikos in beat 5 after 10 seconds: Eleni writes "Dad, don't forget your pills tomorrow at 8." If no offer comes again, narrate beats 5 and 6, and continue with beat 7 or 8.
 - No reminder after `/fastforward` in beat 6 after 10 seconds: narrate the reminder, and continue.
+- The voice note "Call me" in beat 7 gets another answer: Nikos types "Call me". A typed "Call me" never goes to the model.
 - "I couldn't ring you just now" in beat 7, or no ring after 15 seconds: say "The phone call is our next step", and close with beat 8.
 - The call rings, but Anchor stays silent for 5 seconds: Nikos hangs up. Say "The phone call is our next step", and close with beat 8.
 - Two beats fail: stop the live demo and play the screen recording.
