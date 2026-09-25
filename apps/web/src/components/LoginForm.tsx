@@ -14,7 +14,9 @@ export function LoginForm() {
     setBusy(true);
     try {
       await signIn(email, password);
-      window.location.href = '/account';
+      const next = new URLSearchParams(window.location.search).get('next');
+      const dest = next && next.startsWith('/family') && !next.startsWith('//') ? next : '/family';
+      window.location.href = dest;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not sign in.');
     } finally {

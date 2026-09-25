@@ -1,0 +1,15 @@
+---
+import FamilyLayout from '../../../layouts/FamilyLayout.astro';
+import { FamilyApp } from '../../../components/family/FamilyApp';
+import { MEMORY_IDS } from '../../../family/data';
+
+export function getStaticPaths() {
+  return MEMORY_IDS.map((id) => ({ params: { id } }));
+}
+
+const { id } = Astro.params;
+---
+
+<FamilyLayout title="Memory">
+  <FamilyApp client:load view="memory" memoryId={id} />
+</FamilyLayout>
