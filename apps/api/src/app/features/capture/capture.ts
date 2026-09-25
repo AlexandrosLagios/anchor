@@ -180,7 +180,8 @@ async function close(bundle: Bundle, family: Family, ctx: Context) {
 export const capture: Feature = {
   name: 'capture',
   async handle(event, family, ctx) {
-    if (event.chat !== 'group' || !family) return false;
+    // a button tap is never a message, and shares sits after capture, so its taps must pass through
+    if (event.chat !== 'group' || !family || event.button !== undefined) return false;
 
     if (!passesRules(event)) {
       count(family, 'rules');
