@@ -91,6 +91,12 @@ pnpm deploy:bot</pre>
     <tr><td>No ring in beat 7</td><td>Twilio permissions, or <code>anchor-bot</code> not public for the stream</td><td>Check the call gate checklist, then check the logs.</td></tr>
   </table>
 
+  <h2>9 · After the hackathon</h2>
+  <ol class="check">
+    <li><input type="checkbox" id="a1"><label for="a1">Delete the service to stop its cost (about 1.64 USD per day): <code>gcloud run services delete anchor-bot --project=a11y-hack26ath-267 --region=europe-west1</code>. The bucket keeps the record.</label></li>
+    <li><input type="checkbox" id="a2"><label for="a2">Revoke the <code>@anchor_family_bot</code> token in BotFather, because it was shared in a chat.</label></li>
+  </ol>
+
   <footer>Sources: <code>docs/demo-runbook.md</code>, <code>docs/specs/2026-09-25-family-memory-design.md</code>, and <code>DEPLOY.md</code> on <code>main</code>.</footer>
 </main>
 <script>

@@ -753,6 +753,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 ### 6.8 Read a reminder offer (v2, step 6)
 
 - The prompt holds the sender's name, the text, the local time and weekday of the demo clock, and one line per member: id and name.
+- When the message replies to a member's message, the prompt also names that member. The prompt holds names only, so only this hint lets the model map "Dad" or "you" to a member id.
 - The schema is `{ offer: boolean, who: enum, time: string }`. `who` holds the member ids and `unknown`. `time` is `HH:MM` in 24-hour local time, or an empty string.
 - The prompt says no by default. `offer` is true only when a member must remember a future action that has a time or a trigger, for example "take my pills when we leave in the morning". Plans for the whole family, past events, questions, and jokes get false.
 - The prompt maps "in the morning" to 08:00 and "tonight" to 20:00. A stated clock time wins.
