@@ -316,6 +316,7 @@ test('two concurrent ticks classify a pending bundle once', async () => {
 });
 
 test('a forget deletes the moment it replies to, the moment of a memory post, or just the story of a story message', async () => {
+  const saveSpy = vi.spyOn(ctx.store, 'save');
   const m1 = moment({ id: 'm1', messageIds: ['msg-1'] });
   const m2 = moment({ id: 'm2', messageIds: ['msg-2'], memoryPostIds: ['post-2'] });
   const m3 = moment({
@@ -328,16 +329,19 @@ test('a forget deletes the moment it replies to, the moment of a memory post, or
   const forgetMoment = event({ text: 'Anchor, forget this', replyTo: 'msg-1' });
   expect(await forget.handle(forgetMoment, family, ctx)).toBe(true);
   expect(family.moments.find((m) => m.id === 'm1')).toBeUndefined();
+  expect(saveSpy).toHaveBeenCalledTimes(1);
 
   const forgetMemoryPost = event({ text: 'Anchor, forget this', replyTo: 'post-2' });
   await forget.handle(forgetMemoryPost, family, ctx);
   expect(family.moments.find((m) => m.id === 'm2')).toBeUndefined();
+  expect(saveSpy).toHaveBeenCalledTimes(2);
 
   const forgetStory = event({ text: 'Anchor, forget this', replyTo: 'story-3' });
   await forget.handle(forgetStory, family, ctx);
   const remaining = family.moments.find((m) => m.id === 'm3');
   expect(remaining).toBeDefined();
   expect(remaining?.stories).toEqual([]);
+  expect(saveSpy).toHaveBeenCalledTimes(3);
 
   expect(transport.reactions).toEqual([
     { chatId: '-100', messageId: forgetMoment.messageId, emoji: '👌' },
@@ -394,6 +398,7 @@ test('a forget that owns nothing still reacts but does not save, and a forget wi
 });
 
 test('a keep-quiet marks the moment sensitive and keeps it in place', async () => {
+  const saveSpy = vi.spyOn(ctx.store, 'save');
   const m1 = moment({ id: 'm1', messageIds: ['msg-1'], sensitive: false });
   family.moments.push(m1);
   const keepQuiet = event({ text: "Anchor, don't bring this back", replyTo: 'msg-1' });
@@ -402,6 +407,7 @@ test('a keep-quiet marks the moment sensitive and keeps it in place', async () =
   expect(family.moments[0].id).toBe('m1');
   expect(family.moments[0].sensitive).toBe(true);
   expect(transport.reactions).toEqual([{ chatId: '-100', messageId: keepQuiet.messageId, emoji: '👌' }]);
+  expect(saveSpy).toHaveBeenCalledTimes(1);
 });
 
 test('a keep-quiet accepts the U+2019 apostrophe too', async () => {
@@ -414,14 +420,17 @@ test('a keep-quiet accepts the U+2019 apostrophe too', async () => {
 
 test('a keep-quiet on an open bundle makes the saved moment sensitive', async () => {
   (ask as Mock).mockResolvedValue(classification);
+  const saveSpy = vi.spyOn(ctx.store, 'save');
   const textEvent = event({ text: 'Maria on her first day' });
   await capture.handle(textEvent, family, ctx);
   await forget.handle(event({ text: "Anchor, don't bring this back", replyTo: textEvent.messageId }), family, ctx);
+  expect(saveSpy).not.toHaveBeenCalled(); // no moment exists yet; only the in-memory bundle flag flipped
 
   advance(BUNDLE_GAP_MS);
   await tick();
 
   expect(family.moments[0].sensitive).toBe(true);
+  expect(saveSpy).toHaveBeenCalled(); // the tick's close() saves the new, already-sensitive moment
 });
 
 test('forget.handle and capture.handle return false for a private event', async () => {
