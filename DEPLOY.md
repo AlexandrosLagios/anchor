@@ -172,7 +172,7 @@ For the demo, an admin moves the bot on cue. `/fastforward <days>` moves the dem
 
 Deploy while the family is quiet. During a rollout, the old and the new instance run together for a short time, and the last write to the record wins.
 
-- A push to `main` that changes `apps/api` or a root build file deploys a new version automatically (see "Automatic deploy"). To deploy by hand, repeat steps 1 to 3 of the deploy.
+- To deploy a new version, run `pnpm deploy:bot` (see "One-command deploy").
 - To stop the bot and the cost, delete the service. The bucket keeps the record.
 - Before a laptop run with the same token, delete the service. The service polls the token all the time.
 
@@ -180,33 +180,17 @@ Deploy while the family is quiet. During a rollout, the old and the new instance
 gcloud run services delete anchor-bot --project=$PROJECT --region=$REGION
 ```
 
-### Automatic deploy
+### One-command deploy
 
-The workflow `.github/workflows/deploy-anchor-bot.yml` deploys `anchor-bot` when a push to `main` changes `apps/api` or a root file that the image copies (`package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `nx.json`, `tsconfig.base.json`). It runs `pnpm nx test api`, builds the image, pushes the image with the short commit as its tag, and deploys the image as a new revision. The revision keeps the flags, the secrets, and the volume of the service. The "Run workflow" button on the Actions tab starts the same deploy by hand.
-
-The workflow signs in to Google Cloud through Workload Identity Federation, so GitHub stores no key. Only a workflow run from the repository `High-Contrast-Team/anchor` on `main` gets the deployer identity.
-
-A person with the Owner role runs this setup once, before the first run. Set the variables of "Telegram bot" first.
+To deploy the latest `main` to the live bot, run the deploy script from a clean checkout of `origin/main`:
 
 ```bash
-NUMBER=$(gcloud projects describe $PROJECT --format='value(projectNumber)')
-DEPLOYER=anchor-deployer@$PROJECT.iam.gserviceaccount.com
-
-gcloud services enable iamcredentials.googleapis.com sts.googleapis.com --project=$PROJECT
-gcloud iam service-accounts create anchor-deployer --project=$PROJECT
-gcloud iam workload-identity-pools create github --project=$PROJECT --location=global --display-name="GitHub Actions"
-gcloud iam workload-identity-pools providers create-oidc anchor --project=$PROJECT --location=global \
-  --workload-identity-pool=github --issuer-uri=https://token.actions.githubusercontent.com \
-  --attribute-mapping=google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref \
-  --attribute-condition="assertion.repository=='High-Contrast-Team/anchor' && assertion.ref=='refs/heads/main'"
-gcloud iam service-accounts add-iam-policy-binding $DEPLOYER --project=$PROJECT --role=roles/iam.workloadIdentityUser \
-  --member="principalSet://iam.googleapis.com/projects/$NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/High-Contrast-Team/anchor"
-gcloud artifacts repositories add-iam-policy-binding anchor --project=$PROJECT --location=$REGION \
-  --member=serviceAccount:$DEPLOYER --role=roles/artifactregistry.writer
-gcloud run services add-iam-policy-binding anchor-bot --project=$PROJECT --region=$REGION \
-  --member=serviceAccount:$DEPLOYER --role=roles/run.developer
-gcloud iam service-accounts add-iam-policy-binding $SA --project=$PROJECT \
-  --member=serviceAccount:$DEPLOYER --role=roles/iam.serviceAccountUser
+git switch --detach origin/main
+pnpm deploy:bot
 ```
 
-The deployer can push images to the `anchor` repository and deploy `anchor-bot` as `$SA`. The deployer holds no role on the secrets or on the bucket. A deployed revision runs as `$SA` and can read both, so a merge to `main` is a deploy of trusted code.
+`scripts/deploy-bot.sh` runs `pnpm nx test api`, builds the image for `linux/amd64`, pushes the image with the short commit as its tag, and deploys the image as a new revision. The revision keeps the flags, the secrets, and the volume of the service. The script stops when the working tree has changes or when `HEAD` is not `origin/main`, so no unmerged code reaches the live bot.
+
+You need Docker, and `gcloud` signed in with deploy rights on the project. A few 409 lines during the rollout are expected, because the old revision polls until it shuts down.
+
+The project gives no account the IAM admin role, and it blocks service-account keys, so an automatic deploy from GitHub Actions is not possible. Run the script after each merge that changes `apps/api`.
