@@ -23,6 +23,7 @@ const request = (call: number) => JSON.parse(String(fetchMock.mock.calls[call][1
 
 beforeEach(() => {
   fetchMock.mockReset();
+  vi.stubEnv('ANCHOR_MODEL_PROVIDER', 'gemini');
 });
 
 test('ask sends each media item as an image or audio input after the prompt', async () => {

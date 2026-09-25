@@ -6,17 +6,16 @@ import { join } from 'node:path';
 import { cut } from '../core/lines';
 import { wav } from '../song';
 import { gemini } from './gemini';
+import { openai } from './openai';
 import type { Clip, Provider } from './provider';
 
-const PROVIDERS: Provider[] = [gemini];
-// ponytail: the directory name predates the seam, so the prototype keeps its cached clips
-const CACHE = join(tmpdir(), 'anchor-gemini');
+const PROVIDERS: Provider[] = [openai, gemini];
 const PROTOTYPE_STYLE = 'warm, calm and slow, like a kind family friend talking to an older woman';
 const logger = new Logger('Model');
 
 // Read on every call, because main.ts loads .env.local after the imports.
 function selected(): Provider {
-  const name = process.env.ANCHOR_MODEL_PROVIDER || 'gemini';
+  const name = process.env.ANCHOR_MODEL_PROVIDER || 'openai';
   const provider = PROVIDERS.find((item) => item.name === name);
   if (!provider) throw new Error(`Unknown model provider ${name}`);
   return provider;
@@ -37,8 +36,10 @@ export const valid = {
 };
 
 // ponytail: every answer is cached on disk, because the free tier allows about 10 TTS requests per model per day
-async function cached(key: string, produce: () => Promise<Buffer>): Promise<Buffer> {
-  const file = join(CACHE, createHash('sha1').update(key).digest('hex'));
+// One directory per provider, so a switch never serves the answer of the other provider, and the keys of the older caches still hit.
+async function cached(provider: Provider, key: string, produce: () => Promise<Buffer>): Promise<Buffer> {
+  const dir = join(tmpdir(), `anchor-${provider.name}`);
+  const file = join(dir, createHash('sha1').update(key).digest('hex'));
   try {
     if (existsSync(file)) return readFileSync(file);
   } catch {
@@ -46,7 +47,7 @@ async function cached(key: string, produce: () => Promise<Buffer>): Promise<Buff
   }
   const data = await produce();
   try {
-    mkdirSync(CACHE, { recursive: true });
+    mkdirSync(dir, { recursive: true });
     writeFileSync(file, data);
   } catch {
     /* Vercel filesystem is ephemeral; the answer is still returned */
@@ -69,8 +70,8 @@ export async function ask<T>(
     return Buffer.from(text);
   };
   const hashes = media.map((item) => createHash('sha1').update(item.data).digest('hex'));
-  const key = `${provider.name}:ask:${prompt}:${JSON.stringify(schema)}:${hashes.join(',')}`;
-  return JSON.parse((await cached(key, produce)).toString());
+  const key = `ask:${prompt}:${JSON.stringify(schema)}:${hashes.join(',')}`;
+  return JSON.parse((await cached(provider, key, produce)).toString());
 }
 
 export async function transcribe(clip: Clip): Promise<string> {
@@ -89,10 +90,9 @@ export async function transcribe(clip: Clip): Promise<string> {
 
 export async function speak(text: string, style = PROTOTYPE_STYLE): Promise<Buffer> {
   const provider = selected();
-  // ponytail: the prototype key predates the style and the seam, and its clips can hold the raw 24 kHz PCM of Gemini; drop the branch with the prototype
-  if (provider.name === 'gemini' && style === PROTOTYPE_STYLE) {
-    const audio = await cached(`speak:${provider.voice}:${text}`, () => provider.speak(text, style));
-    return audio.subarray(0, 4).toString() === 'RIFF' ? audio : wav(audio, 24000);
-  }
-  return cached(`${provider.name}:speak:${provider.voice}:${style}:${text}`, () => provider.speak(text, style));
+  // ponytail: the default key predates the style, so the prototype keeps its cached clips; drop the branch with the prototype
+  const key = style === PROTOTYPE_STYLE ? `speak:${provider.voice}:${text}` : `speak:${provider.voice}:${style}:${text}`;
+  const audio = await cached(provider, key, () => provider.speak(text, style));
+  // ponytail: a Gemini clip cached before the seam can hold raw 24 kHz PCM; drop the branch when those caches age out
+  return provider.name === 'gemini' && audio.subarray(0, 4).toString() !== 'RIFF' ? wav(audio, 24000) : audio;
 }

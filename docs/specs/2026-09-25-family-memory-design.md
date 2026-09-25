@@ -409,12 +409,12 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 ### 6.1 Shared rules
 
 - The model seam: every feature calls only the exports of `model/model.ts`, which are `ask`, `transcribe`, `speak`, and `valid`. Every test mocks that module. The prototype imports the seam through the re-export in `gemini.ts`, and the re-export goes with the prototype.
-- The providers: `model/provider.ts` defines the provider interface, and `model/gemini.ts` is the only file that knows Gemini. `ANCHOR_MODEL_PROVIDER` selects the provider, and the default is `gemini`. A teammate adds `model/openai.ts`, and that change needs no edit to a feature.
+- The providers: `model/provider.ts` defines the provider interface. `model/openai.ts` is the only file that knows OpenAI, and `model/gemini.ts` is the only file that knows Gemini. `ANCHOR_MODEL_PROVIDER` selects the provider, and the default is `openai`.
 - The seam contract: `ask<T>(prompt, schema, { audio?, media?, fast?, timeoutMs? })` returns JSON that matches the schema, and `media` holds images and audio clips. `transcribe(clip)` returns a transcript or an empty string. `speak(text, style?)` returns WAV, which `transports/voice.ts` converts for Telegram.
 - Every provider returns WAV from `speak`, because `transports/voice.ts` converts WAV only. A voice note in another format falls back to text.
 - `ask` gets a `media` option, a list of `{ data, mimeType }`, next to the `audio` option that the prototype uses. An `image/*` item becomes an image input, and an `audio/*` item becomes an audio input.
 - In the Gemini provider, the input items are `{ type: 'image', data, mime_type }` and `{ type: 'audio', data, mime_type }`, with base64 data (ai.google.dev/api/interactions-api).
-- The disk cache key includes the provider name and a hash of every media item. A switch of provider never serves a cached answer of the other provider.
+- The disk cache has one directory per provider, and the cache key includes a hash of every media item. A switch of provider never serves a cached answer of the other provider.
 - UNVERIFIED: the Interactions API docs do not confirm `enum`, `minimum`, or `maximum` in a response schema. The validators enforce every rule in code.
 - Every result passes a validator before the code uses it. Section 8 lists each fallback.
 - The prompts describe Anchor as the keeper of the family's record. No prompt mentions memory loss.
