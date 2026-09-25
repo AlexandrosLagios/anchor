@@ -18,11 +18,15 @@ Anchor takes every name from Telegram. Set the first name of each demo account t
 
 Check the bot and the group:
 
-1. Make sure that the live bot runs the v2 build: steps 5 and 6 of the spec, merged and deployed with the user's go. The technical runbook names the revision.
+1. Make sure that the live bot runs the v2 build: steps 5, 6, and 7 of the spec, merged and deployed with the user's go. The technical runbook names the revision.
 2. Use the group of the demo. A person is a member in one family only, so a new group sends Nikos's private replies to the old family.
 3. Make sure that Anchor is an admin in the group. Anchor sends an ephemeral message only as an admin. Promote Anchor at least one day before, because a move to a supergroup posts `intro` a second time.
 4. Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.
-5. For beat 7 only: Nikos turned on "Call me on the phone" and shared his phone number, Greece is on in the Twilio dialing permissions, and a test call rang his phone after the last deploy.
+5. For beat 7 only, pass the call gate:
+   - `anchor-bot` is open for calls: steps 1 to 4 of "Phone calls" in `DEPLOY.md`, each with the user's go. `ANCHOR_BOT_ONLY=true` must be set before the service opens.
+   - Nikos turned on "Call me on the phone" and shared his phone number with the one-tap button. He saved the "Anchor" contact card, because Anchor calls from a US number.
+   - Greece is on in the Twilio voice geo permissions, for low-risk numbers. It is on since 2026-09-25.
+   - After the last deploy, "Anchor, call me" rang his phone once.
 
 Reset and prepare, before the demo and before each rehearsal:
 
@@ -43,12 +47,14 @@ Each beat names the action and what the audience sees. The times include about 5
 | 4 | 1:10 | Nikos | In private, play the voice note, then answer with a voice note of about 10 seconds: "My first day was in 1958. My mother walked me to the village school, and I cried at the gate." Tap "Yes, share it". | Nikos gets the photo, then a voice note: "Eleni shared: «Maria's first day of school! …» What does it remind you of?". Anchor thanks him by voice. In the group: "Nikos added a story to Eleni's moment 🎙️", with his words, his voice note, and a big ❤. |
 | 5 | 1:50 | Eleni | In the group, reply to Nikos's message of beat 1 with "Dad, remember to take your pills with you when we leave in the morning." | Only Nikos sees "⏰ Eleni wrote: «Dad, remember to take your pills…» Shall I remind you?", with "Yes, at 08:00", "Another time", "No thanks", and "Stop offering reminders". He taps "Yes, at 08:00". The offer turns into "Done ✍ I'll remind you at 08:00 in our private chat.", and Eleni's message gets a ✍. The family sees only the ✍: the pills stay private. |
 | 6 | 2:15 | Eleni | Send `/fastforward 08:05` in the group. | Only Eleni sees "⏩ It's now … 08:05 on the family clock." A few seconds later, Nikos gets his reminder in private as a voice note: "⏰ Your reminder. Eleni wrote: «…»". |
-| 7 | 2:35 | Nikos | The stretch goal, only when the call gate passed and the clock shows 2:35 or less. In private, say "Call me" in a voice note. Answer the phone on speaker. | Nikos's phone rings. Anchor opens with "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person." and reads Eleni's moment in her words. Nikos answers in one sentence. Anchor asks "Shall I tell Eleni you'd love a call?". He says yes, and the group gets "Eleni, Nikos would love a call from you 💛". |
-| 8 | 2:40 or 3:15 | Presenter | Close: "No commands. Nikos chose what he gets, heard Eleni's moment in her words, added his story by voice, and got his reminder in private. The family saw a ❤ and a ✍." | Both screens stay on the group. |
+| 7 | 2:35 | Nikos | The stretch goal, only when the call gate passed and the clock shows 2:35 or less. In private, say "Call me" in a voice note. Answer the phone on speaker. Answer Anchor in one sentence, say "No, thanks" to the share question, and "Yes" to the question about Eleni. | Anchor answers "I'm ringing you now 📞", and Nikos's phone rings. Anchor opens with "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person." and reads Eleni's moment in her words. Anchor asks at most one follow-up, then "Shall I share what you told me with the family?". After his no, Anchor keeps nothing from the call. Anchor asks "Shall I tell Eleni you'd love a call?", and after his yes, the group gets "Eleni, Nikos would love a call from you 💛". Anchor says goodbye and hangs up. |
+| 8 | 2:40 or 3:30 | Presenter | Close: "No commands. Nikos chose what he gets, heard Eleni's moment in her words, added his story by voice, and got his reminder in private. The family saw a ❤ and a ✍." | Both screens stay on the group. |
 
 Beat 5 uses the sentence of the design, because Anchor offers a reminder only for a clear future action with a time or a trigger. Eleni writes the sentence as a reply, because the reply tells Anchor that "Dad" is Nikos. The rehearsals must show the offer both times.
 
 The script does not show the gentle help for a hesitation ("a school?"), the "Another time" buttons, or the fade of an unanswered offer. The presenter can say one sentence about each.
+
+Beat 7 skips the share on the call, because Nikos shared his story in beat 4. A "Yes" posts his words and his voice from the call in the group. "Just the words" posts his words without the voice. A call costs about 0.15 USD per minute, and lasts at most 10 minutes.
 
 ## If a beat fails
 
@@ -57,7 +63,8 @@ The script does not show the gentle help for a hesitation ("a school?"), the "An
 - Nikos's voice answer in beat 4 gets "Thank you 💛" instead of the share question: Anchor closed the invitation. Nikos says "Send me a moment" in private, and repeats beat 4.
 - No reminder offer for Nikos in beat 5 after 10 seconds: Eleni writes "Dad, don't forget your pills tomorrow at 8." If no offer comes again, narrate beats 5 and 6, and continue with beat 7 or 8.
 - No reminder after `/fastforward` in beat 6 after 10 seconds: narrate the reminder, and continue.
-- No ring in beat 7 after 15 seconds: say "The phone call is our next step", and close with beat 8.
+- "I couldn't ring you just now" in beat 7, or no ring after 15 seconds: say "The phone call is our next step", and close with beat 8.
+- The call rings, but Anchor stays silent for 5 seconds: Nikos hangs up. Say "The phone call is our next step", and close with beat 8.
 - Two beats fail: stop the live demo and play the screen recording.
 
 To read what the bot did, run this command after the demo:
@@ -75,3 +82,4 @@ Caution: `/fastforward` moves the family clock of the whole bot for good. After 
 3. If the run takes more than 3 minutes without beat 7, shorten the narration first.
 4. After the deploy of the v2 build, run beats 1 to 5 once on the live bot, without beat 6. Then do steps 1 and 2 of "Reset and prepare" again.
 5. On the live bot, never run `/fastforward` before the demo. Beat 6 on stage is the only jump.
+6. Rehearse beat 7 on the live bot after the call gate. On the dev bot, a call needs a public tunnel: run `ngrok http 3000`, and set `ANCHOR_PUBLIC_URL` to the ngrok URL in `apps/api/.env.local`.

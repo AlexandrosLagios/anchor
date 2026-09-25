@@ -34,23 +34,28 @@
   <h1>Anchor · Technical runbook</h1>
   <p class="sub">Everything the team runs around the demo. The presenter's script is <a href="script.html">a separate page</a>.</p>
 
-  <div class="status"><b>Live bot:</b> <code>@anchor_family_bot</code> on Cloud Run <code>anchor-bot</code> (<code>europe-west1</code>) still runs v1, revision <code>anchor-bot-00004-pw2</code>, commit <code>0b2f4eb</code>. The v2 deploy follows steps 5 and 6 of the design, with the user's go.</div>
+  <div class="status"><b>Live bot:</b> <code>@anchor_family_bot</code> on Cloud Run <code>anchor-bot</code> (<code>europe-west1</code>) still runs v1, revision <code>anchor-bot-00004-pw2</code>, commit <code>0b2f4eb</code>. Steps 4, 6, and 7 of v2 are on <code>main</code> (<code>c185e4b</code>), and step 5 is in review. The v2 deploy follows the step 5 merge, with the user's go.</div>
 
   <h2>1 · Before the demo</h2>
   <ol class="check">
-    <li><input type="checkbox" id="d1"><label for="d1">The live bot runs the v2 build: steps 5 and 6, merged and deployed with the user's go. See the status above for the current revision.</label></li>
+    <li><input type="checkbox" id="d1"><label for="d1">The live bot runs the v2 build: steps 5, 6, and 7, merged and deployed with the user's go. See the status above for the current revision.</label></li>
     <li><input type="checkbox" id="d2"><label for="d2">Use the group of the demo. A person is a member in one family only, so a new group sends Nikos's private replies to the old family.</label></li>
     <li><input type="checkbox" id="d3"><label for="d3">Anchor is an admin in the group. Anchor sends an ephemeral message only as an admin. Promote Anchor at least one day before, because a move to a supergroup posts <code>intro</code> a second time.</label></li>
     <li><input type="checkbox" id="d4"><label for="d4">Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.</label></li>
   </ol>
 
   <h2>2 · The call gate for beat 7</h2>
+  <div class="warn"><b>Caution:</b> set <code>ANCHOR_BOT_ONLY=true</code> before the service opens. Without it, a public <code>anchor-bot</code> serves the website API and the WhatsApp webhook, and the webhook sends the Twilio key to any media URL. The commands are in "Phone calls" in <code>DEPLOY.md</code>, and each step needs the user's go.</div>
   <ol class="check">
-    <li><input type="checkbox" id="g1"><label for="g1">Greece is on in the Twilio dialing permissions.</label></li>
-    <li><input type="checkbox" id="g2"><label for="g2"><code>anchor-bot</code> is public for the call stream, with the user's go for <code>--allow-unauthenticated</code>.</label></li>
-    <li><input type="checkbox" id="g3"><label for="g3">Nikos turned on "Call me on the phone" and shared his phone number.</label></li>
-    <li><input type="checkbox" id="g4"><label for="g4">A test call rang his phone after the last deploy.</label></li>
+    <li><input type="checkbox" id="g1"><label for="g1">Store the Twilio key secret <code>anchor-twilio-api-key-secret</code>, and give the service account read access to the secret.</label></li>
+    <li><input type="checkbox" id="g2"><label for="g2">Update <code>anchor-bot</code> with <code>ANCHOR_BOT_ONLY=true</code>, <code>ANCHOR_PUBLIC_URL</code>, the Twilio variables, the secret, and <code>--timeout=900</code>. Cloud Run closes a WebSocket at the request timeout, and a call lasts at most 10 minutes.</label></li>
+    <li><input type="checkbox" id="g3"><label for="g3">Add the <code>allUsers</code> invoker binding, so Twilio reaches <code>/call/stream</code>.</label></li>
+    <li><input type="checkbox" id="g4"><label for="g4">Check the guard: <code>GET /</code> returns 200, and <code>POST /whatsapp</code> returns 404.</label></li>
+    <li><input type="checkbox" id="g5"><label for="g5">Greece is on in the Twilio voice geo permissions, for low-risk numbers. It is on since 2026-09-25.</label></li>
+    <li><input type="checkbox" id="g6"><label for="g6">Nikos turned on "Call me on the phone", shared his phone number, and saved the "Anchor" contact card.</label></li>
+    <li><input type="checkbox" id="g7"><label for="g7">After the last deploy, "Anchor, call me" rang his phone once.</label></li>
   </ol>
+  <p><code>pnpm deploy:bot</code> keeps the binding, the variables, and the timeout. A full <code>gcloud run deploy</code> with the flags of "Deploy" closes the service again. To close the service on purpose, remove the <code>allUsers</code> binding.</p>
 
   <h2>3 · Reset and prepare</h2>
   <ol class="check">
@@ -71,6 +76,7 @@
     <li><input type="checkbox" id="h3"><label for="h3">If the run takes more than 3 minutes without beat 7, shorten the narration first.</label></li>
     <li><input type="checkbox" id="h4"><label for="h4">After the deploy of the v2 build, run beats 1 to 5 once on the live bot, without beat 6. Then do steps 1 and 2 of "Reset and prepare" again.</label></li>
     <li><input type="checkbox" id="h5"><label for="h5">On the live bot, never run /fastforward before the demo. Beat 6 on stage is the only jump.</label></li>
+    <li><input type="checkbox" id="h6"><label for="h6">Rehearse beat 7 on the live bot after the call gate. On the dev bot, a call needs a public tunnel: run <code>ngrok http 3000</code>, and set <code>ANCHOR_PUBLIC_URL</code> to the ngrok URL in <code>apps/api/.env.local</code>.</label></li>
   </ol>
 
   <h2>6 · Deploy a fix</h2>
@@ -88,7 +94,8 @@ pnpm deploy:bot</pre>
     <tr><td>No ❤ on a photo</td><td>The model is slow, or the bot is down</td><td>Wait 15 s. Then check the logs.</td></tr>
     <tr><td>No reply to anything</td><td>No family in the record: the bot never saw itself join</td><td>Remove Anchor from the group, add it again, promote it.</td></tr>
     <tr><td>409 lines keep coming</td><td>A second process polls the same token</td><td>Stop every local run that uses that token.</td></tr>
-    <tr><td>No ring in beat 7</td><td>Twilio permissions, or <code>anchor-bot</code> not public for the stream</td><td>Check the call gate checklist, then check the logs.</td></tr>
+    <tr><td>No ring in beat 7, or "I couldn't ring you just now"</td><td>No phone or "Call me" off for Nikos, a missing <code>TWILIO_FROM</code> or <code>ANCHOR_PUBLIC_URL</code>, the Twilio geo permissions, or no <code>allUsers</code> binding</td><td>Walk the call gate checklist, then check the logs.</td></tr>
+    <tr><td>The call rings, but Anchor stays silent</td><td>The Realtime session failed before the opener, or Twilio cannot reach <code>wss://</code> on <code>ANCHOR_PUBLIC_URL</code></td><td>Anchor hangs up on a Realtime error. Check the logs for "Refused a call stream".</td></tr>
   </table>
 
   <h2>9 · After the hackathon</h2>
