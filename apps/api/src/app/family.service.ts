@@ -2,17 +2,26 @@ import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } fro
 import { demoNow } from './core/clock';
 import { createRouter } from './core/router';
 import { openStore } from './core/store';
-import type { Feature } from './core/types';
-import { ask } from './features/ask';
+import type { Context, Feature, Window } from './core/types';
 import { capture, forget } from './features/capture/capture';
+import { calls } from './features/calls';
 import { echoes } from './features/echoes';
 import { fastforward } from './features/fastforward';
+import { intents } from './features/intents';
 import { intro } from './features/intro';
 import { invitations } from './features/invitations';
+import { members } from './features/members';
 import { memories } from './features/memories';
+import { reminders } from './features/reminders/reminders';
+import { shares } from './features/shares';
 import { TelegramTransport } from './transports/telegram';
 
-export const FEATURES: Feature[] = [intro, fastforward, forget, invitations, memories, ask, capture, echoes];
+export const FEATURES: Feature[] = [intro, fastforward, forget, reminders, members, invitations, memories, intents, capture, shares, echoes, calls];
+
+// v2, section 4.8: restartWindow collapses the running window to empty at the tick that follows the call, never the in-flight one
+export function nextWindow(from: number, to: number, restart: boolean): Window {
+  return { from: restart ? to : from, to };
+}
 
 @Injectable()
 export class FamilyService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -39,7 +48,9 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
     const daySeconds = configured > 0 ? configured : 86400;
     const telegram = await TelegramTransport.connect(token, this.stop.signal);
     const now = () => demoNow(store.state, daySeconds);
-    const router = createRouter(FEATURES, { now, store, transport: () => telegram });
+    let restart = false;
+    const ctx: Context = { now, store, transport: () => telegram, restartWindow: () => (restart = true) };
+    const router = createRouter(FEATURES, ctx);
 
     // ponytail: the first window starts at boot, so a slot that falls while the host is down is skipped; persist the last tick when that matters
     let from = now();
@@ -48,8 +59,10 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
       if (ticking) return;
       ticking = true;
       const to = now();
+      const window = nextWindow(from, to, restart);
+      restart = false;
       try {
-        await router.tick({ from, to });
+        await router.tick(window);
       } catch (error) {
         this.logger.error(`The tick failed: ${error}`);
       } finally {

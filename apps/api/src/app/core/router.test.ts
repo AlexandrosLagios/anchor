@@ -49,7 +49,7 @@ test('route offers the event in feature order and stops at the first feature tha
   expect(calls).toEqual(['first', 'second']);
 });
 
-test('route finds the family by familyId in a group and by storyteller in private', async () => {
+test('route finds the family by familyId in a group and by member in private', async () => {
   const seen: (string | undefined)[] = [];
   const { router, store } = setup([
     {
@@ -60,16 +60,19 @@ test('route finds the family by familyId in a group and by storyteller in privat
       },
     },
   ]);
-  store.addFamily('-100', '-100').storytellers.push({ id: '42', name: 'Nikos', started: true });
+  const family = store.addFamily('-100', '-100');
+  store.joinMember(family, { id: '42', name: 'Nikos' }).started = true;
   await router.route(groupMessage);
   await router.route(privateMessage('42'));
   await router.route(privateMessage('7'));
   expect(seen).toEqual(['-100', '-100', undefined]);
 });
 
-test('an unhandled private message gets noInvitation from a joined storyteller, notJoined from one who has not started or stopped, and pointer from anyone else', async () => {
+test('an unhandled private message gets noInvitation from a joined member, notJoined from one who has not started or stopped, and pointer from anyone else', async () => {
   const { router, store, transport } = setup([]);
-  store.addFamily('-100', '-100').storytellers.push({ id: '42', name: 'Nikos', started: true }, { id: '43', name: 'Eleni', started: false });
+  const family = store.addFamily('-100', '-100');
+  store.joinMember(family, { id: '42', name: 'Nikos' }).started = true;
+  store.joinMember(family, { id: '43', name: 'Eleni' });
   await router.route(privateMessage('42'));
   await router.route(privateMessage('43'));
   await router.route(privateMessage('7'));
