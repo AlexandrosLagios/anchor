@@ -18,7 +18,7 @@ Anchor takes every name from Telegram. Set the first name of each demo account t
 
 Check the bot and the group:
 
-1. Make sure that the live bot runs the v2 build: steps 5, 6, and 7 of the spec, merged and deployed with the user's go. The technical runbook names the revision.
+1. Make sure that the live bot runs the v2 build: revision `anchor-bot-00005-fxt` (commit `a479654`) or later. The technical runbook names the current revision.
 2. Use the group of the demo. A person is a member in one family only, so a new group sends Nikos's private replies to the old family.
 3. Make sure that Anchor is an admin in the group. Anchor sends an ephemeral message only as an admin. Promote Anchor at least one day before, because a move to a supergroup posts `intro` a second time.
 4. Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.
