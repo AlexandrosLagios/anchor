@@ -144,8 +144,8 @@ async function deliver(family: Family, storyteller: Storyteller, moment: Moment,
   }
 }
 
-async function adminOnly(event: Incoming, family: Family, ctx: Context) {
-  await announce(family, { text: lines.adminOnly, replyTo: event.messageId }, ctx);
+async function answer(event: Incoming, family: Family, text: string, ctx: Context) {
+  await announce(family, { text, replyTo: event.messageId }, ctx);
   return true;
 }
 
@@ -153,8 +153,8 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
   const transport = ctx.transport(family.id);
   if (isCommand(event.text, '/private')) {
     const person = event.replyToSender;
-    if (!(await transport.isAdmin(family.chatId, event.sender.id))) return adminOnly(event, family, ctx);
-    if (!person) return true;
+    if (!(await transport.isAdmin(family.chatId, event.sender.id))) return answer(event, family, lines.adminOnly, ctx);
+    if (!person) return answer(event, family, lines.privateHow, ctx);
     if (!family.storytellers.some((storyteller) => storyteller.id === person.id)) {
       family.storytellers.push({ id: person.id, name: person.name, started: false });
       ctx.store.save();
@@ -164,7 +164,8 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
     return true;
   }
   if (!isCommand(event.text, '/send')) return false;
-  if (!(await transport.isAdmin(family.chatId, event.sender.id))) return adminOnly(event, family, ctx);
+  if (!(await transport.isAdmin(family.chatId, event.sender.id))) return answer(event, family, lines.adminOnly, ctx);
+  if (!family.storytellers.some((storyteller) => storyteller.started)) return answer(event, family, lines.nobodyPrivate, ctx);
   for (const storyteller of family.storytellers) {
     if (!storyteller.started) continue;
     const now = ctx.now();
