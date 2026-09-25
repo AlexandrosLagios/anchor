@@ -1,5 +1,7 @@
 ---
 import '../styles/tokens.css';
+import { AuthNav } from '../components/AuthNav';
+import { ConsentBanner } from '../components/ConsentBanner';
 
 interface Props {
   title: string;
@@ -43,6 +45,7 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
         <a href="/how-it-works" aria-current={currentPath === '/how-it-works' ? 'page' : undefined}>How it works</a>
         <a href="/app" aria-current={currentPath === '/app' ? 'page' : undefined}>Try the demo</a>
         <a href="/privacy" aria-current={currentPath === '/privacy' ? 'page' : undefined}>Privacy</a>
+        <AuthNav client:load />
       </nav>
     </header>
 
@@ -55,8 +58,13 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
       <nav aria-label="Footer">
         <a href="/how-it-works">How it works</a>
         <a href="/app">Try the demo</a>
+        <a href="/signup">Create account</a>
         <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/cookies">Cookies</a>
       </nav>
     </footer>
+
+    <ConsentBanner client:load />
   </body>
 </html>

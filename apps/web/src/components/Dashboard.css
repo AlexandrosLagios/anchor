@@ -5,6 +5,16 @@
   align-items: start;
 }
 
+.auth-callout {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--brand-soft);
+  color: var(--ink);
+}
+
 @media (max-width: 52rem) {
   .dashboard {
     grid-template-columns: 1fr;

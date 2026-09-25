@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@anchor.com';
+---
+
+<BaseLayout
+  title="Terms of use"
+  description="Terms of use for the Anchor hackathon prototype and user accounts."
+  currentPath="/terms"
+>
+  <article class="prose">
+    <h1>Terms of use</h1>
+    <p class="lede">
+      These terms govern use of the Anchor website and demo. Questions: <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
+    </p>
+
+    <h2>Prototype status</h2>
+    <p>
+      Anchor is an OpenConf hackathon prototype. Features may change, break, or lose data. Do not rely on it for clinical
+      care or irreversible decisions.
+    </p>
+
+    <h2>Accounts</h2>
+    <p>
+      You must provide accurate information, keep credentials secure, and accept the Privacy policy when you register.
+      You are responsible for activity under your account.
+    </p>
+
+    <h2>Acceptable use</h2>
+    <ul>
+      <li>Do not upload unlawful content or others’ personal data without a lawful basis.</li>
+      <li>Do not attempt to disrupt the service, scrape aggressively, or bypass security.</li>
+      <li>Do not use Anchor to diagnose or treat medical conditions.</li>
+    </ul>
+
+    <h2>AI features</h2>
+    <p>
+      Moment extraction and speech use Google Gemini. Outputs can be wrong. You remain responsible for what you share with
+      the family chat.
+    </p>
+
+    <h2>Intellectual property</h2>
+    <p>You retain rights to content you submit. You grant us a licence to process it to provide the service.</p>
+
+    <h2>Liability</h2>
+    <p>
+      The service is provided “as is” without warranties. To the fullest extent permitted by law we are not liable for
+      indirect or consequential loss arising from the prototype.
+    </p>
+
+    <h2>Governing law</h2>
+    <p>These terms are intended for users in the EU/EEA; mandatory consumer protections still apply where relevant.</p>
+  </article>
+</BaseLayout>

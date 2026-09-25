@@ -1,0 +1,148 @@
+.auth-panel {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 0 var(--space) calc(var(--space) * 2);
+}
+
+.auth-panel h1 {
+  margin: 0 0 0.65rem;
+  font-family: var(--display);
+  font-size: clamp(1.85rem, 4vw, 2.4rem);
+  color: var(--brand);
+}
+
+.auth-panel .lede {
+  margin: 0 0 1.25rem;
+  color: var(--ink-muted);
+}
+
+.auth-panel .field {
+  margin-bottom: 0.85rem;
+}
+
+.auth-panel .field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  margin-bottom: 0.25rem;
+}
+
+.auth-panel .field input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #8d958f;
+  border-radius: 0.7rem;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.consent-set {
+  margin: 1rem 0;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+
+.consent-set legend {
+  font-weight: 700;
+  padding: 0 0.35rem;
+}
+
+.check {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  margin: 0.55rem 0;
+  min-height: var(--tap);
+}
+
+.check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.form-error {
+  color: #8b1e1e;
+  font-weight: 600;
+}
+
+.auth-switch {
+  margin-top: 1rem;
+  color: var(--ink-muted);
+}
+
+.account-meta {
+  margin: 0 0 1rem;
+}
+
+.account-meta div {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.account-meta dt {
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+.account-meta dd {
+  margin: 0;
+}
+
+.auth-panel .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.auth-nav-link {
+  font-weight: 600;
+}
+
+.consent-banner {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 0.75rem var(--space) calc(0.75rem + env(safe-area-inset-bottom, 0));
+  background: rgba(20, 32, 31, 0.92);
+  color: #f4fffc;
+}
+
+.consent-inner {
+  max-width: var(--max);
+  margin: 0 auto;
+}
+
+.consent-banner h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--display);
+  font-size: 1.15rem;
+}
+
+.consent-banner p {
+  margin: 0 0 0.75rem;
+  max-width: 46rem;
+  color: #d7ebe7;
+}
+
+.consent-banner a {
+  color: #fff;
+}
+
+.consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

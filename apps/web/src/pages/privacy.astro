@@ -1,45 +1,89 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@anchor.com';
 ---
 
 <BaseLayout
   title="Privacy"
-  description="How Anchor handles family chat data, media, and AI processing for the Athina prototype."
+  description="How Anchor processes personal data under GDPR, where EU data is stored, and how Gemini AI is used."
   currentPath="/privacy"
 >
   <article class="prose">
-    <h1>Privacy</h1>
+    <h1>Privacy policy</h1>
     <p class="lede">
-      Anchor is a hackathon prototype. This page explains what the demo collects and how it is used.
+      This policy explains how Anchor (“we”) processes personal data for the OpenConf hackathon prototype. Controller
+      contact: <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
     </p>
 
-    <h2>What we process</h2>
+    <h2>Who we are</h2>
     <p>
-      When you use the web demo or connect WhatsApp via Twilio, Anchor may process message text, photos, and voice notes
-      you send so it can store family moments and run spaced-retrieval practice.
+      Anchor is a family memory product that helps practise spaced retrieval in a group chat. For privacy requests email{' '}
+      {privacyEmail}.
     </p>
 
-    <h2>Why</h2>
+    <h2>What we collect</h2>
+    <ul>
+      <li>Account data: email, display name, authentication identifiers (Firebase Auth).</li>
+      <li>Consent records: acceptance of Terms and Privacy, optional marketing preference, timestamps.</li>
+      <li>Family moments: text, photos, or voice notes you submit in the demo or via WhatsApp.</li>
+      <li>Technical logs needed to run the service (security, errors).</li>
+    </ul>
+
+    <h2>Purposes and legal bases (GDPR)</h2>
+    <ul>
+      <li><strong>Contract / steps prior to contract</strong> — create and run your account and the demo.</li>
+      <li><strong>Consent</strong> — optional marketing emails; acceptance of Terms/Privacy at signup.</li>
+      <li><strong>Legitimate interests</strong> — secure the service, prevent abuse, improve the prototype (balanced against your rights).</li>
+    </ul>
+
+    <h2>Where data is stored (EU sovereignty)</h2>
     <p>
-      Content is sent to Google Gemini to extract a recallable moment (who, what, when, a practice question) and optionally
-      to synthesise speech. Twilio delivers WhatsApp messages when that channel is connected.
+      Account profiles, consent records, and authenticated moment metadata are stored in <strong>Google Cloud Firestore
+      multi-region Europe (<code>eur3</code>)</strong>. Firebase Authentication for your account is configured on the same
+      EU-oriented Firebase project. Create the Firestore database in <code>eur3</code> when provisioning — location cannot
+      be changed later.
     </p>
+
+    <h2>Artificial intelligence (Gemini)</h2>
+    <p>
+      To extract recallable moments and synthesise speech we send relevant text/media to <strong>Google’s Gemini Developer
+      API</strong> (<code>generativelanguage.googleapis.com</code>). This is <strong>not</strong> Vertex AI with EU
+      residency guarantees. Prompts and media may be processed <strong>outside the European Union</strong> under Google’s
+      Gemini API terms. Do not submit special-category health data you are not prepared to share with that processor.
+    </p>
+
+    <h2>Processors</h2>
+    <ul>
+      <li>Google Firebase / Google Cloud — Auth and Firestore (EU <code>eur3</code> for stored app data).</li>
+      <li>Google Gemini API — AI extraction and TTS (may process outside the EU).</li>
+      <li>Twilio — WhatsApp delivery when connected.</li>
+      <li>Vercel — hosts the public website.</li>
+    </ul>
 
     <h2>Retention</h2>
     <p>
-      The current prototype keeps state in memory on the API server. Restarting the server clears the demo conversation.
-      Do not send real medical records or secrets you cannot afford to lose.
+      Account and Firestore data are kept while your account exists, or until you request deletion. Anonymous in-memory
+      demo state on the API may reset when the server restarts. Cached Gemini answers on the API filesystem are ephemeral
+      operational caches.
     </p>
 
     <h2>Your rights</h2>
     <p>
-      For a production deployment you would get access, deletion, and export controls. In this prototype, clear the session
-      by restarting the API or stop sending messages.
+      Under GDPR you may request access, rectification, erasure, restriction, portability, and objection, and you may
+      withdraw consent where processing is consent-based. Contact {privacyEmail}. You may also lodge a complaint with your
+      local supervisory authority.
     </p>
+
+    <h2>Children</h2>
+    <p>Anchor is not directed at children under 16. Do not create accounts for minors without lawful basis.</p>
+
+    <h2>Changes</h2>
+    <p>We may update this policy for the hackathon prototype; the date in the page footer or git history reflects changes.</p>
 
     <h2>Contact</h2>
     <p>
-      Questions about this prototype: use the project repository maintainers.
+      Privacy / GDPR: <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>
     </p>
   </article>
 </BaseLayout>

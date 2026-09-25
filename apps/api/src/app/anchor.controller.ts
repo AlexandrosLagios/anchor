@@ -10,11 +10,14 @@ import {
   Param,
   Post,
   StreamableFile,
+  UseGuards,
 } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { AnchorService, Role } from './anchor.service';
+import { CurrentUser, FirebaseAuthGuard, type AuthUser } from './firebase-auth.guard';
 import { download, sendWhatsApp, twiml } from './twilio';
+import { UserStoreService } from './user-store.service';
 
 type TwilioForm = Record<string, string | undefined>;
 
@@ -34,7 +37,12 @@ export class RootController {
 
   @Get()
   health() {
-    return { ok: true, service: 'anchor-api' };
+    return {
+      ok: true,
+      service: 'anchor-api',
+      geminiDataRegionNote: process.env.GEMINI_DATA_REGION_NOTE ?? 'developer-api-global',
+      requireAuth: process.env.REQUIRE_AUTH === 'true' || process.env.REQUIRE_AUTH === '1',
+    };
   }
 
   @Post('whatsapp')
@@ -80,8 +88,12 @@ export class RootController {
 
 // ponytail: no X-Twilio-Signature check yet — add before real family data flows through here
 @Controller('api')
+@UseGuards(FirebaseAuthGuard)
 export class AnchorController {
-  constructor(private readonly anchor: AnchorService) {}
+  constructor(
+    private readonly anchor: AnchorService,
+    private readonly userStore: UserStoreService,
+  ) {}
 
   @Get('state')
   state() {
@@ -89,39 +101,46 @@ export class AnchorController {
   }
 
   @Post('moment')
-  async moment(@Body() body: MomentBody) {
+  async moment(@Body() body: MomentBody, @CurrentUser() user: AuthUser | null) {
     const media = decodeMedia(body.mediaBase64, body.mediaMimeType);
-    return {
-      ack: await this.anchor.addMoment({
-        text: body.text,
-        from: body.from,
-        image: media?.mimeType.startsWith('image/') ? media : undefined,
-        audio: media?.mimeType.startsWith('audio/') ? media : undefined,
-      }),
-    };
+    const ack = await this.anchor.addMoment({
+      text: body.text,
+      from: body.from,
+      image: media?.mimeType.startsWith('image/') ? media : undefined,
+      audio: media?.mimeType.startsWith('audio/') ? media : undefined,
+    });
+    await this.persist(user);
+    return { ack };
   }
 
   /** Alias kept for the old rehearse script and muscle memory */
   @Post('news')
-  async news(@Body() body: { text: string; from?: Role }) {
-    return { ack: await this.anchor.addMoment({ text: body.text, from: body.from }) };
+  async news(@Body() body: { text: string; from?: Role }, @CurrentUser() user: AuthUser | null) {
+    const ack = await this.anchor.addMoment({ text: body.text, from: body.from });
+    await this.persist(user);
+    return { ack };
   }
 
   @Post('bring-back')
-  async bringBack(@Body() body: { momentId?: string } = {}) {
+  async bringBack(@Body() body: { momentId?: string } = {}, @CurrentUser() user: AuthUser | null) {
     const result = await this.anchor.bringBack(body.momentId);
     if (!result.ok) throw new BadRequestException(result.reason);
+    await this.persist(user);
     return result;
   }
 
   @Post('reply')
-  async reply(@Body() body: { text?: string; mediaBase64?: string; mediaMimeType?: string }) {
+  async reply(
+    @Body() body: { text?: string; mediaBase64?: string; mediaMimeType?: string },
+    @CurrentUser() user: AuthUser | null,
+  ) {
     const media = decodeMedia(body.mediaBase64, body.mediaMimeType);
     const result = await this.anchor.replyAsAthina({
       text: body.text,
       audio: media?.mimeType.startsWith('audio/') ? media : undefined,
     });
     if (!result.ok) throw new BadRequestException(result.reason);
+    await this.persist(user);
     return result;
   }
 
@@ -142,6 +161,16 @@ export class AnchorController {
     const page = readFileSync(join(__dirname, 'assets', 'index.html'), 'utf8');
     const demo = JSON.stringify(this.anchor.demo()).replace(/</g, '\\u003c');
     return page.replace('<script>', () => `<script>window.DEMO = ${demo};</script>\n<script>`);
+  }
+
+  private async persist(user: AuthUser | null) {
+    if (!user) return;
+    const state = this.anchor.state();
+    await this.userStore.persistSnapshot(user.uid, {
+      chat: state.chat,
+      moments: state.moments,
+      activeId: state.activeId,
+    });
   }
 
   private file(file: string) {

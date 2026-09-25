@@ -1,0 +1,34 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@anchor.com';
+---
+
+<BaseLayout
+  title="Cookies"
+  description="How Anchor uses cookies and similar storage, and how to change your choice."
+  currentPath="/cookies"
+>
+  <article class="prose">
+    <h1>Cookies</h1>
+    <p class="lede">
+      We keep cookies and local storage to a minimum. Contact <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a> with
+      questions.
+    </p>
+
+    <h2>Essential</h2>
+    <p>
+      Required for security and signed-in sessions (Firebase Auth). These run when you use accounts. The consent banner
+      preference is stored in <code>localStorage</code> under <code>anchor-consent-v1</code>.
+    </p>
+
+    <h2>Analytics / marketing</h2>
+    <p>We do not set analytics or marketing cookies by default in this prototype.</p>
+
+    <h2>Change your choice</h2>
+    <p>
+      Clear site data for this domain in your browser, or remove <code>anchor-consent-v1</code> from local storage, then
+      reload to see the banner again.
+    </p>
+  </article>
+</BaseLayout>

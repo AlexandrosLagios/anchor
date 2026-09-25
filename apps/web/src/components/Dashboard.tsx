@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import type { User } from 'firebase/auth';
+import { firebaseConfigured } from '../lib/firebase';
+import { watchAuth } from '../lib/auth';
 import './Dashboard.css';
 
 type Role = 'sofia' | 'maria' | 'athina' | 'anchor';
@@ -46,10 +49,13 @@ const ratings: Record<string, string> = {
 };
 
 async function api<T = unknown>(path: string, init?: RequestInit): Promise<T> {
+  const { getIdToken } = await import('../lib/auth');
+  const token = await getIdToken();
   const response = await fetch(`/api${path}`, {
     ...init,
     headers: {
       'content-type': 'application/json',
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   });
@@ -75,9 +81,17 @@ export function Dashboard() {
   const [from, setFrom] = useState<'sofia' | 'maria'>('sofia');
   const [news, setNews] = useState('');
   const [reply, setReply] = useState('');
+  const [user, setUser] = useState<User | null>(null);
   const chatRef = useRef<HTMLUListElement>(null);
   const lastSnapshot = useRef('');
   const announce = useRef('');
+  const requireAuth = import.meta.env.PUBLIC_REQUIRE_AUTH === 'true' || import.meta.env.PUBLIC_REQUIRE_AUTH === '1';
+  const writesLocked = requireAuth && firebaseConfigured() && !user;
+
+  useEffect(() => {
+    if (!firebaseConfigured()) return;
+    return watchAuth(setUser);
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -120,6 +134,10 @@ export function Dashboard() {
 
   async function onCompose(event: FormEvent) {
     event.preventDefault();
+    if (writesLocked) {
+      setStatus('Sign in required to save moments.');
+      return;
+    }
     const text =
       news.trim() ||
       "Maria's first day of school — she didn't want to let go of my hand";
@@ -132,6 +150,10 @@ export function Dashboard() {
   }
 
   async function bringBack(momentId?: string) {
+    if (writesLocked) {
+      setStatus('Sign in required to practise moments.');
+      return;
+    }
     setStatus(momentId ? 'Starting practice for the next moment…' : 'Bringing a moment back…');
     await api('/bring-back', {
       method: 'POST',
@@ -143,6 +165,10 @@ export function Dashboard() {
   }
 
   async function sendReply(text: string) {
+    if (writesLocked) {
+      setStatus('Sign in required to reply.');
+      return;
+    }
     setStatus("Sending Athina's reply…");
     await api('/reply', { method: 'POST', body: JSON.stringify({ text }) });
     setReply('');
@@ -164,6 +190,14 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
+      {firebaseConfigured() && !user ? (
+        <p className="auth-callout" role="status">
+          {requireAuth
+            ? 'Sign in to save moments to your EU account.'
+            : 'Optional: create an account so moments persist to EU Firestore.'}{' '}
+          <a href="/signup">Create account</a> or <a href="/login">sign in</a>.
+        </p>
+      ) : null}
       <section className="panel chat-shell" aria-labelledby="chat-heading">
         <h2 className="panel-heading" id="chat-heading">
           Family group chat
@@ -225,7 +259,7 @@ export function Dashboard() {
               enterKeyHint="send"
             />
           </div>
-          <button className="btn btn-primary btn-send" type="submit">
+          <button className="btn btn-primary btn-send" type="submit" disabled={writesLocked}>
             Send
           </button>
         </form>
@@ -242,7 +276,7 @@ export function Dashboard() {
           <button
             type="button"
             className="btn btn-primary"
-            disabled={!state.moments.length || waiting}
+            disabled={!state.moments.length || waiting || writesLocked}
             onClick={() => void bringBack()}
           >
             Bring a moment back
@@ -250,7 +284,7 @@ export function Dashboard() {
           <button
             type="button"
             className="btn btn-secondary"
-            disabled={!state.moments.length || waiting}
+            disabled={!state.moments.length || waiting || writesLocked}
             onClick={() => {
               const first = state.moments.find((m) => m.phase === 'idle');
               if (first) void bringBack(first.id);

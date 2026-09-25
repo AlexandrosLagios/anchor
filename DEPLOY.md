@@ -1,13 +1,46 @@
-# Deploy Anchor on Google (Firebase Hosting + Cloud Run)
+# Deploy Anchor (Vercel site + EU Firebase + Cloud Run API)
 
-## One-time setup
+## Credentials policy (ADC, not API keys)
 
-1. Create a Firebase / GCP project (replace `anchor-openconf` in `.firebaserc`).
-2. Enable **Cloud Run** and **Firebase Hosting**.
-3. Install CLIs: `npm i -g firebase-tools` and ensure `gcloud` is authenticated.
-4. `firebase login` and `gcloud auth login`.
+This org disallows **Google Cloud API keys**. Prefer **Application Default Credentials**:
 
-## Build & deploy API (Cloud Run)
+```bash
+# once per machine
+gcloud auth login
+gcloud auth application-default login
+gcloud config set project YOUR_FIREBASE_PROJECT_ID
+```
+
+- **Nest / Firebase Admin / Cloud Run:** use ADC (runtime service account on Cloud Run; ADC locally).
+- **Do not** create Cloud Console “API keys” for the backend.
+- `GOOGLE_APPLICATION_CREDENTIALS` may point at a **service account JSON file** (IAM key file). That is not an API key, but many orgs also restrict downloading SA keys — prefer ADC login or Cloud Run’s attached service account.
+
+## EU Firebase (accounts + sovereignty)
+
+1. Create a Firebase project (update `.firebaserc`).
+2. Enable **Authentication → Email/Password**.
+3. Create **Firestore** in **`eur3` (Europe multi-region)**.
+4. `firebase login` then `firebase deploy --only firestore:rules`
+5. Register a **Web** app. Copy the Firebase SDK snippet into `apps/web/.env` as `PUBLIC_FIREBASE_*`.
+   - The web snippet includes a browser `apiKey` field. That is Firebase’s client config (auto-provisioned with the web app), not a key you create under “APIs & Services → Credentials”. If your org blocks even those, ask IT for an exception for Firebase Web apps, or we cannot run client Auth in the browser.
+6. Set `FIREBASE_PROJECT_ID` / `GOOGLE_CLOUD_PROJECT` on the API (no API key).
+7. Production: `REQUIRE_AUTH=true` and `PUBLIC_REQUIRE_AUTH=true`.
+
+## Gemini
+
+Current code uses the **Gemini Developer API** (`GEMINI_API_KEY` header). If that is also blocked by the same org policy, we must move to **Vertex AI + ADC** (breaking change vs the hackathon “Developer API” choice). Say if you want that switch.
+
+Until then:
+
+```bash
+GEMINI_DATA_REGION_NOTE=developer-api-global
+```
+
+## Vercel (website)
+
+Root directory: `apps/web`. Function region: **Frankfurt (`fra1`)**. Set `PUBLIC_FIREBASE_*` and `PUBLIC_PRIVACY_EMAIL=privacy@anchor.com`.
+
+## Cloud Run API (ADC / service account)
 
 ```bash
 pnpm build:api
@@ -16,36 +49,18 @@ gcloud run deploy anchor-api \
   --dockerfile apps/api/Dockerfile \
   --region europe-west1 \
   --allow-unauthenticated \
-  --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest \
-  --set-env-vars=TWILIO_ACCOUNT_SID=...,PUBLIC_URL=https://YOUR_HOSTING_DOMAIN
+  --service-account=anchor-api@YOUR_PROJECT.iam.gserviceaccount.com \
+  --set-env-vars=GOOGLE_CLOUD_PROJECT=YOUR_PROJECT,FIREBASE_PROJECT_ID=YOUR_PROJECT,REQUIRE_AUTH=true,GEMINI_DATA_REGION_NOTE=developer-api-global,PUBLIC_URL=https://YOUR_HOST
 ```
 
-Or build the image yourself:
-
-```bash
-docker build -f apps/api/Dockerfile -t REGION-docker.pkg.dev/PROJECT/anchor/anchor-api .
-```
-
-Set Twilio / Gemini secrets on the Cloud Run service (see `apps/api/.env.example`).
-
-## Build & deploy site (Firebase Hosting)
-
-```bash
-pnpm build:web
-firebase deploy --only hosting
-```
-
-`firebase.json` rewrites `/api/**` and `/whatsapp` to Cloud Run service `anchor-api` in `europe-west1`.
-
-## Twilio webhook
-
-Point the WhatsApp sandbox (or number) webhook to:
-
-`https://YOUR_FIREBASE_HOSTING_DOMAIN/whatsapp`
+Grant that service account Firebase Admin / Datastore User (or Firebase Admin SDK Administrator Service Agent) — no API keys.
 
 ## Local development
 
 ```bash
-pnpm dev:api   # Nest on :3000
-pnpm dev:web   # Astro on :4321, proxies /api and /whatsapp → :3000
+gcloud auth application-default login
+# apps/web/.env from apps/web/.env.example (Firebase web snippet)
+# apps/api/.env.local: FIREBASE_PROJECT_ID=...  (no service-account JSON required if ADC works)
+pnpm dev:api
+pnpm dev:web
 ```
