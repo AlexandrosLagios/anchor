@@ -22,6 +22,24 @@ export const hasPicture = (event: Incoming) => Boolean(event.photo || event.vide
 
 export const ADDRESS = /^anchor\b[,:]?\s+/i;
 
+// v2: these phrases decide an intent in code, before any model call, so the demo phrases never depend on the model
+const FIXED = /^(?:(?:can|could|would|will) you |please )?(send me|another moment|my settings|settings|call me|what did i miss)\b/i;
+const FIXED_INTENTS = {
+  'send me': 'sendMe',
+  'another moment': 'sendMe',
+  'my settings': 'settings',
+  settings: 'settings',
+  'call me': 'callMe',
+  'what did i miss': 'missed',
+} as const;
+
+export function fixedIntent(text: string | undefined): (typeof FIXED_INTENTS)[keyof typeof FIXED_INTENTS] | 'stop' | undefined {
+  const phrase = text?.trim() ?? '';
+  if (/^stop[.!]?$/i.test(phrase)) return 'stop';
+  const match = FIXED.exec(phrase)?.[1].toLowerCase() as keyof typeof FIXED_INTENTS | undefined;
+  return match ? FIXED_INTENTS[match] : undefined;
+}
+
 export const isCommand = (text: string | undefined, command: string) => text === command || !!text?.startsWith(`${command} `);
 
 export function pictureOf(moment: Moment): { photo: Media } | { video: Media } | undefined {

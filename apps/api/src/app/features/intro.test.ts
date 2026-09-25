@@ -29,11 +29,15 @@ const joined: Incoming = {
   joined: true,
 };
 
-test('joining a group saves a new family and posts intro in the group', async () => {
+const introButtons = (transport: FakeTransport, familyId: string) => [{ label: lines.buttons.chooseForMe, url: transport.startLink(familyId) }];
+
+test('joining a group saves a new family and posts intro with the choose-for-me button in the group', async () => {
   const { file, transport, router } = setup();
   await router.route(joined);
   expect(openStore(file).family('-100')).toEqual({ id: '-100', chatId: '-100', members: [], moments: [], offers: [], reminders: [], counters: {} });
-  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.intro } }]);
+  expect(transport.sent).toEqual([
+    { chatId: '-100', messageId: 'sent-1', message: { text: lines.intro, buttons: introButtons(transport, '-100') } },
+  ]);
 });
 
 test('joining the same group again posts intro again and keeps one family', async () => {

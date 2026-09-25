@@ -2,12 +2,15 @@ import { Logger } from '@nestjs/common';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { cut, lines } from '../core/lines';
 import { Blocked, type Button, type Incoming, type Media, type Outgoing, type Person, type Transport } from '../core/types';
-import { httpFetch } from '../http';
+import { httpFetch, type HttpResponse } from '../http';
+import { pollFetch } from './poll-fetch';
 import { toOgg } from './voice';
 
 const API = 'https://api.telegram.org';
 const GROUP_TYPES = ['group', 'supergroup'];
 const logger = new Logger('Telegram');
+// an edit or a remove runs inside the tick, and the tick loop skips a tick while one runs, so a hung call must not stall every feature
+const TIDY_MS = 5000;
 
 type User = { id: number; is_bot?: boolean; first_name: string; username?: string };
 type Chat = { id: number; type: string };
@@ -132,8 +135,19 @@ function target(chatId: string, messageId: string, onlyFor?: string) {
     : { chat_id: chatId, message_id: Number(messageId) };
 }
 
-async function call<T>(token: string, method: string, params: Record<string, unknown> = {}, signal = AbortSignal.timeout(30_000)): Promise<T> {
-  const response = await httpFetch(`${API}/bot${token}/${method}`, { method: 'POST', ...encode(params), signal });
+const SLOW_MS = 5000;
+
+async function call<T>(
+  token: string,
+  method: string,
+  params: Record<string, unknown> = {},
+  signal = AbortSignal.timeout(30_000),
+  fetcher: (url: string, init: RequestInit) => Promise<HttpResponse> = httpFetch,
+): Promise<T> {
+  const started = Date.now();
+  const response = await fetcher(`${API}/bot${token}/${method}`, { method: 'POST', ...encode(params), signal });
+  const took = Date.now() - started;
+  if (took > SLOW_MS && method !== 'getUpdates') logger.warn(`Telegram ${method} took ${(took / 1000).toFixed(1)} s`);
   const reply = (await response.json()) as { ok: boolean; result: T; error_code?: number; description?: string };
   if (reply.ok) return reply.result;
   // a user id is positive and a group id negative, so only a 403 from a private chat means the person blocked Anchor
@@ -179,7 +193,7 @@ export class TelegramTransport implements Transport {
       try {
         // limit 1 confirms each update before the next one, so a restart repeats at most the update in flight
         const params = { offset, timeout: 30, limit: 1, allowed_updates: [] };
-        updates = await call(this.token, 'getUpdates', params, AbortSignal.any([signal, AbortSignal.timeout(40_000)]));
+        updates = await call(this.token, 'getUpdates', params, AbortSignal.any([signal, AbortSignal.timeout(40_000)]), pollFetch);
       } catch (error) {
         if (signal.aborted) break;
         logger.error(`${error}`);
@@ -233,12 +247,12 @@ export class TelegramTransport implements Transport {
   async edit(chatId: string, messageId: string, { text, buttons, onlyFor }: { text?: string; buttons?: Button[]; onlyFor?: string }) {
     const method = onlyFor ? 'editEphemeralMessage' : 'editMessage';
     const params = { ...target(chatId, messageId, onlyFor), reply_markup: buttons && inline(buttons) };
-    if (text === undefined) await call(this.token, `${method}ReplyMarkup`, params);
-    else await call(this.token, `${method}Text`, { ...params, text: cut(text, 4096) });
+    if (text === undefined) await call(this.token, `${method}ReplyMarkup`, params, AbortSignal.timeout(TIDY_MS));
+    else await call(this.token, `${method}Text`, { ...params, text: cut(text, 4096) }, AbortSignal.timeout(TIDY_MS));
   }
 
   async remove(chatId: string, messageId: string, onlyFor?: string) {
-    await call(this.token, onlyFor ? 'deleteEphemeralMessage' : 'deleteMessage', target(chatId, messageId, onlyFor));
+    await call(this.token, onlyFor ? 'deleteEphemeralMessage' : 'deleteMessage', target(chatId, messageId, onlyFor), AbortSignal.timeout(TIDY_MS));
   }
 
   async react(chatId: string, messageId: string, emoji: string, big?: boolean) {

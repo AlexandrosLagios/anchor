@@ -8,6 +8,11 @@ import { wav } from '../song';
 import { TelegramTransport, toIncoming, type Update } from './telegram';
 
 vi.mock('../http', () => ({ httpFetch: vi.fn() }));
+// the long poll has its own connection in production; the tests route it through the same fake Bot API
+vi.mock('./poll-fetch', async () => {
+  const http = await import('../http');
+  return { pollFetch: (url: string, init: RequestInit) => http.httpFetch(url, init) };
+});
 const fetchMock = vi.mocked(httpFetch);
 beforeEach(() => {
   fetchMock.mockReset();
@@ -600,4 +605,31 @@ test('the admin menu registers /fastforward as an ephemeral command and has no /
   expect(commands).not.toContain('private');
   expect(commands).not.toContain('send');
   expect(lines.commands.admins.find(({ command }) => command === 'fastforward')).toMatchObject({ is_ephemeral: true });
+});
+
+test('edit and remove give up after 5 seconds, so a hung call never stalls the tick', async () => {
+  const signals: (AbortSignal | undefined)[] = [];
+  botApi(() => ok(true));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  fetchMock.mockImplementation(async (_url, init) => {
+    signals.push(init?.signal ?? undefined);
+    return ok(true);
+  });
+  const timeout = vi.spyOn(AbortSignal, 'timeout');
+  await telegram.edit('222', '77', { text: 'All set 💛' });
+  await telegram.remove('-1001234567890', '6819514', '222');
+  expect(timeout.mock.calls).toEqual([[5000], [5000]]);
+  expect(signals).toHaveLength(2);
+  timeout.mockRestore();
+});
+
+test('a Bot API call over 5 seconds logs its method and duration', async () => {
+  botApi(() => ok(true));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  const now = vi.spyOn(Date, 'now').mockReturnValueOnce(0).mockReturnValueOnce(29_000);
+  await telegram.react('-1001234567890', '42', '✍');
+  expect(warn).toHaveBeenCalledWith('Telegram setMessageReaction took 29.0 s');
+  now.mockRestore();
+  warn.mockRestore();
 });

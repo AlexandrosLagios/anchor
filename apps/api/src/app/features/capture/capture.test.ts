@@ -689,3 +689,8 @@ test('forget.handle and capture.handle return false when the router found no fam
   expect(await forget.handle(event({ text: 'Anchor, forget this', replyTo: 'x' }), undefined, ctx)).toBe(false);
   expect(await capture.handle(event({ text: 'hello there friend' }), undefined, ctx)).toBe(false);
 });
+
+test('capture leaves a group button tap to the later features', async () => {
+  expect(await capture.handle(event({ button: 'shr:yes:abcd1234' }), family, ctx)).toBe(false);
+  expect(family.counters).toEqual({});
+});
