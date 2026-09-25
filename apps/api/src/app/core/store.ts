@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname } from 'node:path';
 import type { Family, State, Store } from './types';
 
+const logger = new Logger('Store');
+
 // ponytail: each save rewrites the whole record; move to SQLite when a save gets slow or a second process writes
 export function openStore(file: string, realNow = Date.now()): Store {
   const state = load(file) ?? { clockStart: realNow, families: [] };
@@ -36,7 +38,7 @@ function load(file: string): State | undefined {
   } catch (error) {
     const aside = `${file}.corrupt-${Date.now()}`;
     renameSync(file, aside);
-    new Logger('Store').warn(`${file} is unreadable (${error}), moved it to ${aside} and started empty`);
+    logger.warn(`${file} is unreadable (${error}), moved it to ${aside} and started empty`);
     return undefined;
   }
 }

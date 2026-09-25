@@ -1,8 +1,10 @@
+const graphemes = new Intl.Segmenter();
+
 /** Cuts the text to at most `max` UTF-16 units, the unit of the Telegram limits, and never inside an emoji. */
 export function cut(text: string, max: number): string {
   if (text.length <= max) return text;
   let kept = '';
-  for (const { segment } of new Intl.Segmenter().segment(text)) {
+  for (const { segment } of graphemes.segment(text)) {
     if (kept.length + segment.length > max) break;
     kept += segment;
   }

@@ -119,10 +119,11 @@ test('transcribe returns an empty string for an invalid answer or a failed call'
   expect(await transcribe({ data: Buffer.from(randomUUID()), mimeType: 'audio/ogg' })).toBe('');
 });
 
-const cacheFile = (key: string) => join(tmpdir(), 'anchor-gemini', createHash('sha1').update(key).digest('hex'));
+const cacheDir = join(tmpdir(), 'anchor-gemini');
+const cacheFile = (key: string) => join(cacheDir, createHash('sha1').update(key).digest('hex'));
 const cacheDefaultClip = (text: string) => {
   const clip = wav(Buffer.alloc(8), 24000);
-  mkdirSync(join(tmpdir(), 'anchor-gemini'), { recursive: true });
+  mkdirSync(cacheDir, { recursive: true });
   writeFileSync(cacheFile(`speak:Sulafat:${text}`), clip);
   return clip;
 };

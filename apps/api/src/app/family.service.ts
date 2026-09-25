@@ -31,7 +31,8 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
   private async start(token: string) {
     const file = process.env.ANCHOR_STATE_FILE || 'tmp/anchor-state.json';
     const store = openStore(file);
-    const daySeconds = Number(process.env.ANCHOR_DAY_SECONDS) > 0 ? Number(process.env.ANCHOR_DAY_SECONDS) : 86400;
+    const configured = Number(process.env.ANCHOR_DAY_SECONDS);
+    const daySeconds = configured > 0 ? configured : 86400;
     const telegram = await TelegramTransport.connect(token, this.stop.signal);
     const now = () => demoNow(store.state.clockStart, daySeconds);
     const router = createRouter(FEATURES, { now, store, transport: () => telegram });
