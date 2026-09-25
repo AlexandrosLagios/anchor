@@ -447,6 +447,26 @@ test('an invitation with no reply for 3 hours gets gentleHelp and the voice note
   expect(save).not.toHaveBeenCalled();
 });
 
+test('a member who turned family moments off gets no gentleHelp 3 hours later', async () => {
+  add();
+  await tickAt(at(25, 11));
+  nikos().choices.moments = false;
+  await tickAt(at(25, 14));
+  expect(transport.sent).toHaveLength(2);
+  expect(nikos().invitation?.helped).toBe(false);
+});
+
+test('a fixed phrase while an invitation is open goes to intents, and the invitation stays open', async () => {
+  const moment = add();
+  const invitation = invite(moment);
+  for (const text of ['settings', 'What did I miss?', 'call me', 'Send me a moment', 'Another moment']) {
+    expect(await receive(fromNikos({ text }))).toBe(false);
+  }
+  expect(nikos().invitation).toBe(invitation);
+  expect(transport.sent).toEqual([]);
+  expect(ask).not.toHaveBeenCalled();
+});
+
 test('an invitation with no sentAt fails safe and never gets gentleHelp', async () => {
   const moment = add({ voice: { id: 'voice-57' } });
   invite(moment, { sentAt: undefined });

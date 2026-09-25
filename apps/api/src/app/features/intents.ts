@@ -5,7 +5,7 @@ import type { Context, Family, Feature, Incoming, Member, Moment } from '../core
 import * as model from '../model/model';
 import { answerInGroup, choiceLine } from './ask';
 import { actOnReply } from './capture/capture';
-import { ADDRESS, pictureOf } from './capture/filter';
+import { ADDRESS, fixedIntent, pictureOf } from './capture/filter';
 import { callMember } from './calls';
 import { sendMe } from './invitations';
 import { postMemoryNow } from './memories';
@@ -148,7 +148,8 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
   if (isNew) ctx.store.save();
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
-  const { intent, momentId } = await readIntent(family, event, 'group', question, moments, ctx);
+  const fixed = event.voice ? undefined : fixedIntent(question);
+  const { intent, momentId } = fixed ? { intent: fixed, momentId: undefined } : await readIntent(family, event, 'group', question, moments, ctx);
   return groupAction(intent, momentId, event, family, member, ctx);
 }
 
@@ -241,7 +242,8 @@ async function inPrivate(event: Incoming, family: Family, ctx: Context): Promise
   if (!event.text && !event.voice) return unclearPrivate(family, member, ctx);
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
-  const { intent, momentId } = await readIntent(family, event, 'private', event.text ?? '', moments, ctx);
+  const fixed = event.voice ? undefined : fixedIntent(event.text);
+  const { intent, momentId } = fixed ? { intent: fixed, momentId: undefined } : await readIntent(family, event, 'private', event.text ?? '', moments, ctx);
   return privateAction(intent, momentId, family, member, ctx);
 }
 

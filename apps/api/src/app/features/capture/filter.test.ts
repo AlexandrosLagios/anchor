@@ -2,7 +2,7 @@ process.env.TZ = 'Europe/Athens';
 
 import { expect, test } from 'vitest';
 import type { Family, Incoming } from '../../core/types';
-import { isClosed, passesRules, typedText, wordCount, worthClassifying } from './filter';
+import { fixedIntent, isClosed, passesRules, typedText, wordCount, worthClassifying } from './filter';
 import type { Bundle } from './filter';
 
 test('wordCount counts the words of a text and skips links', () => {
@@ -88,4 +88,24 @@ test('worthClassifying keeps a bare photo or a bare video that also carries a vo
 test('typedText joins the texts and the captions of the bundle in message order', () => {
   const events = [event({ messageId: '1', text: 'Maria on her first day' }), event({ messageId: '2', text: 'so proud of her' })];
   expect(typedText(bundle(events))).toBe('Maria on her first day\nso proud of her');
+});
+
+test('fixedIntent decides the fixed phrases in code, and leaves every other text to the model', () => {
+  const cases: [string, ReturnType<typeof fixedIntent>][] = [
+    ['can you send me the family photos?', 'sendMe'],
+    ['Send me a moment', 'sendMe'],
+    ['Another moment', 'sendMe'],
+    ['settings', 'settings'],
+    ['My settings', 'settings'],
+    ['please call me', 'callMe'],
+    ['Call me', 'callMe'],
+    ['What did I miss?', 'missed'],
+    ['stop', 'stop'],
+    ['Stop.', 'stop'],
+    ['My mother used to send me to the village school', undefined],
+    ['Stop, this one makes me cry', undefined],
+    ['who is that?', undefined],
+    ['when did Maria start school?', undefined],
+  ];
+  for (const [text, intent] of cases) expect([text, fixedIntent(text)]).toEqual([text, intent]);
 });

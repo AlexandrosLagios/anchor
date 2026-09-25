@@ -20,7 +20,7 @@ import {
 } from '../core/types';
 import { ask, speak, valid } from '../model/model';
 import { react } from './capture/capture';
-import { pictureOf, wordCount } from './capture/filter';
+import { fixedIntent, pictureOf, wordCount } from './capture/filter';
 import { nextSteps } from './members';
 
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];
@@ -156,6 +156,8 @@ export async function sendMe(family: Family, member: Member, ctx: Context) {
 async function inPrivate(event: Incoming, family: Family, member: Member, ctx: Context): Promise<boolean> {
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
   if ((event.button && !action) || event.text?.startsWith('/')) return false;
+  // a fixed phrase such as "settings" or "what did I miss?" goes to intents, and the open invitation stays open
+  if (!action && !event.voice && fixedIntent(event.text)) return false;
   if (action === 'never') {
     const moment = family.moments.find((item) => item.id === momentId);
     let changed = false;
@@ -278,7 +280,7 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
 
 async function helpIfSilent(family: Family, member: Member, now: number, ctx: Context) {
   const invitation = member.invitation;
-  if (!member.started || !invitation || invitation.replied || invitation.helped || !(now - invitation.sentAt >= THREE_HOURS)) return;
+  if (!member.started || !member.choices.moments || !invitation || invitation.replied || invitation.helped || !(now - invitation.sentAt >= THREE_HOURS)) return;
   const moment = family.moments.find((item) => item.id === invitation.momentId);
   if (!moment || moment.sensitive) {
     member.invitation = undefined;

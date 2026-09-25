@@ -89,17 +89,15 @@ beforeEach(() => {
   vi.mocked(callMember).mockReset();
 });
 
-test('group: sendMe sends an invitation in private when the member started', async () => {
+test('group: the demo phrase "can you send me the family photos?" is sendMe in code, and sends an invitation in private', async () => {
   const { transport, family, router } = setup();
   const m = member(family, { started: true });
   family.moments.push(moment());
-  vi.mocked(model.ask).mockResolvedValue({ intent: 'sendMe', momentId: 'none' });
 
   await router.route(groupEvent);
 
   expect(transport.sent.some((s) => s.chatId === m.id)).toBe(true);
-  const [prompt] = vi.mocked(model.ask).mock.calls[0];
-  expect(prompt).toContain('"can you send me the family photos?"');
+  expect(model.ask).not.toHaveBeenCalled();
 });
 
 test('group: sendMe sends the ephemeral nudge when the member has not started', async () => {
@@ -187,6 +185,87 @@ test('group: find with none replies notFound', async () => {
   await router.route({ ...groupEvent, text: 'Anchor, when did Maria start school?' });
 
   expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound, replyTo: 'g1' } }]);
+});
+
+test('group: the moment list sent to the model leaves out every sensitive moment', async () => {
+  const { family, router } = setup();
+  member(family);
+  family.moments.push(moment({ id: 'm1' }), moment({ id: 'm-loss', title: 'Grandma in hospital', sensitive: true }));
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'find', momentId: 'none' });
+
+  await router.route({ ...groupEvent, text: 'Anchor, when did Maria start school?' });
+
+  const [prompt, schema] = vi.mocked(model.ask).mock.calls[0];
+  expect(prompt).not.toContain('m-loss');
+  expect(prompt).not.toContain('Grandma in hospital');
+  expect((schema as { properties: { momentId: { enum: string[] } } }).properties.momentId.enum).toEqual(['m1', 'none']);
+});
+
+test('group: a moment id outside the list, or a moment deleted during the call, gets notFound', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  const kept = moment({ id: 'm1', photo: { id: 'photo-1' } });
+  family.moments.push(kept);
+  vi.mocked(model.ask).mockResolvedValueOnce({ intent: 'find', momentId: 'm-invented' });
+  await router.route({ ...groupEvent, text: 'Anchor, when did Maria start school?' });
+
+  vi.mocked(model.ask).mockImplementationOnce(async () => {
+    family.moments.splice(family.moments.indexOf(kept), 1);
+    return { intent: 'find', momentId: 'm1' };
+  });
+  await router.route({ ...groupEvent, text: 'Anchor, when did Maria start school?' });
+
+  expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.notFound, lines.notFound]);
+});
+
+test('group: the answer shows the video over the photo, then the first voice story, and both ids land in memoryPostIds', async () => {
+  const { transport, family, router, file } = setup();
+  member(family);
+  const found = moment({
+    id: 'm1',
+    photo: { id: 'photo-1' },
+    video: { id: 'video-1' },
+    stories: [story({ id: 's1' }), story({ id: 's2', by: { id: 'u4', name: 'Sofia' }, voice: { id: 'voice-s2' } })],
+  });
+  family.moments.push(found);
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'find', momentId: 'm1' });
+
+  await router.route({ ...groupEvent, text: 'Anchor, when did Maria start school?' });
+
+  expect(transport.sent.map(({ message }) => message)).toEqual([
+    { video: { id: 'video-1' }, text: lines.askAnswer("Maria's first day at school", '25 September 2026', ['Dimitris', 'Sofia']), replyTo: 'g1' },
+    { voice: { id: 'voice-s2' } },
+  ]);
+  expect(found.memoryPostIds).toEqual(['sent-1', 'sent-2']);
+  expect(openStore(file).family('-100')?.moments[0].memoryPostIds).toEqual(['sent-1', 'sent-2']);
+});
+
+test('group: "Anchorage was lovely", a bare "anchor", and a forwarded "Anchor, ..." are not questions', async () => {
+  const { transport, family, ctx } = setup();
+  member(family);
+  family.moments.push(moment());
+  for (const event of [
+    { ...groupEvent, text: 'Anchorage was lovely' },
+    { ...groupEvent, text: 'anchor' },
+    { ...groupEvent, text: 'Anchor, when did Maria start school?', forwarded: true },
+  ]) {
+    expect(await intents.handle?.(event, family, ctx)).toBe(false);
+  }
+  expect(model.ask).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([]);
+});
+
+test('private: a fixed phrase decides the intent in code, and a voice note still goes to the model', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+  await router.route({ ...privateEvent, text: 'What did I miss?' });
+  expect(model.ask).not.toHaveBeenCalled();
+  expect(transport.sent.at(-1)).toMatchObject({ chatId: m.id, message: { text: lines.nothingNew } });
+
+  transport.files.set('clip-1', { data: Buffer.from('what did I miss'), mimeType: 'audio/ogg' });
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'missed', momentId: 'none' });
+  await router.route({ ...privateEvent, text: undefined, voice: { id: 'clip-1', mimeType: 'audio/ogg' } });
+  expect(model.ask).toHaveBeenCalledTimes(1);
 });
 
 test('group: memory posts a memory now, like /memory', async () => {
