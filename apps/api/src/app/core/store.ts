@@ -23,6 +23,11 @@ export function openStore(file: string, realNow = Date.now()): Store {
       state.families.find((family) => family.members.some((person) => person.id === userId)),
     joinMember(family, person) {
       const existing = family.members.find((member) => member.id === person.id);
+      // a member can rename the account, and every line reads member.name
+      if (existing && person.name && existing.name !== person.name) {
+        existing.name = person.name;
+        store.save();
+      }
       if (existing) return existing;
       const member: Member = { id: person.id, name: person.name, started: false, choices: { ...DEFAULT_CHOICES } };
       family.members.push(member);

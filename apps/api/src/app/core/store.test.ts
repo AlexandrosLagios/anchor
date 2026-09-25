@@ -49,6 +49,17 @@ test('joinMember adds a member with the default choices, and returns the existin
   expect(family.members).toHaveLength(1);
 });
 
+test('joinMember takes the new name of a member who renamed the account, and saves it', () => {
+  const file = stateFile();
+  const store = openStore(file, 1000);
+  const family = store.addFamily('-100', '-100');
+  const member = store.joinMember(family, { id: '42', name: 'Nikos' });
+  store.save();
+  expect(store.joinMember(family, { id: '42', name: 'Sofia' })).toBe(member);
+  expect(member.name).toBe('Sofia');
+  expect(openStore(file, 1000).family('-100')?.members[0].name).toBe('Sofia');
+});
+
 test('a v1-shaped file loads with the v2 defaults, and no migration runs', () => {
   const file = stateFile();
   writeFileSync(
