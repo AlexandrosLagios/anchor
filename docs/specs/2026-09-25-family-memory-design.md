@@ -8,16 +8,23 @@
 
 ## 1. Framing
 
-Anchor is a member of the family group chat. Anchor keeps the family's record of shared moments, brings moments back to the family, and invites the grandparents to add their stories.
+The team's journey document for Challenge #12 (older adults who live independently) sets the framing. Its persona is a grandfather who lives on his own and has a recent MCI diagnosis. His daughter shares everyday moments in the family group chat, and he has his own stories to tell.
 
-The grandparents are the storytellers of the family. The product never presents itself as a memory aid, a test, or a therapy. No line that Anchor sends mentions memory loss, cognitive impairment, recall, hints, or scores.
+Anchor is a member of the family group chat. Anchor keeps the family's shared moments, brings them back so the family can relive them together, and invites the grandparents to add their stories. The design centres on the member for whom the moments are most fragile, and that makes it better for everyone.
+
+- Anchor is a keeper of the family's memories, never a member of the family. Anchor says that it is not a person.
+- Anchor quotes each moment in the words of the person who shared it, and attributes each moment to that person. Anchor never claims feelings or a shared past of its own.
+- The grandparents are contributors and storytellers, not receivers of help.
+- The memory benefit is honest but is not the label. Only the private welcome to a storyteller mentions it.
+- No line that Anchor sends mentions memory loss, cognitive impairment, recall, tests, hints, or scores. A return is an invitation to relive a moment, never a question with a right answer.
+- Success is the moments that the family shares, not how much anyone talks to Anchor.
 
 ## 2. Changes to the spike
 
 The spike stays the source for the platform research and for the rejected platforms. This design changes the product decisions of the spike as follows.
 
 - Kept: decisions 1, 2, 5, 6, 8, 9, and 10.
-- Changed in decision 8: a `sensitive` bundle covers illness, death, conflict, money, and the health of any person.
+- Changed in decision 8: Anchor keeps a sensitive moment (a loss, grief, or illness) and never brings it back. Journey step 6 keeps painful memories in the family's story, and a person decides when they return.
 - Replaced: decisions 3, 4, and 7. Section 4 of this design replaces them.
 - Settled open questions:
   - Persona: Anchor takes every name from the transport. The team plays the family in a test group.
@@ -50,8 +57,9 @@ Step 3 writes the v1 findings into section 11. Read section 11 before a v1.x cha
 3. A bundle closes 2 minutes after its last message. A bundle that holds a photo and words closes at the next tick. Words are a text, a caption, or a voice note.
 4. The code drops a closed bundle that has no photo, no voice note, and fewer than 3 words. The code also drops a bundle that has a photo and no words, because a bare photo has nothing to bring back.
 5. One Gemini call classifies the bundle (section 6.2). The call gets the texts, the first photo, and the voice note of the bundle.
-6. The code saves only a `family_moment`. Then Anchor reacts with ❤ on the first message of the bundle.
-7. The code counts each outcome in `family.counters`: `rules`, `family_moment`, `logistics`, `small_talk`, `sensitive`, and `failed`.
+6. The code saves a `family_moment` and a `sensitive` moment, and drops the rest. A `sensitive` verdict sets `moment.sensitive`. Then Anchor reacts with ❤ on the first message of the bundle.
+7. `moment.text` holds the typed words of the bundle. A bundle without typed words uses the transcript of its voice note. When both are empty, `moment.text` is the title, so `moment.text` is never empty.
+8. The code counts each outcome in `family.counters`: `rules`, `family_moment`, `logistics`, `small_talk`, `sensitive`, and `failed`.
 
 The bundler uses real time, because people type in real time. Every other rule in section 4 uses the demo clock (section 4.8).
 
@@ -61,9 +69,9 @@ The bundler uses real time, because people type in real time. Every other rule i
 - A moment is due for a lookback when 7, 30, or 365 days have passed since `savedAt`, and the age is not in `moment.lookbacks`.
 - A moment is due for an anniversary when its `eventDate` has the month and the day of today and a year before this year. The key `anniversary-<this year>` must not be in `moment.lookbacks`.
 - When several keys are due for one moment, the code posts one memory. The anniversary wins, and otherwise the highest age wins. The code marks every due key as done.
-- The code skips every moment whose `tone` is `sensitive`.
+- The code skips every moment whose `sensitive` flag is true.
 - `byPriority` in `core/priority.ts` orders the due moments: anniversary first, then the higher salience, then the older `savedAt`.
-- The post is the photo with the caption `memoryCaption(label, title)`. A moment without a photo posts the caption as text. The code adds the message id of the post to `moment.memoryPostIds`.
+- The post is the photo with the caption `memoryCaption(label, sender, text)`, which quotes the sender's own words. A moment without a photo posts the caption as text. The code adds the message id of the post to `moment.memoryPostIds`.
 - An admin sends `/memory` in the group to post a memory at once. `/memory` posts the first due moment with its label.
 - When no moment is due, `/memory` posts the moment with the fewest memory posts, with the label `fromRecord`. `byPriority` breaks a tie.
 - `/memory` does not change `lastMemoryDay`. When the family has no moment, `/memory` gets `nothingToShare`.
@@ -76,19 +84,25 @@ The bundler uses real time, because people type in real time. Every other rule i
 
 ### 4.5 Story invitations
 
+Moments come back to a storyteller more often than to the group, in private, at 11:00. Each return is an invitation to relive the moment.
+
 - The 11:00 slot sends at most one invitation per started storyteller per day.
-- A moment qualifies when the storyteller did not send the moment, and the moment is at least 3 demo-clock hours old. The storyteller id must not be in `moment.offeredTo`, and the tone must not be `sensitive`.
+- A moment qualifies when the storyteller did not send it, it is not sensitive, and it is at least 3 demo-clock hours old. `moment.returns[storytellerId].due` must be at or before now. A missing entry counts as due.
 - `byPriority` picks the first qualifying moment.
-- Anchor sends the photo first. Then Anchor sends a voice note of `moment.invitation`, with the text as the caption and a "Not now" button. When no voice clip exists, Anchor sends the text with the button.
+- Anchor sends the photo first. Then Anchor sends a voice note of `invitation(sender, text)`, with the text as the caption and the buttons "Not now" and "Don't bring this back". When no voice clip exists, Anchor sends the text with the buttons.
 - The code makes the TTS clip once per moment. The transport returns a media id for the uploaded clip, and the code stores the id in `moment.invitationVoice`.
-- The code adds the storyteller id to `moment.offeredTo` when the invitation goes out.
-- Each private reply of the storyteller adds to one story. The story joins the texts and the transcripts, and keeps the first voice note.
-- After the first reply, Anchor sends `thanks` with the buttons "Yes, share it" and "No, thanks".
+- After each delivered invitation, the code increments `count` and sets `due` to the slot time plus the next gap. The gaps are 1, 2, 4, 8, 16, and 32 days. After the seventh return, the moment gets no more private returns.
+- A delivered invitation counts as a return whether or not the storyteller answers. Silence is never read as forgetting, and nobody is watched.
+- "Not now" sends `notNow`, sets `due` to the next day's slot, and keeps `count`. "Don't bring this back" sets `sensitive` and sends `dontBringBack`. Both close the invitation.
+- One Gemini call reads each private reply (section 6.3) and returns a `kind`:
+  - `story`: the reply adds to one story, which joins the texts and the transcripts and keeps the first voice note. After the first story reply, Anchor sends `thanks` with the buttons "Yes, share it" and "No, thanks".
+  - `unsure`, the first time: Anchor sends `gentleHelp(date, title)`, then the sender's voice note by its media id when the moment has one. The invitation stays open, and `helped` becomes true.
+  - `unsure` after the help, or `other`: Anchor sends `warmClose`, and the invitation closes.
 - "Yes, share it" posts `storyAdded(name)` in the group as a reply to the first message of the moment. The voice note follows by its media id, or the text follows as a quote. Then the code appends the story to the moment and sends `shared` in private.
-- "No, thanks" sends `notShared`. "Not now" sends `notNow`. Both close the invitation, and the code stores no story.
+- "No, thanks" sends `notShared`, closes the invitation, and stores no story.
 - An invitation that is still open at the next 11:00 slot closes without a message.
 - An admin sends `/invite` in the group to send an invitation to every started storyteller at once. An open invitation closes first.
-- `/invite` skips the 3-hour rule. When no moment qualifies for a storyteller, Anchor posts `nothingToInvite(name)` in the group.
+- `/invite` skips the 3-hour rule and the due check. `/invite` picks the moment with the lowest return count, and `byPriority` breaks a tie. When no moment qualifies for a storyteller, Anchor posts `nothingToInvite(name)` in the group.
 
 ### 4.6 Ask Anchor (v1.x)
 
@@ -100,9 +114,10 @@ The bundler uses real time, because people type in real time. Every other rule i
 ### 4.7 Commands and fixed replies
 
 - When Anchor joins a group, Anchor creates the family and posts `intro`.
-- `/storyteller`, sent by an admin as a reply to the message of a member, registers the member as a storyteller. Anchor posts `storytellerStart(name)` with a URL button to `transport.startLink(family id)`.
+- `/storyteller`, sent by an admin as a reply to the message of a member, registers `event.replyToSender` as a storyteller. Anchor posts `storytellerStart(name)` with a URL button to `transport.startLink(family id)`.
 - `/start` in private, from a registered storyteller, sets `started` and gets `welcome(name)`.
 - "Anchor, forget this", sent as a reply, deletes the moment or the story that owns the replied-to message. Anchor reacts with 👌.
+- "Anchor, don't bring this back", sent as a reply, sets `sensitive` on the moment that owns the replied-to message. The moment stays in the record, and Anchor reacts with 👌.
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
 - `/memory` and `/invite` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
 - A private message that no feature handles gets `noInvitation` from a storyteller, and `pointer` from any other person.
@@ -117,15 +132,19 @@ The bundler uses real time, because people type in real time. Every other rule i
 
 | Key | Text |
 | --- | --- |
-| `intro` | Hi, I'm Anchor 👋 I keep this family's record. When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, and the grandparents can add their stories. An admin can reply /storyteller to a grandparent's message. Reply "Anchor, forget this" to any message and I delete it. This is a test build, so please share staged photos only. |
+| `intro` | Hi, I'm Anchor 👋 I'm not a person: I keep this family's photos and stories, each one in the words of the person who shared it. When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, so it stays with all of us. An admin can reply /storyteller to a grandparent's message. Reply "Anchor, forget this" to delete a moment, or "Anchor, don't bring this back" to keep it without bringing it back. This is a test build, so please share staged photos only. |
 | `storytellerStart(name)` | {name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment. |
-| `welcome(name)` | Hello {name} 🙂 I'm Anchor. Now and then I'll send you a moment from the family. Tell me what it reminds you of, by voice or by text. I share nothing unless you say yes. |
-| `memoryCaption(label, title)` | {label}: {title} 💛 (new line) Reply with a story or a voice note to add it to the family record. |
+| `welcome(name)` | Hello {name} 🙂 I'm Anchor. I keep your family's photos and stories, and I'm not a person. Now and then, and a little more often for you, I'll send you a moment the family shared. Seeing moments again helps them stay with us. Tell me what it brings back, by voice or by text. There's no right answer, and I share nothing unless you say yes. |
+| `invitation(sender, text)` | {sender} shared: «{text}» (new line) What does it remind you of? |
+| `memoryCaption(label, sender, text)` | {label} 💛 (new line) {sender} shared: «{text}» (new line) Reply with a story or a voice note to add it to the family record. |
 | labels | `7` One week ago · `30` One month ago · `365` One year ago · anniversary On this day in {year} · `fromRecord` From the family record |
+| `gentleHelp(date, title)` | No rush 🙂 This is from {date}: {title}. Any memory it brings is welcome. |
+| `warmClose` | Thank you 💛 |
 | `thanks` | Thank you for the story 💛 Shall I share it with the family? |
 | `shared` | Done, the family can hear it now 💛 |
 | `notShared` | Of course. I won't share it. |
 | `notNow` | No problem 🙂 Another time. |
+| `dontBringBack` | Of course. I'll keep it, and I won't bring it back. |
 | `storyAdded(name)` | {name} added a story to this moment 🎙️ |
 | `askAnswer(title, date, names)` | {title} · {date} 💛 plus "Stories from {names}" when the moment has stories |
 | `notFound` | I couldn't find that in the family record yet. |
@@ -135,7 +154,7 @@ The bundler uses real time, because people type in real time. Every other rule i
 | `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
 | `nothingToInvite(name)` | {name} has seen every moment so far. |
 
-The buttons read "Start", "Not now", "Yes, share it", and "No, thanks". A step may change the wording of its own lines, but no line may break section 1.
+The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks". A step may change the wording of its own lines, but no line may break section 1.
 
 ## 5. Architecture
 
@@ -146,6 +165,8 @@ The buttons read "Start", "Not now", "Yes, share it", and "No, thanks". A step m
 - **Record**: the server holds the family memory in one `State`. A later feature adds its own typed fields to `Family`, and the JSON file needs no migration.
 
 Not built: a plugin loader, per-family feature flags, an event bus, a message archive, and a second language. Add each one when a family needs it.
+
+Parked from the journey document, for after the v1 team test: the Lovely / Tell Eleni / Later quick replies, the response states (engaged, partial, no reply, distress), a reminder to a family member about a sensitive moment, a slot time per storyteller, consent that the family renews over time, and support that decreases as recall improves.
 
 ### 5.2 Files
 
@@ -195,6 +216,7 @@ export type Incoming = {
   forwarded?: boolean;
   unsupported?: boolean; // sticker, GIF, video, document, poll, service message
   replyTo?: string;
+  replyToSender?: { id: string; name: string }; // the sender of the replied-to message
   button?: string; // the data of a pressed button
   joined?: boolean; // Anchor joined this group
 };
@@ -233,20 +255,19 @@ export type Moment = {
   by: Person;
   messageIds: string[]; // the group messages of the bundle
   savedAt: number; // demo-clock ms
-  text: string;
+  text: string; // the sender's own words, verbatim
   photo?: Media;
   voice?: Media;
   salience: number; // 1 to 5
-  tone: 'joyful' | 'neutral' | 'sensitive';
+  sensitive: boolean; // Anchor never brings the moment back
   people: string[];
   eventDate?: string; // YYYY-MM-DD
   title: string;
-  invitation: string;
-  invitationVoice?: Media;
+  invitationVoice?: Media; // the TTS clip of invitation(sender, text)
   stories: Story[];
   lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'
   memoryPostIds: string[];
-  offeredTo: string[]; // storyteller ids
+  returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
 };
 
 export type Invitation = {
@@ -255,6 +276,7 @@ export type Invitation = {
   messageIds: string[]; // the private messages of Anchor for this invitation
   story?: { text: string; voice?: Media };
   shareAsked: boolean;
+  helped: boolean; // the gentle help went out once
 };
 
 export type Storyteller = Person & {
@@ -309,7 +331,7 @@ export interface Feature {
 | Position | Feature | Step | Handles |
 | --- | --- | --- | --- |
 | 1 | `intro` | 1 | `joined` events |
-| 2 | `forget` | 2 | "Anchor, forget this" |
+| 2 | `forget` | 2 | "Anchor, forget this" and "Anchor, don't bring this back" |
 | 3 | `invitations` | 2 | `/storyteller`, `/invite`, `/start`, private replies, and invitation buttons |
 | 4 | `memories` | 2 | `/memory`, and replies to memory posts |
 | 5 | `ask` | v1.x | group messages that start with "Anchor," |
@@ -358,22 +380,24 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 
 | Field | Type | Rule |
 | --- | --- | --- |
-| `verdict` | enum | `family_moment`, `logistics`, `small_talk`, or `sensitive`. |
+| `verdict` | enum | `family_moment`, `sensitive`, `logistics`, or `small_talk`. |
 | `salience` | integer | 1 to 5. An invalid value becomes 3. |
-| `tone` | enum | `joyful`, `neutral`, or `sensitive`. An invalid value becomes `neutral`. |
 | `people` | string array | The names in the moment. An invalid value becomes an empty array. |
 | `eventDate` | string | `YYYY-MM-DD`, or an empty string when the date is unknown. An invalid value becomes unknown. |
 | `title` | string | A short phrase for the record, for example "Maria's first day at school". At most 100 characters. |
-| `invitation` | string | One or two short spoken sentences that show the moment to a grandparent and invite a story. At most 300 characters, because a Telegram caption holds at most 1024. |
+| `transcript` | string | The words spoken in the voice note of the bundle, or an empty string. |
 
-- The invitation names the sender, for example "Sofia shared this: Maria's first day at school. What does it remind you of?".
-- The invitation never asks for a fact and never tests the listener.
-- A `family_moment` with an empty `title` or an empty `invitation` counts as `failed`.
+- `family_moment` is a moment worth keeping.
+- `sensitive` is a moment worth keeping that can hurt to see again: a loss, grief, or illness.
+- `logistics` covers plans, errands, and money. `small_talk` covers chatter, jokes, reactions, and arguments.
+- A `family_moment` or a `sensitive` moment with an empty `title` counts as `failed`.
+- The code composes every line that quotes a moment, from `moment.text` and the sender's name. Gemini writes no line that Anchor sends.
 
-### 6.3 Transcribe (step 1)
+### 6.3 Transcribe and read a reply
 
-- `transcribe(media)` returns the transcript of a voice note, or an empty string.
-- The schema is `{ transcript: string }`. The call uses the fast models.
+- `transcribe(media)` (step 1) returns the transcript of a voice note, or an empty string. The schema is `{ transcript: string }`, and the call uses the fast models. Group voice stories use this call.
+- The reply call (step 2, in `features/invitations.ts`) reads one private reply, text or voice, next to the moment's title and the sender's words. The schema is `{ transcript: string, kind: story | unsure | other }`.
+- `story` is a detail, a feeling, or a memory. `unsure` is a hesitation or a question, for example "a school?". `other` is an acknowledgement, for example "ok" or an emoji.
 
 ### 6.4 Find a moment (v1.x)
 
@@ -414,6 +438,7 @@ BotFather setup for the team test:
 - **Gemini**: every call has a fixed fallback.
   - A failed or invalid classification drops the bundle and increments `failed`. Nothing unclassified enters the record, because the sensitive check did not run.
   - A failed transcription keeps the voice note with the text `voiceNote`.
+  - A failed reply call counts as `story` when the reply holds a voice note or at least 3 words, and as `other` otherwise.
   - A failed find, or a `none` answer, gets `notFound`.
   - A failed TTS call or a failed `ffmpeg` conversion sends the invitation as text.
 - **Transport**: the code logs a failed send or a failed reaction, and the record change stays. When `send` throws `Blocked` for a storyteller, the code sets `started` to false.
