@@ -79,8 +79,10 @@ export const lines = {
   voiceNote: '🎤 voice note',
   nothingToShare: 'The family record is empty so far. Share a photo with a few words 🙂',
   nothingToInvite: (name: string) => `${name} has seen every moment so far.`,
-  // the menu that Telegram shows when someone types "/": the group commands for admins only, and the private ones for everyone
+  adminOnly: 'Only a group admin can do that 🙂',
+  // the menu that Telegram shows when someone types "/"; an admin sees only the admin list, so it repeats /memory
   commands: {
+    group: [{ command: 'memory', description: 'Share a family memory in the group now' }],
     admins: [
       { command: 'memory', description: 'Share a family memory in the group now' },
       { command: 'private', description: 'Reply to a message: that person gets family moments in private' },

@@ -5,7 +5,10 @@ export const fastforward: Feature = {
   name: 'fastforward',
   async handle(event, family, ctx) {
     if (event.chat !== 'group' || !family || !event.text || !/^\/fastforward(\s|$)/.test(event.text)) return false;
-    if (!(await ctx.transport(family.id).isAdmin(event.chatId, event.sender.id))) return true;
+    if (!(await ctx.transport(family.id).isAdmin(event.chatId, event.sender.id))) {
+      await ctx.transport(family.id).send(event.chatId, { text: lines.adminOnly, replyTo: event.messageId });
+      return true;
+    }
     const match = event.text.match(/^\/fastforward\s+(\d+)\s*$/);
     const days = Number(match?.[1]);
     if (!(days >= 1 && days <= 400)) {

@@ -157,13 +157,14 @@ test('/private from an admin registers the replied-to member once and posts stor
   ]);
 });
 
-test('/private from a member who is not an admin, or with no replied-to member, sends nothing', async () => {
+test('/private from a member who is not an admin gets adminOnly and registers nobody, and an admin with no replied-to member gets nothing', async () => {
   family.storytellers.length = 0;
-  expect(await receive(inGroup({ text: '/private', replyToSender: { id: '7', name: 'Nikos' } }))).toBe(true);
+  const fromMember = inGroup({ text: '/private', replyToSender: { id: '7', name: 'Nikos' } });
+  expect(await receive(fromMember)).toBe(true);
   transport.admins.add('1');
   expect(await receive(inGroup({ text: '/private' }))).toBe(true);
   expect(family.storytellers).toEqual([]);
-  expect(transport.sent).toEqual([]);
+  expect(messages()).toEqual([['-100', { text: lines.adminOnly, replyTo: fromMember.messageId }]]);
 });
 
 test('/start from a storyteller asks for a yes and leaves started alone, and any other person or group message is left to the next feature', async () => {
@@ -808,15 +809,17 @@ test('/send from an admin closes the open invitation and invites with the fewest
   expect(transport.sent.map(({ chatId }) => chatId)).toEqual(['7', '7']);
 });
 
-test('/send posts nothingToInvite for a storyteller with no moment left, and a member who is not an admin gets nothing', async () => {
+test('/send posts nothingToInvite for a storyteller with no moment left, and a member who is not an admin gets adminOnly', async () => {
   family.storytellers.push({ id: '8', name: 'Eleni', started: false });
   invite(add({ by: { id: '7', name: 'Nikos' } }));
-  expect(await receive(inGroup({ text: '/send' }))).toBe(true);
-  expect(transport.sent).toEqual([]);
+  const fromMember = inGroup({ text: '/send' });
+  expect(await receive(fromMember)).toBe(true);
+  expect(messages()).toEqual([['-100', { text: lines.adminOnly, replyTo: fromMember.messageId }]]);
+  expect(nikos().invitation).toBeDefined();
 
   transport.admins.add('1');
   await receive(inGroup({ text: '/send' }));
-  expect(messages()).toEqual([['-100', { text: lines.nothingToInvite('Nikos') }]]);
+  expect(messages().slice(1)).toEqual([['-100', { text: lines.nothingToInvite('Nikos') }]]);
   expect(saved()?.storytellers[0].invitation).toBeUndefined();
 });
 
