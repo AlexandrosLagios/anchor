@@ -13,6 +13,10 @@ import { httpFetch, type HttpResponse } from './http';
 import { ask } from './model/model';
 
 vi.mock('./http', () => ({ httpFetch: vi.fn() }));
+vi.mock('./transports/poll-fetch', async () => {
+  const http = await import('./http');
+  return { pollFetch: (url: string, init: RequestInit) => http.httpFetch(url, init) };
+});
 vi.mock('./model/model', async (importOriginal) => ({ ...(await importOriginal<typeof import('./model/model')>()), ask: vi.fn() }));
 const fetchMock = vi.mocked(httpFetch);
 
