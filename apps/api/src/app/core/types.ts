@@ -14,6 +14,7 @@ export type Incoming = {
   video?: Media;
   thumbnail?: Media; // the preview frame of the video, for the classification
   voice?: Media;
+  albumId?: string; // the media group of an album
   forwarded?: boolean;
   unsupported?: boolean; // sticker, GIF, video note, document, poll, service message
   replyTo?: string;
@@ -60,7 +61,8 @@ export type Moment = {
   by: Person;
   messageIds: string[]; // the group messages of the bundle
   savedAt: number; // demo-clock ms
-  text: string; // the sender's own words, verbatim
+  text: string; // the sender's own words, verbatim, or the title when wordless
+  wordless?: boolean; // the sharer sent no words, so text holds the model's title
   photo?: Media;
   video?: Media; // a return shows the video when the moment has one
   voice?: Media;

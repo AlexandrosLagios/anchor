@@ -29,7 +29,7 @@ let sequence: number;
 
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 8, day, hour, minute).getTime();
 const wav = Buffer.from('RIFF clip');
-const invitationText = lines.invitation('Sofia', 'Maria on her first day at school');
+const invitationText = 'Sofia shared: «Maria on her first day at school»\nWhat does it remind you of?';
 const inviteButtons = (id: string) => [
   { label: lines.buttons.notNow, data: `inv:later:${id}` },
   { label: lines.buttons.dontBringBack, data: `inv:never:${id}` },
@@ -284,6 +284,28 @@ test('the 11:00 tick sends the photo, then the invitation voice with both button
   expect(save).not.toHaveBeenCalled();
 });
 
+test('an invitation of a wordless photo speaks and captions the photo by its title, never as a quote', async () => {
+  add({ text: "Maria's first day at school", wordless: true });
+  await tickAt(at(25, 11));
+
+  const text = "Sofia shared a photo: Maria's first day at school\nWhat does it remind you of?";
+  expect(speak).toHaveBeenCalledWith(text, 'warm, calm and slow, like a kind family friend talking to a grandparent');
+  expect(messages()).toEqual([
+    ['7', { photo: { id: 'photo-57' } }],
+    ['7', { voice: { wav }, text, buttons: inviteButtons('m1') }],
+  ]);
+});
+
+test('the reply prompt of a wordless moment does not present the title as her words', async () => {
+  invite(add({ text: "Maria's first day at school", wordless: true }));
+  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'story' });
+  await receive(fromNikos({ text: 'She would not let go of my hand' }));
+
+  const [prompt] = vi.mocked(ask).mock.calls[0];
+  expect(prompt).toContain("Sofia shared a photo: Maria's first day at school");
+  expect(prompt).not.toContain('«Maria');
+});
+
 test('a moment with a video goes out as the video, and a moment with no picture as the voice alone', async () => {
   add({ video: { id: 'video-57' } });
   await tickAt(at(25, 11));
@@ -347,7 +369,7 @@ test('a window that spans both the 3-hour silent mark and the next 11:00 slot le
 
   expect(messages().slice(sentBefore)).toEqual([
     ['7', { photo: { id: 'photo-99' } }],
-    ['7', { voice: { wav }, text: lines.invitation('Eleni', 'Sunday lunch with all the cousins'), buttons: inviteButtons('m2') }],
+    ['7', { voice: { wav }, text: 'Eleni shared: «Sunday lunch with all the cousins»\nWhat does it remind you of?', buttons: inviteButtons('m2') }],
   ]);
   expect(nikos().invitation?.momentId).toBe('m2');
   expect(transport.sent.slice(sentBefore).some(({ message }) => message.text?.includes('No rush'))).toBe(false);

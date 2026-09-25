@@ -2,7 +2,7 @@ process.env.TZ = 'Europe/Athens';
 
 import { expect, test } from 'vitest';
 import type { Family, Incoming } from '../../core/types';
-import { BUNDLE_GAP_MS, isClosed, passesRules, typedText, wordCount, worthClassifying } from './filter';
+import { isClosed, passesRules, typedText, wordCount, worthClassifying } from './filter';
 import type { Bundle } from './filter';
 
 test('wordCount counts the words of a text and skips links', () => {
@@ -37,10 +37,20 @@ test('passesRules keeps a photo with no caption, a video, and a plain text', () 
   expect(passesRules(event({ text: 'Maria on her first day' }))).toBe(true);
 });
 
-test('isClosed is true 2 minutes after the last message, and not a second before', () => {
+test('isClosed is true 5 minutes after the last message, and not a second before', () => {
   const open = bundle([event({ text: 'hello' })]);
-  expect(isClosed(open, BUNDLE_GAP_MS - 1000)).toBe(false);
-  expect(isClosed(open, BUNDLE_GAP_MS)).toBe(true);
+  expect(isClosed(open, 5 * 60_000 - 1000)).toBe(false);
+  expect(isClosed(open, 5 * 60_000)).toBe(true);
+});
+
+test('isClosed waits the 5 minutes for a bare photo, so a text can still join it', () => {
+  const photo = bundle([event({ photo: { id: 'p1' } })]);
+  expect(isClosed(photo, 5 * 60_000 - 1000)).toBe(false);
+  expect(isClosed(photo, 5 * 60_000)).toBe(true);
+});
+
+test('isClosed is true at once for a sealed bundle, which a newer picture from the sender replaced', () => {
+  expect(isClosed({ ...bundle([event({ photo: { id: 'p1' } })]), sealed: true }, 0)).toBe(true);
 });
 
 test('isClosed is true at once for a captioned photo, and for a captioned video', () => {
@@ -48,10 +58,14 @@ test('isClosed is true at once for a captioned photo, and for a captioned video'
   expect(isClosed(bundle([event({ text: 'Maria', video: { id: 'v1' } })]), 0)).toBe(true);
 });
 
-test('worthClassifying drops fewer than 3 typed words, and a bare photo or a bare video', () => {
+test('worthClassifying drops fewer than 3 typed words, and a bare video without a thumbnail', () => {
   expect(worthClassifying(bundle([event({ text: 'ok great' })]))).toBe(false);
-  expect(worthClassifying(bundle([event({ photo: { id: 'p1' } })]))).toBe(false);
   expect(worthClassifying(bundle([event({ video: { id: 'v1' } })]))).toBe(false);
+});
+
+test('worthClassifying keeps a bare photo, and a bare video with a thumbnail', () => {
+  expect(worthClassifying(bundle([event({ photo: { id: 'p1' } })]))).toBe(true);
+  expect(worthClassifying(bundle([event({ video: { id: 'v1' }, thumbnail: { id: 't1' } })]))).toBe(true);
 });
 
 test('worthClassifying keeps 3 typed words, a voice note alone, and a photo with a caption', () => {

@@ -72,6 +72,12 @@ test('toIncoming keeps the largest photo size and the caption as text', () => {
   });
 });
 
+test('toIncoming maps the media group of an album photo as albumId, and leaves it unset for a single photo', () => {
+  const photo = [{ ...file('album-1'), width: 1280, height: 960 }];
+  expect(toIncoming(message({ photo, media_group_id: '13579246801357924' }), BOT)?.albumId).toBe('13579246801357924');
+  expect(toIncoming(message({ photo }), BOT)?.albumId).toBeUndefined();
+});
+
 test('toIncoming maps a voice note', () => {
   const event = toIncoming(message({ voice: { ...file('voice-1'), duration: 4, mime_type: 'audio/ogg' } }), BOT);
   expect(event).toMatchObject({ voice: { id: 'voice-1', mimeType: 'audio/ogg' }, unsupported: false });

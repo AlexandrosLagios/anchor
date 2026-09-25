@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { Logger } from '@nestjs/common';
 import { lines } from '../../core/lines';
-import type { Context, Family, Feature, Moment } from '../../core/types';
+import type { Context, Family, Feature, Incoming, Moment } from '../../core/types';
 import { classify } from './classify';
 import type { Classification } from './classify';
-import { BUNDLE_GAP_MS, isClosed, passesRules, typedText, worthClassifying } from './filter';
+import { BUNDLE_GAP_MS, hasPicture, isClosed, passesRules, typedText, worthClassifying } from './filter';
 import type { Bundle } from './filter';
 
 const logger = new Logger('Capture');
@@ -129,12 +129,13 @@ async function close(bundle: Bundle, family: Family, ctx: Context) {
     return;
   }
 
+  const words = typedText(bundle) || classification.transcript;
   const moment: Moment = {
     id: randomUUID(),
     by: bundle.sender,
     messageIds: bundle.events.map((event) => event.messageId),
     savedAt: ctx.now(),
-    text: typedText(bundle) || classification.transcript || classification.title,
+    text: words || classification.title,
     photo: bundle.events.find((event) => event.photo)?.photo,
     video: bundle.events.find((event) => event.video)?.video,
     voice: bundle.events.find((event) => event.voice)?.voice,
@@ -148,6 +149,7 @@ async function close(bundle: Bundle, family: Family, ctx: Context) {
     memoryPostIds: [],
     returns: {},
   };
+  if (!words) moment.wordless = true;
   family.moments.push(moment);
   ctx.store.save();
   await react(ctx, family, family.chatId, bundle.events[0].messageId, '\u2764');
@@ -165,15 +167,20 @@ export const capture: Feature = {
     }
 
     const candidates = bundles.filter(
-      (bundle) => bundle.family === family && bundle.sender.id === event.sender.id && !bundle.closing,
+      (bundle) => bundle.family === family && bundle.sender.id === event.sender.id && !bundle.closing && !bundle.sealed,
     );
     const open = candidates[candidates.length - 1];
     const last = open?.events[open.events.length - 1];
     if (open && last && event.at - last.at <= BUNDLE_GAP_MS) {
-      open.events.push(event);
-    } else {
-      bundles.push({ family, sender: event.sender, events: [event] });
+      const sameAlbum = (other: Incoming) => event.albumId !== undefined && other.albumId === event.albumId;
+      const newPicture = hasPicture(event) && open.events.some((other) => hasPicture(other) && !sameAlbum(other));
+      if (!newPicture) {
+        open.events.push(event);
+        return true;
+      }
+      open.sealed = true;
     }
+    bundles.push({ family, sender: event.sender, events: [event] });
     return true;
   },
 

@@ -31,7 +31,7 @@ export function labelFor(moment: Moment, keys: string[]): string {
 
 async function post(family: Family, moment: Moment, label: string, keys: string[], ctx: Context) {
   moment.lookbacks.push(...keys);
-  const text = lines.memoryCaption(label, moment.by.name, moment.text);
+  const text = lines.memoryCaption(label, moment);
   const message = moment.video ? { video: moment.video, text } : moment.photo ? { photo: moment.photo, text } : { text };
   try {
     const { messageId } = await ctx.transport(family.id).send(family.chatId, message);

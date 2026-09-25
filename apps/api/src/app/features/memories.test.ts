@@ -112,7 +112,7 @@ test('a tick with a window that holds 18:00 posts the due photo memory and marks
   await memories.tick?.(family, { from: at(25, 17, 59), to: at(25, 18, 1) }, ctx);
 
   expect(transport.sent).toEqual([
-    { chatId: '-100', messageId: 'sent-1', message: { photo: { id: 'photo-1' }, text: lines.memoryCaption(lines.labels['7'], 'Sofia', due.text) } },
+    { chatId: '-100', messageId: 'sent-1', message: { photo: { id: 'photo-1' }, text: lines.memoryCaption(lines.labels['7'], due) } },
   ]);
   expect(due.memoryPostIds).toEqual(['sent-1']);
   expect(due.lookbacks).toEqual(['7']);
@@ -141,7 +141,7 @@ test('the anniversary moment wins over a 30-day moment', async () => {
   await memories.tick?.(family, { from: at(25, 17, 59), to: at(25, 18, 1) }, ctx);
 
   expect(transport.sent).toHaveLength(1);
-  expect(transport.sent[0].message.text).toBe(lines.memoryCaption(lines.labels.anniversary(2019), 'Sofia', anniversary.text));
+  expect(transport.sent[0].message.text).toBe(lines.memoryCaption(lines.labels.anniversary(2019), anniversary));
 });
 
 test('between two due moments, the higher salience wins', async () => {
@@ -160,13 +160,13 @@ test('a moment with no photo posts the caption as text, and a video wins over a 
   const textOnly = moment({ id: 'text-only', savedAt: daysBefore(at(25, 18), 7) });
   family.moments.push(textOnly);
   await memories.tick?.(family, { from: at(25, 17, 59), to: at(25, 18, 1) }, ctx);
-  expect(transport.sent[0].message).toEqual({ text: lines.memoryCaption(lines.labels['7'], 'Sofia', textOnly.text) });
+  expect(transport.sent[0].message).toEqual({ text: lines.memoryCaption(lines.labels['7'], textOnly) });
 
   const withBoth = moment({ id: 'with-both', savedAt: daysBefore(at(26, 18), 7), photo: { id: 'p1' }, video: { id: 'v1' } });
   family.moments.push(withBoth);
   family.lastMemoryDay = undefined;
   await memories.tick?.(family, { from: at(26, 17, 59), to: at(26, 18, 1) }, ctx);
-  expect(transport.sent[1].message).toEqual({ video: { id: 'v1' }, text: lines.memoryCaption(lines.labels['7'], 'Sofia', withBoth.text) });
+  expect(transport.sent[1].message).toEqual({ video: { id: 'v1' }, text: lines.memoryCaption(lines.labels['7'], withBoth) });
 });
 
 test('a sensitive moment is never posted', async () => {
@@ -199,8 +199,21 @@ test('/memory from an admin posts the due moment with its label', async () => {
   const handled = await memories.handle?.(groupEvent({ text: '/memory' }), family, ctx);
 
   expect(handled).toBe(true);
-  expect(transport.sent[0].message.text).toBe(lines.memoryCaption(lines.labels['7'], 'Sofia', due.text));
+  expect(transport.sent[0].message.text).toBe(lines.memoryCaption(lines.labels['7'], due));
   expect(family.lastMemoryDay).toBeUndefined();
+});
+
+test('/memory on a wordless photo names the photo by its title and never quotes the title as her words', async () => {
+  transport.admins.add('2');
+  family.moments.push(moment({ savedAt: daysBefore(now, 7), photo: { id: 'photo-1' }, text: "Maria's first day at school", wordless: true }));
+
+  await memories.handle?.(groupEvent({ text: '/memory' }), family, ctx);
+
+  expect(transport.sent[0].message).toEqual({
+    photo: { id: 'photo-1' },
+    text: `${lines.labels['7']} 💛\nSofia shared a photo: Maria's first day at school\nReply with a story or a voice note to add it to the family record.`,
+  });
+  expect(transport.sent[0].message.text).not.toContain("«Maria's first day at school»");
 });
 
 test('/memory with nothing due posts the moment with the fewest memory posts, from the record', async () => {
@@ -211,7 +224,7 @@ test('/memory with nothing due posts the moment with the fewest memory posts, fr
 
   await memories.handle?.(groupEvent({ text: '/memory' }), family, ctx);
 
-  expect(transport.sent[0].message.text).toBe(lines.memoryCaption(lines.labels.fromRecord, 'Sofia', seenOnce.text));
+  expect(transport.sent[0].message.text).toBe(lines.memoryCaption(lines.labels.fromRecord, seenOnce));
 });
 
 test('/memory with a tie in memory posts breaks the tie by byPriority', async () => {

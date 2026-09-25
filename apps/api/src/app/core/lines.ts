@@ -1,3 +1,5 @@
+import type { Moment } from './types';
+
 const graphemes = new Intl.Segmenter();
 
 /** Cuts the text to at most `max` UTF-16 units, the unit of the Telegram limits, and never inside an emoji. */
@@ -14,6 +16,13 @@ export function cut(text: string, max: number): string {
 // keeps every caption under the Telegram limit of 1024 characters and the invitation voice note short
 const clip = (text: string, max = 600) => (text.length > max ? `${cut(text, max - 1)}…` : text);
 
+// a wordless moment names what was shared, so the model's title never reads as the sharer's words
+function sharedBy(moment: Moment, max = 600): string {
+  if (!moment.wordless) return `${moment.by.name} shared: «${clip(moment.text, max)}»`;
+  const kind = moment.video ? 'a video' : !moment.photo && moment.voice ? 'a voice note' : 'a photo';
+  return `${moment.by.name} shared ${kind}: ${moment.title}`;
+}
+
 export const lines = {
   intro:
     "Hi, I'm Anchor 👋 I'm not a person: I keep this family's photos and stories, each one in the words of the person who shared it. " +
@@ -28,9 +37,10 @@ export const lines = {
     "Now and then, and a little more often for you, I'll send you a moment the family shared. " +
     'Seeing moments again helps them stay with us. You can answer by voice or by text. ' +
     "There's no right answer, I share nothing unless you say yes, and you can send /stop at any time. Would you like that?",
-  invitation: (sender: string, text: string) => `${sender} shared: «${clip(text)}»\nWhat does it remind you of?`,
-  memoryCaption: (label: string, sender: string, text: string) =>
-    `${label} 💛\n${sender} shared: «${clip(text)}»\nReply with a story or a voice note to add it to the family record.`,
+  sharedBy,
+  invitation: (moment: Moment) => `${sharedBy(moment)}\nWhat does it remind you of?`,
+  memoryCaption: (label: string, moment: Moment) =>
+    `${label} 💛\n${sharedBy(moment)}\nReply with a story or a voice note to add it to the family record.`,
   labels: {
     '7': 'One week ago',
     '30': 'One month ago',
@@ -49,8 +59,7 @@ export const lines = {
   notNow: 'No problem 🙂 Another time.',
   dontBringBack: "Of course. I'll keep it, and I won't bring it back.",
   storyAdded: (name: string, sender: string, story: string) => `${name} added a story to ${sender}'s moment 🎙️\n«${clip(story)}»`,
-  echoCaption: (olderSender: string, olderText: string, newerSender: string, newerText: string) =>
-    `Then and now 💛\n${olderSender} shared: «${clip(olderText, 450)}»\n${newerSender} shared: «${clip(newerText, 450)}»`,
+  echoCaption: (then: Moment, now: Moment) => `Then and now 💛\n${sharedBy(then, 450)}\n${sharedBy(now, 450)}`,
   fastforwarded: (date: string) => `⏩ It's now ${date} on the family clock.`,
   fastforwardUsage: 'Send /fastforward and a number of days, for example /fastforward 7.',
   askAnswer: (title: string, date: string, names: string[]) =>

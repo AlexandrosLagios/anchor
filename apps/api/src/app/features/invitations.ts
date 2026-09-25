@@ -116,7 +116,7 @@ async function deliver(family: Family, storyteller: Storyteller, moment: Moment,
     invitation.messageIds.push(sent.messageId);
     return sent;
   };
-  const text = lines.invitation(moment.by.name, moment.text);
+  const text = lines.invitation(moment);
   const buttons = [
     { label: lines.buttons.notNow, data: `inv:later:${moment.id}` },
     { label: lines.buttons.dontBringBack, data: `inv:never:${moment.id}` },
@@ -370,7 +370,7 @@ function replyPrompt(event: Incoming, moment: Moment) {
     "You read replies for Anchor, the keeper of a family's photos and stories.",
     'Anchor sent a moment that the family shared to a grandparent, one of the family storytellers, and the grandparent replied in a private chat.',
     `The moment: ${moment.title}`,
-    `${moment.by.name} shared: «${moment.text}»`,
+    lines.sharedBy(moment),
     `The typed reply: «${event.text ?? ''}»`,
     'When the reply holds a voice note, set transcript to its words, verbatim. Otherwise set transcript to an empty string.',
     'Set kind to one of these values:',

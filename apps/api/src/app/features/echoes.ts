@@ -70,7 +70,7 @@ async function checkOne(family: Family, momentId: string, ctx: Context) {
   ctx.store.save();
 
   const [then, now] = thenNow(newMoment, matchMoment, earlier);
-  const caption = cut(lines.echoCaption(then.by.name, then.text, now.by.name, now.text), 1024);
+  const caption = cut(lines.echoCaption(then, now), 1024);
   const pictures = [pictureOf(then), pictureOf(now)].filter((picture) => picture !== undefined);
   const message =
     pictures.length === 2

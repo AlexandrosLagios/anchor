@@ -21,6 +21,7 @@ type Message = {
   photo?: { file_id: string; width: number; height: number }[];
   video?: { file_id: string; mime_type?: string; thumbnail?: { file_id: string } };
   voice?: { file_id: string; mime_type?: string };
+  media_group_id?: string;
   forward_origin?: object;
   reply_to_message?: Message;
   migrate_to_chat_id?: number;
@@ -59,6 +60,7 @@ function fromMessage(message: Message, username: string): Incoming {
     video: video && { id: video.file_id, mimeType: video.mime_type },
     thumbnail: video?.thumbnail && { id: video.thumbnail.file_id, mimeType: 'image/jpeg' },
     voice: voice && { id: voice.file_id, mimeType: voice.mime_type ?? 'audio/ogg' },
+    albumId: message.media_group_id,
     forwarded: Boolean(message.forward_origin),
     unsupported: Boolean(message.animation || message.document || message.audio) || !(text || photo || video || voice || migratedTo),
     replyTo: reply && String(reply.message_id),

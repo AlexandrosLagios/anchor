@@ -125,6 +125,7 @@ test('a captioned photo becomes a family moment at the tick, and gets a heart', 
       returns: {},
     },
   ]);
+  expect(family.moments[0]).not.toHaveProperty('wordless');
   expect(transport.reactions).toEqual([{ chatId: '-100', messageId: photoEvent.messageId, emoji: '\u2764' }]);
   expect(family.counters.family_moment).toBe(1);
 });
@@ -171,13 +172,8 @@ test('a sticker, a forwarded text, a command, and a bare link fail the rules and
   expect(bundles).toEqual([]);
 });
 
-test('"ok great", a bare photo, and a bare video are dropped at the close, with no ask call', async () => {
+test('"ok great" and a bare video without a thumbnail are dropped at the close, with no ask call', async () => {
   await capture.handle(event({ text: 'ok great' }), family, ctx);
-  advance(BUNDLE_GAP_MS);
-  await tick();
-
-  transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });
-  await capture.handle(event({ photo: { id: 'photo-1' } }), family, ctx);
   advance(BUNDLE_GAP_MS);
   await tick();
 
@@ -186,9 +182,47 @@ test('"ok great", a bare photo, and a bare video are dropped at the close, with 
   await tick();
 
   expect(ask).not.toHaveBeenCalled();
-  expect(family.counters.rules).toBe(3);
+  expect(family.counters.rules).toBe(2);
   expect(bundles).toEqual([]);
   expect(family.moments).toEqual([]);
+});
+
+test('a bare photo becomes a wordless moment 5 minutes later: ask gets the photo, the text is the title, and it gets a heart', async () => {
+  (ask as Mock).mockResolvedValue(classification);
+  transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });
+  const photoEvent = event({ photo: { id: 'photo-1' } });
+  await capture.handle(photoEvent, family, ctx);
+
+  advance(5 * 60_000);
+  await tick();
+
+  const [, , options] = (ask as Mock).mock.calls[0];
+  expect(options.media).toEqual([{ data: Buffer.from('x'), mimeType: 'image/jpeg' }]);
+  expect(family.moments).toHaveLength(1);
+  expect(family.moments[0]).toMatchObject({ text: classification.title, title: classification.title, wordless: true, photo: { id: 'photo-1' } });
+  expect(transport.reactions).toEqual([{ chatId: '-100', messageId: photoEvent.messageId, emoji: '\u2764' }]);
+  expect(family.counters.family_moment).toBe(1);
+});
+
+test('a text, then a photo 3 minutes later from the same sender: one moment with the text in her own words, not wordless', async () => {
+  (ask as Mock).mockResolvedValue(classification);
+  transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });
+  const textEvent = event({ text: 'Maria on her first day' });
+  await capture.handle(textEvent, family, ctx);
+
+  advance(3 * 60_000);
+  await tick();
+  expect(ask).not.toHaveBeenCalled();
+  const photoEvent = event({ photo: { id: 'photo-1' } });
+  await capture.handle(photoEvent, family, ctx);
+  await tick();
+
+  expect(ask).toHaveBeenCalledTimes(1);
+  expect(family.moments).toHaveLength(1);
+  expect(family.moments[0].messageIds).toEqual([textEvent.messageId, photoEvent.messageId]);
+  expect(family.moments[0].text).toBe('Maria on her first day');
+  expect(family.moments[0].photo).toEqual({ id: 'photo-1' });
+  expect(family.moments[0]).not.toHaveProperty('wordless');
 });
 
 test('a captioned video is classified from its thumbnail, and the moment keeps the video', async () => {
@@ -224,11 +258,11 @@ test('a bare photo, then a voice note from the same sender: one moment with the 
   expect(family.moments[0].text).toBe('She was so happy that day');
 });
 
-test('a text bundle is not classified at 1:59 after its last message, and is classified at 2:00', async () => {
+test('a text bundle is not classified at 4:59 after its last message, and is classified at 5:00', async () => {
   (ask as Mock).mockResolvedValue(classification);
   await capture.handle(event({ text: 'Maria on her first day' }), family, ctx);
 
-  advance(BUNDLE_GAP_MS - 1000);
+  advance(4 * 60_000 + 59_000);
   await tick();
   expect(ask).not.toHaveBeenCalled();
   expect(bundles).toHaveLength(1);
@@ -256,11 +290,69 @@ test('a photo, then a text 30 seconds later from the same sender: one bundle wit
   expect(family.moments[0].messageIds).toEqual([photoEvent.messageId, textEvent.messageId]);
 });
 
-test('two texts 3 minutes apart from the same sender open two bundles', async () => {
-  await capture.handle(event({ text: 'first message here' }), family, ctx);
-  advance(3 * 60_000);
-  await capture.handle(event({ text: 'second message here' }), family, ctx);
+test('a bare photo, a second bare photo, then a text: two moments, the first wordless at the next tick, and the text joins the second', async () => {
+  (ask as Mock)
+    .mockResolvedValueOnce({ ...classification, title: 'A plate of pasta' })
+    .mockResolvedValueOnce({ ...classification, title: 'Danae in the morning' });
+  transport.files.set('photo-food', { data: Buffer.from('f'), mimeType: 'image/jpeg' });
+  transport.files.set('photo-danae', { data: Buffer.from('d'), mimeType: 'image/jpeg' });
+  const foodEvent = event({ photo: { id: 'photo-food' } });
+  await capture.handle(foodEvent, family, ctx);
+  advance(30_000);
+  const danaeEvent = event({ photo: { id: 'photo-danae' } });
+  await capture.handle(danaeEvent, family, ctx);
+  expect(bundles).toHaveLength(2);
 
+  await tick();
+  expect(ask).toHaveBeenCalledTimes(1);
+  expect(family.moments).toHaveLength(1);
+
+  advance(30_000);
+  const textEvent = event({ text: 'Η Δανάη το πρωί' });
+  await capture.handle(textEvent, family, ctx);
+  await tick();
+
+  expect(family.moments).toHaveLength(2);
+  const [food, danae] = family.moments;
+  expect(food).toMatchObject({ messageIds: [foodEvent.messageId], photo: { id: 'photo-food' }, text: 'A plate of pasta', wordless: true });
+  expect(danae).toMatchObject({ messageIds: [danaeEvent.messageId, textEvent.messageId], photo: { id: 'photo-danae' }, text: 'Η Δανάη το πρωί' });
+  expect(danae).not.toHaveProperty('wordless');
+});
+
+test('a 3-photo album with one caption is one moment with the first photo and the caption, and a photo outside the album starts its own bundle', async () => {
+  (ask as Mock).mockResolvedValue(classification);
+  transport.files.set('photo-1', { data: Buffer.from('1'), mimeType: 'image/jpeg' });
+  const album = [
+    event({ photo: { id: 'photo-1' }, albumId: 'album-1', text: 'Maria on her first day' }),
+    event({ photo: { id: 'photo-2' }, albumId: 'album-1' }),
+    event({ photo: { id: 'photo-3' }, albumId: 'album-1' }),
+  ];
+  for (const albumEvent of album) await capture.handle(albumEvent, family, ctx);
+  expect(bundles).toHaveLength(1);
+
+  await capture.handle(event({ photo: { id: 'photo-4' } }), family, ctx);
+  expect(bundles).toHaveLength(2);
+  await tick();
+
+  expect(ask).toHaveBeenCalledTimes(1);
+  expect(family.moments).toHaveLength(1);
+  expect(family.moments[0]).toMatchObject({
+    messageIds: album.map((albumEvent) => albumEvent.messageId),
+    photo: { id: 'photo-1' },
+    text: 'Maria on her first day',
+  });
+  expect(bundles).toHaveLength(1);
+  expect(bundles[0].events[0].photo).toEqual({ id: 'photo-4' });
+});
+
+test('two texts 5 minutes apart from the same sender join one bundle, and a second more opens another', async () => {
+  await capture.handle(event({ text: 'first message here' }), family, ctx);
+  advance(5 * 60_000);
+  await capture.handle(event({ text: 'second message here' }), family, ctx);
+  expect(bundles).toHaveLength(1);
+
+  advance(5 * 60_000 + 1000);
+  await capture.handle(event({ text: 'third message here' }), family, ctx);
   expect(bundles).toHaveLength(2);
 });
 
@@ -271,6 +363,7 @@ test('a voice note alone uses the transcript, or the title when the transcript i
   advance(BUNDLE_GAP_MS);
   await tick();
   expect(family.moments[0].text).toBe('She loved that trip');
+  expect(family.moments[0]).not.toHaveProperty('wordless');
 
   transport.files.set('voice-2', { data: Buffer.from('v'), mimeType: 'audio/ogg' });
   (ask as Mock).mockResolvedValueOnce({ ...classification, transcript: '' });
@@ -278,6 +371,7 @@ test('a voice note alone uses the transcript, or the title when the transcript i
   advance(BUNDLE_GAP_MS);
   await tick();
   expect(family.moments[1].text).toBe(classification.title);
+  expect(family.moments[1].wordless).toBe(true);
 });
 
 test('ask rejecting, or an invalid verdict, counts as failed with no moment', async () => {

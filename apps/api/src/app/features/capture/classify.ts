@@ -52,6 +52,7 @@ function prompt(bundle: Bundle): string {
     `${bundle.sender.name} shared this in the family chat:`,
     typedText(bundle) || '(no typed words)',
     '',
+    'The moment may have no words. Then classify it and give it a title from the photo or the video frame.',
     'Classify it as one of these verdicts:',
     '- family_moment: a moment worth keeping.',
     '- sensitive: a moment worth keeping that can hurt to see again, such as a loss, grief, or illness.',

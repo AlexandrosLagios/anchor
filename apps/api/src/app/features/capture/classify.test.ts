@@ -124,6 +124,18 @@ test('classify sends no image for a video without a thumbnail', async () => {
   expect(options.media).toEqual([]);
 });
 
+test('classify sends a bare photo, and the prompt says the moment may have no words, so the model titles it from the picture', async () => {
+  const transport = new FakeTransport();
+  transport.files.set('photo-1', { data: Buffer.from('photo'), mimeType: 'image/jpeg' });
+  (ask as Mock).mockResolvedValue(valid);
+
+  await classify(bundle([event({ photo: { id: 'photo-1' } })]), transport);
+
+  const [prompt, , options] = (ask as Mock).mock.calls[0];
+  expect(prompt).toContain('The moment may have no words. Then classify it and give it a title from the photo or the video frame.');
+  expect(options.media).toEqual([{ data: Buffer.from('photo'), mimeType: 'image/jpeg' }]);
+});
+
 test('classify returns validate(raw)', async () => {
   const transport = new FakeTransport();
   (ask as Mock).mockResolvedValue({ ...valid, verdict: 'logistics' });
