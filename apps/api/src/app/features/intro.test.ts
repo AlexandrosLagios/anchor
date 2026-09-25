@@ -6,8 +6,10 @@ import { FakeTransport } from '../core/fake-transport';
 import { lines } from '../core/lines';
 import { createRouter } from '../core/router';
 import { openStore } from '../core/store';
-import type { Incoming } from '../core/types';
+import type { Choices, Incoming } from '../core/types';
 import { intro } from './intro';
+
+const DEFAULT_CHOICES: Choices = { moments: false, reminders: true, shares: true, voice: false, call: false };
 
 function setup() {
   const file = join(mkdtempSync(join(tmpdir(), 'anchor-intro-')), 'state.json');
@@ -30,7 +32,7 @@ const joined: Incoming = {
 test('joining a group saves a new family and posts intro in the group', async () => {
   const { file, transport, router } = setup();
   await router.route(joined);
-  expect(openStore(file).family('-100')).toEqual({ id: '-100', chatId: '-100', members: [], moments: [], counters: {} });
+  expect(openStore(file).family('-100')).toEqual({ id: '-100', chatId: '-100', members: [], moments: [], offers: [], reminders: [], counters: {} });
   expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.intro } }]);
 });
 
@@ -45,13 +47,22 @@ test('joining the same group again posts intro again and keeps one family', asyn
 test('a group that became a supergroup keeps its family under the new chat id, and the migration sends nothing', async () => {
   const { file, transport, store, router } = setup();
   await router.route(joined);
-  store.family('-100')?.members.push({ id: '42', name: 'Nikos', started: true });
+  const family = store.family('-100');
+  if (family) store.joinMember(family, { id: '42', name: 'Nikos' }).started = true;
   const supergroup = { ...joined, familyId: '-1009', chatId: '-1009' };
   await router.route(supergroup);
   await router.route({ ...joined, joined: undefined, messageId: '7', migratedTo: '-1009' });
 
   expect(openStore(file).state.families).toEqual([
-    { id: '-1009', chatId: '-1009', members: [{ id: '42', name: 'Nikos', started: true }], moments: [], counters: {} },
+    {
+      id: '-1009',
+      chatId: '-1009',
+      members: [{ id: '42', name: 'Nikos', started: true, choices: DEFAULT_CHOICES }],
+      moments: [],
+      offers: [],
+      reminders: [],
+      counters: {},
+    },
   ]);
   expect(transport.sent.map(({ chatId }) => chatId)).toEqual(['-100', '-1009']);
 });

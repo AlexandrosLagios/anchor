@@ -22,3 +22,19 @@ test('FakeTransport rejects a message that sets an album and a photo', async () 
   const transport = new FakeTransport();
   await expect(transport.send('-100', { photo: { id: 'p1' }, album: [{ photo: { id: 'p2' } }] })).rejects.toThrow(/at most one/);
 });
+
+test('FakeTransport records onlyFor and a contact, and rejects a contact next to a photo', async () => {
+  const transport = new FakeTransport();
+  const sent = await transport.send('-100', { text: 'Shall I send this?', onlyFor: '42', contact: { phone: '+301234', name: 'Anchor' } });
+  expect(sent).toEqual({ messageId: 'sent-1', voice: undefined });
+  expect(transport.sent[0].message).toMatchObject({ onlyFor: '42', contact: { phone: '+301234', name: 'Anchor' } });
+  await expect(transport.send('-100', { photo: { id: 'p1' }, contact: { phone: '+301234', name: 'Anchor' } })).rejects.toThrow(/at most one/);
+});
+
+test('FakeTransport records an edit and a remove', async () => {
+  const transport = new FakeTransport();
+  await transport.edit('-100', 'sent-1', { text: 'Sent 💛', onlyFor: '42' });
+  await transport.remove('-100', 'sent-2', '42');
+  expect(transport.edits).toEqual([{ chatId: '-100', messageId: 'sent-1', change: { text: 'Sent 💛', onlyFor: '42' } }]);
+  expect(transport.removed).toEqual([{ chatId: '-100', messageId: 'sent-2', onlyFor: '42' }]);
+});

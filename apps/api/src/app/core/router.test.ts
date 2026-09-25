@@ -60,7 +60,8 @@ test('route finds the family by familyId in a group and by member in private', a
       },
     },
   ]);
-  store.addFamily('-100', '-100').members.push({ id: '42', name: 'Nikos', started: true });
+  const family = store.addFamily('-100', '-100');
+  store.joinMember(family, { id: '42', name: 'Nikos' }).started = true;
   await router.route(groupMessage);
   await router.route(privateMessage('42'));
   await router.route(privateMessage('7'));
@@ -69,7 +70,9 @@ test('route finds the family by familyId in a group and by member in private', a
 
 test('an unhandled private message gets noInvitation from a joined member, notJoined from one who has not started or stopped, and pointer from anyone else', async () => {
   const { router, store, transport } = setup([]);
-  store.addFamily('-100', '-100').members.push({ id: '42', name: 'Nikos', started: true }, { id: '43', name: 'Eleni', started: false });
+  const family = store.addFamily('-100', '-100');
+  store.joinMember(family, { id: '42', name: 'Nikos' }).started = true;
+  store.joinMember(family, { id: '43', name: 'Eleni' });
   await router.route(privateMessage('42'));
   await router.route(privateMessage('43'));
   await router.route(privateMessage('7'));

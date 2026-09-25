@@ -155,10 +155,9 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
     const person = event.replyToSender;
     if (!(await transport.isAdmin(family.chatId, event.sender.id))) return answer(event, family, lines.adminOnly, ctx);
     if (!person) return answer(event, family, lines.privateHow, ctx);
-    if (!family.members.some((member) => member.id === person.id)) {
-      family.members.push({ id: person.id, name: person.name, started: false });
-      ctx.store.save();
-    }
+    const isNew = !family.members.some((member) => member.id === person.id);
+    ctx.store.joinMember(family, person);
+    if (isNew) ctx.store.save();
     const start = { label: lines.buttons.start, url: transport.startLink(family.id) };
     await announce(family, { text: lines.memberStart(person.name), buttons: [start] }, ctx);
     return true;
