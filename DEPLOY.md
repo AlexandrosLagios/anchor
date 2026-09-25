@@ -117,6 +117,8 @@ IMAGE=$REGION-docker.pkg.dev/$PROJECT/anchor/anchor-bot
 
 Only one process can poll a bot token. Before you deploy, stop `pnpm dev:api` and every other process that uses the token. A second poller gets a 409 from Telegram.
 
+Start the deployed bot on a fresh record. Do not copy `tmp/anchor-state.json` from a laptop run. The demo clock counts from `State.clockStart`, so a record from a run with a different `ANCHOR_DAY_SECONDS` jumps in time.
+
 1. Build the image for `linux/amd64`. Cloud Run runs only Linux x86_64 images.
 
    ```bash
@@ -130,13 +132,7 @@ Only one process can poll a bot token. Before you deploy, stop `pnpm dev:api` an
    docker push $IMAGE
    ```
 
-3. To keep the record of the laptop test, copy the record into the bucket.
-
-   ```bash
-   gcloud storage cp tmp/anchor-state.json gs://$BUCKET/anchor-state.json
-   ```
-
-4. Deploy the service.
+3. Deploy the service.
 
    ```bash
    gcloud run deploy anchor-bot --project=$PROJECT --region=$REGION --image=$IMAGE \
@@ -144,11 +140,15 @@ Only one process can poll a bot token. Before you deploy, stop `pnpm dev:api` an
      --min-instances=1 --max-instances=1 --no-cpu-throttling --cpu=1 --memory=512Mi \
      --add-volume=name=state,type=cloud-storage,bucket=$BUCKET,mount-options="uid=1000;gid=1000" \
      --add-volume-mount=volume=state,mount-path=/data \
-     --set-env-vars=ANCHOR_STATE_FILE=/data/anchor-state.json,ANCHOR_DAY_SECONDS=120,TZ=Europe/Athens \
+     --set-env-vars=ANCHOR_STATE_FILE=/data/anchor-state.json,TZ=Europe/Athens \
      --set-secrets=TELEGRAM_BOT_TOKEN=anchor-telegram-bot-token:latest,GEMINI_API_KEY=anchor-gemini-api-key:latest
    ```
 
-5. Send a photo with a caption in the group. Anchor reacts with ❤. If Anchor does not react, read the log.
+4. If the bot is already in the group, remove the bot from the group. Anchor creates the family only when Anchor joins a group.
+
+5. Add the bot to the group, and promote the bot to admin. Anchor posts `intro`.
+
+6. Send a photo with a caption in the group. Anchor reacts with ❤. If Anchor does not react, read the log.
 
    ```bash
    gcloud run services logs read anchor-bot --project=$PROJECT --region=$REGION --limit=50
@@ -162,16 +162,17 @@ The deploy flags do these things:
 - The image runs as the `node` user, uid 1000. A volume belongs to root by default, so `uid=1000;gid=1000` lets `node` write the record.
 - A volume mount needs the second generation execution environment. Cloud Run selects that environment when the service sets no execution environment.
 - `TZ=Europe/Athens` puts the 11:00 and 18:00 slots on Athens time.
-- `ANCHOR_DAY_SECONDS=120` matches the laptop test. The demo clock counts from `State.clockStart`, so a different value makes the clock of a copied record jump.
+- `ANCHOR_DAY_SECONDS` stays unset, so the demo clock runs at real time. Each slot fires once per day, at 11:00 and at 18:00.
 
-To use a different `ANCHOR_DAY_SECONDS`, delete `gs://$BUCKET/anchor-state.json` before you deploy. Then remove the bot from the group and add the bot again as an admin.
+For the demo, an admin moves the bot on cue. `/fastforward <days>` moves the demo clock, `/memory` posts a memory at once, and `/invite` sends the invitations at once.
 
 ### Update or stop the bot
 
 Deploy while the family is quiet. During a rollout, the old and the new instance run together for a short time, and the last write to the record wins.
 
-- To deploy a new version, repeat steps 1, 2, and 4 of the deploy.
+- To deploy a new version, repeat steps 1 to 3 of the deploy.
 - To stop the bot and the cost, delete the service. The bucket keeps the record.
+- Before a laptop run with the same token, delete the service. The service polls the token all the time.
 
 ```bash
 gcloud run services delete anchor-bot --project=$PROJECT --region=$REGION
