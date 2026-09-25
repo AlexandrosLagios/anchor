@@ -600,7 +600,7 @@ v2 shared functions. Step 4 lands each signature.
 ```ts
 // core/offers.ts: every ephemeral offer goes through these functions
 export const FADE_MS = 10 * 60_000;
-export function sendOffer(family: Family, kind: Offer['kind'], to: Member, ref: string, message: Outgoing, ctx: Context): Promise<Offer | undefined>; // sends with onlyFor, records the offer, saves; undefined when the send fails
+export function sendOffer(family: Family, kind: Offer['kind'], to: Member, ref: string, message: (id: string) => Outgoing, ctx: Context): Promise<Offer | undefined>; // creates the id first, so the buttons carry it; sends with onlyFor, records the offer, saves; undefined when the send fails
 export function findOffer(family: Family, id: string): Offer | undefined;
 export function closeOffer(family: Family, offer: Offer, ctx: Context, change?: { text?: string; buttons?: Button[] }): Promise<void>; // edits the offer to the change, or removes the offer without a change; drops the record; saves
 export function fadeOffers(family: Family, kind: Offer['kind'], now: number, ctx: Context): Promise<Offer[]>; // removes each offer older than FADE_MS, drops the records, saves, and returns the faded offers
