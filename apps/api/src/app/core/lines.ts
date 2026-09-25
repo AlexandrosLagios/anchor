@@ -71,6 +71,7 @@ export const lines = {
   reminderSet: (time: string) => `Done ✍ I'll remind you at ${time} in our private chat.`,
   reminderStart: (time: string) => `Tap Start, and I'll remind you at ${time} in our private chat 🙂`,
   reminderConfirmed: (time: string) => `Done ✍ I'll remind you here at ${time}.`,
+  offersOff: `Of course. I won't offer that again. Say "settings" to change this.`,
   reminder: (who: string, text: string) => `⏰ Your reminder. ${who} wrote: «${clip(text)}»`,
   fastforwardUsage: 'Send /fastforward and a number of days or a time, for example /fastforward 7 or /fastforward 08:05.',
   // v2, section 4.15: the phone call
