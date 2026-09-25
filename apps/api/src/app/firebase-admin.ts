@@ -1,13 +1,12 @@
 import { getApps, initializeApp, applicationDefault, type App as FirebaseApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
 
 let app: FirebaseApp | undefined;
 
 /**
  * Prefer Application Default Credentials (ADC) — required when the org blocks API keys.
  * Local: `gcloud auth application-default login`
- * Cloud Run / GCE: the runtime service account is ADC automatically.
+ * Vercel / Cloud Run: service account via GOOGLE_APPLICATION_CREDENTIALS or runtime ADC.
  * Optional override: GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json (file path, not an API key).
  */
 export function firebaseAdminConfigured(): boolean {
@@ -40,7 +39,7 @@ export function getFirebaseAdminApp(): FirebaseApp {
     if (process.env.REQUIRE_AUTH === 'true' || process.env.REQUIRE_AUTH === '1') {
       throw error;
     }
-    app = initializeApp({ projectId: projectId || 'anchor-local' });
+    app = initializeApp({ projectId: projectId || 'a11y-hack26ath-267' });
   }
   return app;
 }
@@ -49,17 +48,19 @@ export function adminAuth() {
   return getAuth(getFirebaseAdminApp());
 }
 
-export function adminDb() {
-  return getFirestore(getFirebaseAdminApp());
-}
+export type AuthUser = { uid: string; email?: string; displayName?: string };
 
-export async function verifyIdToken(authorization?: string): Promise<{ uid: string; email?: string } | null> {
-  if (!authorization?.startsWith('Bearer ')) return null;
+export async function verifyIdToken(authorization?: string): Promise<AuthUser | null> {
+  if (!authorization?.startsWith('Bearer ') || !firebaseAdminConfigured()) return null;
   const token = authorization.slice('Bearer '.length).trim();
   if (!token) return null;
   try {
     const decoded = await adminAuth().verifyIdToken(token);
-    return { uid: decoded.uid, email: decoded.email };
+    return {
+      uid: decoded.uid,
+      email: decoded.email,
+      displayName: typeof decoded.name === 'string' ? decoded.name : undefined,
+    };
   } catch {
     return null;
   }

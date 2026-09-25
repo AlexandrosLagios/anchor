@@ -1,5 +1,5 @@
 .auth-panel {
-  max-width: 28rem;
+  max-width: 36rem;
   margin: 0 auto;
   padding: 0 var(--space) calc(var(--space) * 2);
 }
@@ -145,4 +145,79 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.file-drop {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.file-drop h2 {
+  margin: 0 0 0.5rem;
+  font-family: var(--display);
+  font-size: 1.45rem;
+  color: var(--brand);
+}
+
+.drop-zone {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  padding: 1.25rem;
+  border: 1.5px dashed #8d958f;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  margin-bottom: 1rem;
+}
+
+.drop-zone.is-dragging {
+  border-color: var(--brand);
+  background: #e8f5f1;
+}
+
+.drop-zone.is-busy {
+  opacity: 0.7;
+}
+
+.drop-zone p {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.file-status {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.file-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.file-list strong {
+  display: block;
+}
+
+.file-list span {
+  display: block;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }

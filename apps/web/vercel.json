@@ -2,6 +2,16 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "astro",
   "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "pnpm exec astro build",
-  "outputDirectory": "dist"
+  "buildCommand": "cd ../.. && pnpm exec astro build --root apps/web",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://anchor-api-teal.vercel.app/api/$1"
+    },
+    {
+      "source": "/whatsapp",
+      "destination": "https://anchor-api-teal.vercel.app/whatsapp"
+    }
+  ]
 }

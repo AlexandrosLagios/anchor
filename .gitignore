@@ -60,3 +60,5 @@ out-tsc
 # claude code
 .claude/settings.local.json
 .claude/worktrees/
+.vercel
+.env*

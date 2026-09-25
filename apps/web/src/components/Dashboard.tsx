@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import type { User } from 'firebase/auth';
-import { firebaseConfigured } from '../lib/firebase';
-import { watchAuth } from '../lib/auth';
+import { authConfigured } from '../lib/config';
+import { watchAuth, type AuthUser } from '../lib/auth';
 import './Dashboard.css';
 
 type Role = 'sofia' | 'maria' | 'athina' | 'anchor';
@@ -81,17 +80,14 @@ export function Dashboard() {
   const [from, setFrom] = useState<'sofia' | 'maria'>('sofia');
   const [news, setNews] = useState('');
   const [reply, setReply] = useState('');
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const chatRef = useRef<HTMLUListElement>(null);
   const lastSnapshot = useRef('');
   const announce = useRef('');
   const requireAuth = import.meta.env.PUBLIC_REQUIRE_AUTH === 'true' || import.meta.env.PUBLIC_REQUIRE_AUTH === '1';
-  const writesLocked = requireAuth && firebaseConfigured() && !user;
+  const writesLocked = requireAuth && authConfigured() && !user;
 
-  useEffect(() => {
-    if (!firebaseConfigured()) return;
-    return watchAuth(setUser);
-  }, []);
+  useEffect(() => watchAuth(setUser), []);
 
   const refresh = useCallback(async () => {
     try {
@@ -190,11 +186,11 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
-      {firebaseConfigured() && !user ? (
+      {!user ? (
         <p className="auth-callout" role="status">
           {requireAuth
             ? 'Sign in to save moments to your EU account.'
-            : 'Optional: create an account so moments persist to EU Firestore.'}{' '}
+            : 'Optional: create an account so moments persist in EU Postgres.'}{' '}
           <a href="/signup">Create account</a> or <a href="/login">sign in</a>.
         </p>
       ) : null}

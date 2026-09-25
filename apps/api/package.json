@@ -1,0 +1,22 @@
+{
+  "name": "anchor-api",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Anchor NestJS API (Vercel Fluid + Neon)",
+  "scripts": {
+    "start": "node ../../dist/apps/api/main.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@vercel/blob": "^2.8.0",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.4.0",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.0",
+    "ws": "^8.21.3"
+  }
+}

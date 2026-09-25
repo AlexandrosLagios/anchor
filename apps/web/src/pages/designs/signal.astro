@@ -1,0 +1,414 @@
+---
+/**
+ * Homepage design VARIANT D — "Signal line"
+ * Modern product-marketing: single geometric polyline motif.
+ * WhatsApp / group chat as product context for Anchor spaced retrieval.
+ * Standalone exploration page — does not alter the live homepage.
+ */
+import SignalField from '../../components/designs/signal/SignalField.astro';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Anchor — family memories returning as a signal in the group chat. Spaced retrieval, no new app."
+    />
+    <meta name="theme-color" content="#071211" />
+    <meta name="robots" content="noindex" />
+    <title>Anchor · Signal line (design D)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Figtree:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="signal-page">
+    <a class="skip" href="#main">Skip to main content</a>
+
+    <header class="top">
+      <a class="top-brand" href="/">Anchor</a>
+      <nav class="top-nav" aria-label="Primary">
+        <a href="/how-it-works">How it works</a>
+        <a href="/app">Demo</a>
+        <a class="top-cta" href="/signup">Get started</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- Hero: brand first, one composition, full-bleed signal plane -->
+      <section class="hero" aria-labelledby="hero-brand">
+        <SignalField />
+        <div class="hero-copy">
+          <h1 id="hero-brand" class="hero-brand">Anchor</h1>
+          <p class="hero-line">The memory signal in your family chat.</p>
+          <p class="hero-support">
+            Spaced retrieval for Athina — gentle cues that return on the line, without a new app to learn.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-signal" href="/app">Try the demo</a>
+            <a class="btn btn-ghost" href="/how-it-works">How it works</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- One job: product context -->
+      <section class="strip" aria-labelledby="strip-title">
+        <h2 id="strip-title" class="strip-title">Lives on the chat line</h2>
+        <p class="strip-copy">
+          Sofia drops a moment into WhatsApp. Anchor holds it. Later, a quiet question comes back —
+          timed so Athina practises remembering, still in the same group chat.
+        </p>
+      </section>
+
+      <!-- One job: spaced retrieval as signal -->
+      <section class="beat" aria-labelledby="beat-title">
+        <div class="beat-rule" aria-hidden="true"></div>
+        <h2 id="beat-title" class="beat-title">Remember. Stretch. Return.</h2>
+        <p class="beat-copy">
+          Free recall stretches the wait. A cue holds the schedule. A struggle resets to tomorrow.
+          The family keeps talking; Athina keeps her place on the thread.
+        </p>
+        <a class="btn btn-signal" href="/app">See it in the demo</a>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>Design variant D · Signal line · <a href="/">Live homepage</a></p>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  .signal-page {
+    --bg: #071211;
+    --bg-lift: #0d1c1a;
+    --ink: #e6f4ef;
+    --muted: #8aa8a0;
+    --brand: #f2fff9;
+    --signal: #3dff9a;
+    --signal-dim: #1a6b5c;
+    --line: #1e3d38;
+    --focus: #5eead4;
+    --font: "Figtree", "Segoe UI", system-ui, sans-serif;
+    --display: "Syne", "Arial Black", sans-serif;
+    --space: clamp(1rem, 3vw, 2rem);
+    --max: 68rem;
+
+    margin: 0;
+    min-height: 100dvh;
+    font: 400 1.0625rem / 1.55 var(--font);
+    color: var(--ink);
+    background: var(--bg);
+    color-scheme: dark;
+  }
+
+  .signal-page *,
+  .signal-page *::before,
+  .signal-page *::after {
+    box-sizing: border-box;
+  }
+
+  .signal-page a {
+    color: var(--signal);
+  }
+
+  .signal-page :focus {
+    outline: none;
+  }
+
+  .signal-page :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .skip {
+    position: absolute;
+    left: var(--space);
+    top: 0;
+    transform: translateY(-140%);
+    z-index: 100;
+    padding: 0.6rem 1rem;
+    background: var(--signal);
+    color: #041210;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .skip:focus {
+    transform: translateY(0.75rem);
+  }
+
+  .top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: calc(var(--space) + env(safe-area-inset-top, 0)) var(--space) 0;
+  }
+
+  .top-brand {
+    font-family: var(--display);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--brand);
+    text-decoration: none;
+  }
+
+  .top-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 1.25rem;
+  }
+
+  .top-nav a {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+
+  .top-nav a:hover {
+    color: var(--ink);
+  }
+
+  .top-cta {
+    color: var(--bg) !important;
+    background: var(--signal);
+    padding: 0.45rem 0.9rem;
+    font-weight: 700 !important;
+  }
+
+  .top-cta:hover {
+    filter: brightness(1.08);
+    color: var(--bg) !important;
+  }
+
+  /* ——— Hero: one composition, full-bleed plane ——— */
+  .hero {
+    position: relative;
+    min-height: calc(100dvh - 4.5rem);
+    display: grid;
+    align-items: end;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 70% 50% at 85% 20%, #0f3d3555 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 10% 80%, #12352f44 0%, transparent 50%),
+      linear-gradient(165deg, #071211 0%, #0a1816 45%, #071211 100%);
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 1;
+    max-width: var(--max);
+    width: 100%;
+    margin: 0 auto;
+    padding: clamp(2.5rem, 10vh, 5rem) var(--space) calc(var(--space) * 2.25);
+  }
+
+  .hero-brand {
+    margin: 0 0 0.55rem;
+    font-family: var(--display);
+    font-size: clamp(4rem, 16vw, 8.5rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 0.88;
+    color: var(--brand);
+    animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .hero-line {
+    margin: 0 0 0.85rem;
+    max-width: 16ch;
+    font-family: var(--display);
+    font-size: clamp(1.35rem, 3.2vw, 1.85rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--signal);
+    animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+  }
+
+  .hero-support {
+    margin: 0 0 1.6rem;
+    max-width: 32rem;
+    color: var(--muted);
+    font-size: 1.1rem;
+    animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.55rem 1.2rem;
+    font: 700 0.95rem / 1.2 var(--font);
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+
+  .btn-signal {
+    background: var(--signal);
+    color: #041210;
+  }
+
+  .btn-signal:hover {
+    filter: brightness(1.07);
+    text-decoration: none;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--muted);
+    text-decoration: none;
+  }
+
+  /* ——— Strip: WhatsApp / chat context ——— */
+  .strip {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: clamp(3rem, 8vh, 5rem) var(--space);
+    border-top: 1px solid var(--line);
+  }
+
+  .strip-title {
+    margin: 0 0 0.75rem;
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 3.5vw, 2.15rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--brand);
+  }
+
+  .strip-copy {
+    margin: 0;
+    max-width: 38rem;
+    color: var(--muted);
+    font-size: 1.12rem;
+  }
+
+  /* ——— Beat: spaced retrieval ——— */
+  .beat {
+    position: relative;
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 var(--space) clamp(4rem, 10vh, 6rem);
+  }
+
+  .beat-rule {
+    height: 2px;
+    width: 100%;
+    max-width: 12rem;
+    margin-bottom: 1.75rem;
+    background: linear-gradient(90deg, var(--signal), transparent);
+    transform-origin: left center;
+    animation: rule-grow 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 35%;
+  }
+
+  /* Fallback when scroll-timeline unsupported */
+  @supports not (animation-timeline: view()) {
+    .beat-rule {
+      animation: rule-grow 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+    }
+  }
+
+  .beat-title {
+    margin: 0 0 0.75rem;
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 3.5vw, 2.15rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--brand);
+  }
+
+  .beat-copy {
+    margin: 0 0 1.5rem;
+    max-width: 36rem;
+    color: var(--muted);
+    font-size: 1.12rem;
+  }
+
+  .foot {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: var(--space) var(--space) calc(var(--space) + env(safe-area-inset-bottom, 0));
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .foot a {
+    color: var(--muted);
+  }
+
+  .foot a:hover {
+    color: var(--signal);
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes rule-grow {
+    from {
+      transform: scaleX(0);
+      opacity: 0.4;
+    }
+    to {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-brand,
+    .hero-line,
+    .hero-support,
+    .hero-actions,
+    .beat-rule {
+      animation: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .btn-signal,
+    .btn-ghost,
+    .top-cta {
+      border: 1px solid CanvasText;
+    }
+  }
+</style>

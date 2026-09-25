@@ -1,0 +1,73 @@
+---
+import '../../components/designs/memory/memory.css';
+
+const title = 'Anchor · Paper memory';
+const description =
+  'Family memories on paper warmth — soft cues in the group chat, returning when they matter.';
+const photoSrc =
+  'https://images.unsplash.com/photo-1528569937393-ee892b976859?auto=format&fit=crop&w=2400&q=80';
+const photoAlt =
+  'Hands opening a family photo album filled with black-and-white prints';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#143a44" />
+    <meta name="robots" content="noindex" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="memory-page">
+    <a class="memory-skip" href="#main">Skip to main content</a>
+
+    <header class="memory-chrome">
+      <a class="memory-chrome-mark" href="/">Design · memory</a>
+      <nav class="memory-chrome-nav" aria-label="Primary">
+        <a href="/how-it-works">How it works</a>
+        <a href="/app">Try the demo</a>
+        <a href="/">Current home</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="memory-hero" aria-labelledby="memory-brand">
+        <div class="memory-photo">
+          <img
+            src={photoSrc}
+            alt={photoAlt}
+            width="2400"
+            height="1600"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </div>
+        <div class="memory-grain" aria-hidden="true"></div>
+        <div class="memory-veil" aria-hidden="true"></div>
+
+        <div class="memory-copy">
+          <h1 id="memory-brand" class="memory-brand">Anchor</h1>
+          <p class="memory-headline">The family album, returning.</p>
+          <p class="memory-support">
+            Soft cues in the group chat — familiar photos and stories, at the right time.
+          </p>
+          <div class="memory-actions">
+            <a class="memory-btn memory-btn-primary" href="/app">Try the demo</a>
+            <a class="memory-btn memory-btn-secondary" href="/how-it-works">How it works</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

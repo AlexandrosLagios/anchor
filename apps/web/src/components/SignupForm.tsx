@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { firebaseConfigured, privacyEmail } from '../lib/firebase';
+import { dataRegion, privacyEmail } from '../lib/config';
 import { signUp } from '../lib/auth';
 import './AuthForms.css';
 
@@ -12,18 +12,6 @@ export function SignupForm() {
   const [marketing, setMarketing] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-
-  if (!firebaseConfigured()) {
-    return (
-      <div className="auth-panel" role="status">
-        <h1>Create an account</h1>
-        <p className="lede">
-          Firebase is not configured yet. Add <code>PUBLIC_FIREBASE_*</code> env vars, create a Firestore database in{' '}
-          <code>eur3</code>, and enable Email/Password auth.
-        </p>
-      </div>
-    );
-  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -48,8 +36,8 @@ export function SignupForm() {
     <form className="auth-panel" onSubmit={onSubmit} noValidate>
       <h1>Create an account</h1>
       <p className="lede">
-        Your profile and moments are stored in the EU (Firestore <code>eur3</code>). Moments sent for AI practice are
-        processed by Google&apos;s Gemini API, which may run outside the EU — see{' '}
+        Your profile and moments are stored in the EU (Neon Postgres, <code>{dataRegion}</code>). Moments sent for AI
+        practice are processed by Google&apos;s Gemini API, which may run outside the EU — see{' '}
         <a href="/privacy">Privacy</a>. Contact <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
       </p>
 

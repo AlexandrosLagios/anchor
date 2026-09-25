@@ -1,0 +1,311 @@
+/* Variant C — Paper memory: cool album board, not cream/terracotta */
+
+.memory-page {
+  --mem-paper: #d9e2ea;
+  --mem-paper-deep: #c5d0db;
+  --mem-ink: #152028;
+  --mem-ink-soft: #3d4a54;
+  --mem-brand: #143a44;
+  --mem-brand-glow: #eef5f7;
+  --mem-line: rgba(20, 58, 68, 0.22);
+  --mem-focus: #0b5fff;
+  --mem-display: "Instrument Serif", Georgia, serif;
+  --mem-sans: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mem-space: clamp(1rem, 3vw, 1.75rem);
+  --mem-tap: 2.75rem;
+  --mem-max: 40rem;
+
+  margin: 0;
+  min-height: 100dvh;
+  font: 400 1.0625rem / 1.5 var(--mem-sans);
+  color: var(--mem-ink);
+  background: var(--mem-paper);
+  color-scheme: light;
+}
+
+.memory-page *,
+.memory-page *::before,
+.memory-page *::after {
+  box-sizing: border-box;
+}
+
+.memory-page a {
+  color: inherit;
+}
+
+.memory-page :focus {
+  outline: none;
+}
+
+.memory-page :focus-visible {
+  outline: 3px solid var(--mem-focus);
+  outline-offset: 3px;
+}
+
+.memory-skip {
+  position: absolute;
+  left: var(--mem-space);
+  top: 0;
+  transform: translateY(-120%);
+  z-index: 40;
+  padding: 0.65rem 1rem;
+  border-radius: 0.45rem;
+  background: var(--mem-brand);
+  color: var(--mem-brand-glow);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.memory-skip:focus {
+  transform: translateY(0.75rem);
+}
+
+.memory-chrome {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  padding: calc(var(--mem-space) + env(safe-area-inset-top, 0)) var(--mem-space) var(--mem-space);
+  color: var(--mem-brand-glow);
+  mix-blend-mode: normal;
+}
+
+.memory-chrome a {
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  opacity: 0.88;
+  text-shadow: 0 1px 12px rgba(10, 20, 28, 0.45);
+}
+
+.memory-chrome a:hover {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.memory-chrome-mark {
+  font-family: var(--mem-display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.memory-chrome-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+}
+
+.memory-hero {
+  position: relative;
+  min-height: 100dvh;
+  min-height: 100svh;
+  display: grid;
+  align-items: end;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.memory-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.memory-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 42%;
+  display: block;
+  transform: scale(1.08);
+  animation: memory-drift 22s ease-in-out infinite alternate;
+  filter: saturate(0.92) contrast(1.04);
+}
+
+.memory-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.28;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  animation: memory-grain 8s steps(2) infinite;
+}
+
+.memory-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(18, 32, 40, 0.38) 0%,
+      rgba(18, 32, 40, 0.08) 28%,
+      rgba(18, 32, 40, 0.12) 52%,
+      rgba(21, 32, 40, 0.72) 100%
+    ),
+    radial-gradient(120% 70% at 70% 20%, rgba(120, 150, 170, 0.18) 0%, transparent 55%);
+}
+
+.memory-copy {
+  position: relative;
+  z-index: 3;
+  width: min(100%, var(--mem-max));
+  margin: 0;
+  padding: clamp(4.5rem, 14vh, 7rem) var(--mem-space)
+    calc(var(--mem-space) * 2 + env(safe-area-inset-bottom, 0));
+  color: var(--mem-brand-glow);
+}
+
+.memory-brand {
+  margin: 0 0 0.7rem;
+  font-family: var(--mem-display);
+  font-size: clamp(3.5rem, 14vw, 7rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+  color: #f4f8fa;
+  text-shadow: 0 2px 28px rgba(8, 16, 22, 0.35);
+  animation: memory-rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.memory-headline {
+  margin: 0 0 0.85rem;
+  max-width: 16ch;
+  font-family: var(--mem-display);
+  font-size: clamp(1.55rem, 4.2vw, 2.15rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: #e8eef2;
+  animation: memory-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
+}
+
+.memory-support {
+  margin: 0 0 1.55rem;
+  max-width: 28rem;
+  font-size: clamp(1.02rem, 2.4vw, 1.15rem);
+  line-height: 1.45;
+  color: rgba(236, 242, 246, 0.88);
+  animation: memory-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.26s both;
+}
+
+.memory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  animation: memory-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both;
+}
+
+.memory-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--mem-tap);
+  min-width: var(--mem-tap);
+  padding: 0.55rem 1.2rem;
+  border-radius: 0.55rem;
+  font: 700 0.95rem / 1.2 var(--mem-sans);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.memory-btn-primary {
+  background: #f4f8fa;
+  color: var(--mem-brand);
+}
+
+.memory-btn-primary:hover {
+  background: #ffffff;
+  text-decoration: none;
+}
+
+.memory-btn-secondary {
+  background: rgba(20, 36, 44, 0.35);
+  color: #f4f8fa;
+  border-color: rgba(244, 248, 250, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.memory-btn-secondary:hover {
+  background: rgba(20, 36, 44, 0.5);
+  border-color: rgba(244, 248, 250, 0.7);
+  text-decoration: none;
+}
+
+@keyframes memory-drift {
+  from {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(-2.2%, -1.4%, 0);
+  }
+}
+
+@keyframes memory-grain {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-1.5%, 1%, 0);
+  }
+}
+
+@keyframes memory-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 40rem) {
+  .memory-copy {
+    padding-top: clamp(5rem, 18vh, 7rem);
+  }
+
+  .memory-photo img {
+    object-position: 58% 40%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-photo img,
+  .memory-grain,
+  .memory-brand,
+  .memory-headline,
+  .memory-support,
+  .memory-actions {
+    animation: none;
+  }
+
+  .memory-photo img {
+    transform: scale(1.05);
+  }
+}
+
+@media (forced-colors: active) {
+  .memory-btn {
+    border: 1px solid CanvasText;
+  }
+
+  .memory-btn-primary {
+    background: Highlight;
+    color: HighlightText;
+  }
+}

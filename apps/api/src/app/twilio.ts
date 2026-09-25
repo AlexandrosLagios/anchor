@@ -1,3 +1,5 @@
+import { httpFetch } from './http';
+
 const WHATSAPP_SANDBOX = 'whatsapp:+14155238886';
 
 function authorization() {
@@ -8,11 +10,14 @@ function authorization() {
 }
 
 async function post(resource: string, form: [string, string][]) {
-  const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/${resource}.json`, {
-    method: 'POST',
-    headers: { authorization: authorization() },
-    body: new URLSearchParams(form),
-  });
+  const response = await httpFetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/${resource}.json`,
+    {
+      method: 'POST',
+      headers: { authorization: authorization() },
+      body: new URLSearchParams(form),
+    },
+  );
   if (!response.ok) throw new Error(`Twilio ${response.status}: ${await response.text()}`);
   return (await response.json()) as { sid: string };
 }
@@ -28,7 +33,7 @@ export function sendWhatsApp(to: string, body: string, mediaUrl?: string) {
 }
 
 export async function download(mediaUrl: string): Promise<Buffer> {
-  const response = await fetch(mediaUrl, { headers: { authorization: authorization() } });
+  const response = await httpFetch(mediaUrl, { headers: { authorization: authorization() } });
   if (!response.ok) throw new Error(`Twilio media ${response.status}`);
   return Buffer.from(await response.arrayBuffer());
 }

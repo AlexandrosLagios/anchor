@@ -1,0 +1,464 @@
+/* Night harbor — design variant B. Scoped under .harbor-root */
+
+.harbor-root {
+  --hb-ink: #060d18;
+  --hb-navy: #0b1829;
+  --hb-deep: #12253c;
+  --hb-mist: #1a334f;
+  --hb-foam: #c9d6e4;
+  --hb-foam-muted: #8fa3b8;
+  --hb-lamp: #e4b56a;
+  --hb-lamp-hot: #f0c98a;
+  --hb-lamp-soft: rgba(228, 181, 106, 0.22);
+  --hb-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --hb-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --hb-max: 72rem;
+  --hb-space: clamp(1rem, 2.5vw, 1.75rem);
+
+  min-height: 100dvh;
+  margin: 0;
+  color: var(--hb-foam);
+  font: 400 1.0625rem / 1.5 var(--hb-body);
+  background: var(--hb-ink);
+  color-scheme: dark;
+}
+
+.harbor-root *,
+.harbor-root *::before,
+.harbor-root *::after {
+  box-sizing: border-box;
+}
+
+.harbor-root a {
+  color: var(--hb-lamp-hot);
+}
+
+.harbor-root a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.harbor-root :focus {
+  outline: none;
+}
+
+.harbor-root :focus-visible {
+  outline: 3px solid var(--hb-lamp);
+  outline-offset: 3px;
+}
+
+.harbor-skip {
+  position: absolute;
+  left: var(--hb-space);
+  top: 0;
+  transform: translateY(-120%);
+  z-index: 1000;
+  padding: 0.65rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--hb-lamp);
+  color: var(--hb-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.harbor-skip:focus {
+  transform: translateY(0.75rem);
+}
+
+.harbor-chrome {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: var(--hb-max);
+  margin: 0 auto;
+  padding: calc(var(--hb-space) + env(safe-area-inset-top, 0)) var(--hb-space) var(--hb-space);
+}
+
+.harbor-chrome-mark {
+  font-family: var(--hb-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hb-foam-muted);
+  text-decoration: none;
+  opacity: 0.75;
+}
+
+.harbor-chrome-mark:hover {
+  color: var(--hb-foam);
+  text-decoration: none;
+  opacity: 1;
+}
+
+.harbor-chrome-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.15rem;
+}
+
+.harbor-chrome-nav a {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  color: var(--hb-foam-muted);
+}
+
+.harbor-chrome-nav a:hover {
+  color: var(--hb-foam);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* —— Hero: one full-bleed composition —— */
+.harbor-hero {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  align-items: end;
+  overflow: hidden;
+}
+
+.harbor-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 42%, rgba(6, 13, 24, 0.55) 68%, var(--hb-ink) 100%),
+    radial-gradient(ellipse 90% 55% at 50% -5%, #1e3a5c 0%, transparent 58%),
+    linear-gradient(180deg, #081426 0%, var(--hb-navy) 38%, #0a1524 62%, #050a12 100%);
+}
+
+/* Soft night haze */
+.harbor-haze {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 35% at 18% 48%, var(--hb-lamp-soft) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 72% 44%, rgba(228, 181, 106, 0.14) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 40% at 48% 52%, rgba(26, 51, 79, 0.45) 0%, transparent 70%);
+  animation: harbor-haze-drift 22s ease-in-out infinite alternate;
+}
+
+/* Water plane with lamp reflections */
+.harbor-water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48%;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(8, 20, 38, 0.35) 12%,
+      #071222 55%,
+      #040910 100%
+    );
+  overflow: hidden;
+}
+
+.harbor-water::before {
+  content: "";
+  position: absolute;
+  inset: -8% 0 0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 48px,
+      rgba(201, 214, 228, 0.03) 48px,
+      rgba(201, 214, 228, 0.03) 49px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(228, 181, 106, 0.18) 0%,
+      rgba(228, 181, 106, 0.05) 18%,
+      transparent 42%
+    );
+  transform-origin: 50% 0%;
+  animation: harbor-tide 16s ease-in-out infinite alternate;
+}
+
+.harbor-water::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 12% 55% at 18% 0%, rgba(240, 201, 138, 0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 10% 48% at 48% 0%, rgba(228, 181, 106, 0.28) 0%, transparent 70%),
+    radial-gradient(ellipse 11% 52% at 72% 0%, rgba(240, 201, 138, 0.32) 0%, transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  animation: harbor-reflection 10s ease-in-out infinite alternate;
+}
+
+/* Pier / lamp silhouettes */
+.harbor-lamps {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 42%;
+  height: 18%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 clamp(6%, 10vw, 14%);
+  align-items: flex-end;
+}
+
+.harbor-lamp {
+  position: relative;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent 0%, #1a2838 35%, #0e1824 100%);
+}
+
+.harbor-lamp::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: clamp(2.5rem, 5vw, 3.5rem);
+  height: clamp(2.5rem, 5vw, 3.5rem);
+  transform: translate(-50%, -35%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--hb-lamp-hot) 0%,
+    var(--hb-lamp) 22%,
+    rgba(228, 181, 106, 0.35) 45%,
+    transparent 72%
+  );
+  animation: harbor-lamp-breathe 5.5s ease-in-out infinite;
+}
+
+.harbor-lamp:nth-child(2)::before {
+  animation-delay: -1.8s;
+  animation-duration: 6.2s;
+}
+
+.harbor-lamp:nth-child(3)::before {
+  animation-delay: -3.4s;
+  animation-duration: 5.1s;
+}
+
+.harbor-horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 52%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(201, 214, 228, 0.12) 20%,
+    rgba(228, 181, 106, 0.2) 50%,
+    rgba(201, 214, 228, 0.12) 80%,
+    transparent 100%
+  );
+}
+
+.harbor-copy {
+  position: relative;
+  z-index: 2;
+  max-width: var(--hb-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: clamp(4rem, 14vh, 7rem) var(--hb-space) calc(var(--hb-space) * 2.25);
+}
+
+.harbor-brand {
+  margin: 0 0 0.7rem;
+  font-family: var(--hb-display);
+  font-size: clamp(3.5rem, 14vw, 7rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 0.92;
+  color: #f3efe6;
+  text-shadow: 0 0 40px rgba(6, 13, 24, 0.55);
+  animation: harbor-rise 1s ease-out both;
+}
+
+.harbor-headline {
+  margin: 0 0 0.85rem;
+  max-width: 16ch;
+  font-family: var(--hb-display);
+  font-size: clamp(1.35rem, 3.2vw, 1.85rem);
+  font-weight: 600;
+  line-height: 1.28;
+  color: var(--hb-lamp-hot);
+  animation: harbor-rise 1s ease-out 0.14s both;
+}
+
+.harbor-support {
+  margin: 0 0 1.6rem;
+  max-width: 32rem;
+  font-size: clamp(1.05rem, 2.2vw, 1.15rem);
+  line-height: 1.55;
+  color: var(--hb-foam-muted);
+  animation: harbor-rise 1s ease-out 0.26s both;
+}
+
+.harbor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  animation: harbor-rise 1s ease-out 0.38s both;
+}
+
+.harbor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.55rem 1.25rem;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  font: 700 0.95rem / 1.2 var(--hb-body);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.harbor-btn-primary {
+  background: var(--hb-lamp);
+  color: var(--hb-ink);
+}
+
+.harbor-btn-primary:hover {
+  background: var(--hb-lamp-hot);
+  text-decoration: none;
+  filter: none;
+}
+
+.harbor-btn-ghost {
+  background: transparent;
+  color: var(--hb-foam);
+  border-color: rgba(201, 214, 228, 0.35);
+}
+
+.harbor-btn-ghost:hover {
+  border-color: var(--hb-foam);
+  background: rgba(201, 214, 228, 0.06);
+  text-decoration: none;
+  color: var(--hb-foam);
+}
+
+.harbor-note {
+  margin: 0;
+  padding: 0.85rem var(--hb-space) calc(1.25rem + env(safe-area-inset-bottom, 0));
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(143, 163, 184, 0.7);
+  background: var(--hb-ink);
+}
+
+.harbor-note a {
+  color: var(--hb-foam-muted);
+}
+
+@keyframes harbor-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.9rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes harbor-haze-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(1.2%, -0.8%, 0) scale(1.04);
+    opacity: 0.92;
+  }
+}
+
+@keyframes harbor-tide {
+  from {
+    transform: scaleX(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scaleX(1.03) translate3d(-1.5%, 1.2%, 0);
+  }
+}
+
+@keyframes harbor-reflection {
+  from {
+    opacity: 0.72;
+    transform: translate3d(0, 0, 0) scaleY(1);
+  }
+  to {
+    opacity: 0.95;
+    transform: translate3d(0.6%, 1%, 0) scaleY(1.04);
+  }
+}
+
+@keyframes harbor-lamp-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: translate(-50%, -35%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -35%) scale(1.08);
+  }
+}
+
+@media (max-width: 640px) {
+  .harbor-lamps {
+    padding: 0 10%;
+  }
+
+  .harbor-lamp:nth-child(2) {
+    display: none;
+  }
+
+  .harbor-copy {
+    padding-bottom: calc(var(--hb-space) * 1.75);
+  }
+
+  .harbor-headline {
+    max-width: 18ch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .harbor-haze,
+  .harbor-water::before,
+  .harbor-water::after,
+  .harbor-lamp::before,
+  .harbor-brand,
+  .harbor-headline,
+  .harbor-support,
+  .harbor-actions {
+    animation: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .harbor-btn {
+    border: 1px solid CanvasText;
+  }
+
+  .harbor-btn-primary {
+    background: Highlight;
+    color: HighlightText;
+  }
+}

@@ -27,7 +27,7 @@ async function bootstrap() {
       'http://127.0.0.1:4321',
       ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()) : []),
     ],
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   });
   const port = process.env.PORT || 3000;
   await app.listen(port);

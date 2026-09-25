@@ -15,7 +15,7 @@ import {
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { AnchorService, Role } from './anchor.service';
-import { CurrentUser, FirebaseAuthGuard, type AuthUser } from './firebase-auth.guard';
+import { AuthGuard, CurrentUser, type AuthUser } from './auth.guard';
 import { download, sendWhatsApp, twiml } from './twilio';
 import { UserStoreService } from './user-store.service';
 
@@ -88,7 +88,7 @@ export class RootController {
 
 // ponytail: no X-Twilio-Signature check yet — add before real family data flows through here
 @Controller('api')
-@UseGuards(FirebaseAuthGuard)
+@UseGuards(AuthGuard)
 export class AnchorController {
   constructor(
     private readonly anchor: AnchorService,

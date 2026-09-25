@@ -1,23 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { User } from 'firebase/auth';
-import { firebaseConfigured } from '../lib/firebase';
-import { watchAuth } from '../lib/auth';
+import { watchAuth, type AuthUser } from '../lib/auth';
 
 export function AuthNav() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
 
-  useEffect(() => {
-    if (!firebaseConfigured()) return;
-    return watchAuth(setUser);
-  }, []);
-
-  if (!firebaseConfigured()) {
-    return (
-      <a href="/signup" className="auth-nav-link">
-        Create account
-      </a>
-    );
-  }
+  useEffect(() => watchAuth(setUser), []);
 
   if (user) {
     return (

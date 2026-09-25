@@ -1,43 +1,48 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
+/**
+ * Firebase web client config (PUBLIC_* — safe to expose in the browser).
+ * Primary auth path: Firebase Auth email/password + Firestore user profiles.
+ */
 export const privacyEmail =
   import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@anchor.com';
 
+/** Logical EU region label stored on user docs (create Firestore in eur3). */
 export const firestoreRegion = 'eur3';
 
-const config = {
-  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
-  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
-  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID ?? '',
-  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
-  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
-  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
+const firebaseConfig = {
+  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY,
+  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID,
 };
 
 export function firebaseConfigured(): boolean {
-  return Boolean(config.apiKey && config.projectId && config.appId);
+  return Boolean(
+    firebaseConfig.apiKey &&
+      firebaseConfig.authDomain &&
+      firebaseConfig.projectId &&
+      firebaseConfig.appId,
+  );
 }
-
-let app: FirebaseApp | undefined;
-let auth: Auth | undefined;
-let db: Firestore | undefined;
 
 export function getFirebaseApp(): FirebaseApp {
   if (!firebaseConfigured()) {
-    throw new Error('Firebase is not configured. Set PUBLIC_FIREBASE_* env vars.');
+    throw new Error(
+      'Firebase is not configured. Set PUBLIC_FIREBASE_* in apps/web/.env',
+    );
   }
-  if (!app) app = initializeApp(config);
-  return app;
+  return getApps().length ? getApp() : initializeApp(firebaseConfig);
 }
 
 export function getFirebaseAuth(): Auth {
-  if (!auth) auth = getAuth(getFirebaseApp());
-  return auth;
+  return getAuth(getFirebaseApp());
 }
 
 export function getFirebaseDb(): Firestore {
-  if (!db) db = getFirestore(getFirebaseApp());
-  return db;
+  return getFirestore(getFirebaseApp());
 }

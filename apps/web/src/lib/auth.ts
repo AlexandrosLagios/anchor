@@ -9,12 +9,26 @@ import {
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { firebaseConfigured, firestoreRegion, getFirebaseAuth, getFirebaseDb } from './firebase';
 
+export type AuthUser = {
+  uid: string;
+  email?: string | null;
+  displayName?: string | null;
+};
+
 export type Consents = {
   terms: boolean;
   privacy: boolean;
   marketing: boolean;
   at: string;
 };
+
+function toAuthUser(user: User): AuthUser {
+  return {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+  };
+}
 
 export async function getIdToken(): Promise<string | null> {
   if (!firebaseConfigured()) return null;
@@ -23,12 +37,14 @@ export async function getIdToken(): Promise<string | null> {
   return user.getIdToken();
 }
 
-export function watchAuth(callback: (user: User | null) => void): () => void {
+export function watchAuth(callback: (user: AuthUser | null) => void): () => void {
   if (!firebaseConfigured()) {
     callback(null);
     return () => undefined;
   }
-  return onAuthStateChanged(getFirebaseAuth(), callback);
+  return onAuthStateChanged(getFirebaseAuth(), (user) => {
+    callback(user ? toAuthUser(user) : null);
+  });
 }
 
 export async function signUp(input: {
@@ -36,9 +52,12 @@ export async function signUp(input: {
   password: string;
   displayName: string;
   consents: { terms: boolean; privacy: boolean; marketing: boolean };
-}): Promise<User> {
+}): Promise<AuthUser> {
   if (!input.consents.terms || !input.consents.privacy) {
     throw new Error('You must accept the Terms and Privacy Policy.');
+  }
+  if (!firebaseConfigured()) {
+    throw new Error('Firebase is not configured. Set PUBLIC_FIREBASE_* env vars.');
   }
   const auth = getFirebaseAuth();
   const credential = await createUserWithEmailAndPassword(auth, input.email.trim(), input.password);
@@ -58,14 +77,18 @@ export async function signUp(input: {
     createdAt: serverTimestamp(),
     consents,
   });
-  return credential.user;
+  return toAuthUser(credential.user);
 }
 
-export async function signIn(email: string, password: string): Promise<User> {
+export async function signIn(email: string, password: string): Promise<AuthUser> {
+  if (!firebaseConfigured()) {
+    throw new Error('Firebase is not configured. Set PUBLIC_FIREBASE_* env vars.');
+  }
   const credential = await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-  return credential.user;
+  return toAuthUser(credential.user);
 }
 
 export async function logOut(): Promise<void> {
+  if (!firebaseConfigured()) return;
   await signOut(getFirebaseAuth());
 }

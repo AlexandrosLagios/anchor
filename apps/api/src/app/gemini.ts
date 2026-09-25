@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { httpFetch } from './http';
 import { wav } from './song';
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
@@ -31,7 +32,7 @@ async function cached(key: string, produce: () => Promise<Buffer>): Promise<Buff
 async function interact(models: string[], body: object | ((model: string) => object), timeoutMs: number): Promise<Content[]> {
   const deadline = AbortSignal.timeout(timeoutMs);
   for (const [index, model] of models.entries()) {
-    const response = await fetch(ENDPOINT, {
+    const response = await httpFetch(ENDPOINT, {
       method: 'POST',
       headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY ?? '', 'content-type': 'application/json' },
       body: JSON.stringify({ model, ...(typeof body === 'function' ? body(model) : body) }),

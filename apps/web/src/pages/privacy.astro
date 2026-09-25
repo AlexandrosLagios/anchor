@@ -24,7 +24,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>What we collect</h2>
     <ul>
-      <li>Account data: email, display name, authentication identifiers (Firebase Auth).</li>
+      <li>Account data: email, display name, authentication identifiers (Nest JWT sessions).</li>
       <li>Consent records: acceptance of Terms and Privacy, optional marketing preference, timestamps.</li>
       <li>Family moments: text, photos, or voice notes you submit in the demo or via WhatsApp.</li>
       <li>Technical logs needed to run the service (security, errors).</li>
@@ -39,10 +39,9 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Where data is stored (EU sovereignty)</h2>
     <p>
-      Account profiles, consent records, and authenticated moment metadata are stored in <strong>Google Cloud Firestore
-      multi-region Europe (<code>eur3</code>)</strong>. Firebase Authentication for your account is configured on the same
-      EU-oriented Firebase project. Create the Firestore database in <code>eur3</code> when provisioning — location cannot
-      be changed later.
+      Account profiles, consent records, and authenticated moment metadata are stored in <strong>Neon Postgres on AWS
+      Frankfurt (<code>eu-central-1</code>)</strong>, connected via the Vercel Marketplace. Optional media assets use
+      <strong>Vercel Blob in Frankfurt (<code>fra1</code>)</strong>.
     </p>
 
     <h2>Artificial intelligence (Gemini)</h2>
@@ -55,15 +54,15 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Processors</h2>
     <ul>
-      <li>Google Firebase / Google Cloud — Auth and Firestore (EU <code>eur3</code> for stored app data).</li>
+      <li>Neon (Vercel Marketplace) — Postgres in EU <code>eu-central-1</code>.</li>
+      <li>Vercel — website, Nest API (Frankfurt), and Blob storage (<code>fra1</code>).</li>
       <li>Google Gemini API — AI extraction and TTS (may process outside the EU).</li>
       <li>Twilio — WhatsApp delivery when connected.</li>
-      <li>Vercel — hosts the public website.</li>
     </ul>
 
     <h2>Retention</h2>
     <p>
-      Account and Firestore data are kept while your account exists, or until you request deletion. Anonymous in-memory
+      Account and Postgres data are kept while your account exists, or until you request deletion. Anonymous in-memory
       demo state on the API may reset when the server restarts. Cached Gemini answers on the API filesystem are ephemeral
       operational caches.
     </p>

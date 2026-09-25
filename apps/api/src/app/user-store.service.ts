@@ -1,37 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { FieldValue } from 'firebase-admin/firestore';
 import type { ChatLine, Moment } from './anchor.service';
-import { adminDb, firebaseAdminConfigured } from './firebase-admin';
+import { databaseConfigured, getPool } from './db';
 
 @Injectable()
 export class UserStoreService {
   private readonly logger = new Logger(UserStoreService.name);
 
   async persistSnapshot(uid: string, state: { chat: ChatLine[]; moments: Moment[]; activeId?: string }) {
-    if (!firebaseAdminConfigured()) return;
+    if (!databaseConfigured()) return;
     try {
-      const ref = adminDb().collection('users').doc(uid);
-      await ref.set(
-        {
-          region: 'eur3',
-          lastActiveAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
+      await getPool().query(
+        `INSERT INTO user_states (user_id, chat, moments, active_id, updated_at)
+         VALUES ($1, $2::jsonb, $3::jsonb, $4, now())
+         ON CONFLICT (user_id) DO UPDATE SET
+           chat = EXCLUDED.chat,
+           moments = EXCLUDED.moments,
+           active_id = EXCLUDED.active_id,
+           updated_at = now()`,
+        [uid, JSON.stringify(state.chat), JSON.stringify(state.moments), state.activeId ?? null],
       );
-      await ref.collection('state').doc('current').set({
-        chat: state.chat,
-        moments: state.moments,
-        activeId: state.activeId ?? null,
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-      for (const moment of state.moments) {
-        await ref.collection('moments').doc(moment.id).set({
-          ...moment,
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-      }
     } catch (error) {
-      this.logger.warn(`Firestore persist failed for ${uid}: ${String(error)}`);
+      this.logger.warn(`Neon persist failed for ${uid}: ${String(error)}`);
     }
   }
 }
