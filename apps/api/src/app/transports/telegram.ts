@@ -83,8 +83,10 @@ export function toIncoming(update: Update, username: string): Incoming | undefin
 }
 
 function mentionIn(text: string | undefined, person?: Person) {
-  const offset = text && person?.name ? text.indexOf(person.name) : -1;
-  if (!person || offset < 0) return undefined;
+  if (!text || !person?.name) return undefined;
+  const name = person.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const offset = text.search(new RegExp(`(?<![\\p{L}\\p{N}])${name}(?![\\p{L}\\p{N}])`, 'u'));
+  if (offset < 0) return undefined;
   return [{ type: 'text_mention', offset, length: person.name.length, user: { id: Number(person.id), is_bot: false, first_name: person.name } }];
 }
 
@@ -168,7 +170,7 @@ export class TelegramTransport implements Transport {
         ...(index === 0 ? captioned : {}),
       }));
       const [first] = await call<Message[]>(this.token, 'sendMediaGroup', { chat_id: chatId, media, reply_parameters });
-      return { messageId: String(first.message_id), voice: undefined };
+      return { messageId: String(first.message_id) };
     }
     const params = {
       chat_id: chatId,

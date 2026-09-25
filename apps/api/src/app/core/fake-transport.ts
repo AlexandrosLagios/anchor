@@ -10,6 +10,8 @@ export class FakeTransport implements Transport {
     if ([message.photo, message.video, message.voice, message.album].filter(Boolean).length > 1) {
       throw new Error('An Outgoing sets at most one of photo, video, voice, and album');
     }
+    if (message.album && !(message.album.length >= 2 && message.album.length <= 10)) throw new Error('An album holds 2 to 10 items');
+    if (message.album && message.buttons?.length) throw new Error('An album carries no buttons');
     const messageId = `sent-${this.sent.length + 1}`;
     this.sent.push({ chatId, messageId, message });
     const voice = message.voice && ('wav' in message.voice ? { id: `voice-${messageId}`, mimeType: 'audio/ogg' } : message.voice);

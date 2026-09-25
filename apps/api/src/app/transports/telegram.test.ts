@@ -317,7 +317,7 @@ test('send posts an album with the caption on the first item and returns the fir
     text: 'y'.repeat(1100),
     buttons: [{ label: 'Not now', data: 'not-now' }],
   });
-  expect(sent).toEqual({ messageId: '80', voice: undefined });
+  expect(sent).toEqual({ messageId: '80' });
   expect(calls.at(-1)).toEqual({
     url: 'https://api.telegram.org/botTOKEN/sendMediaGroup',
     method: 'sendMediaGroup',
@@ -342,6 +342,15 @@ test('send mentions the first occurrence of the name, with offsets in UTF-16 uni
   await telegram.send('-1001234567890', { photo: { id: 'large' }, text: 'Sofia shared this', mention: sofiaPerson });
   expect(calls.at(-1)?.params.caption_entities).toEqual([
     { type: 'text_mention', offset: 0, length: 5, user: { id: 111, is_bot: false, first_name: 'Sofia' } },
+  ]);
+});
+
+test('send mentions the name as a whole word, not inside a longer name', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.send('-1001234567890', { text: "Marianna added a story to Maria's moment 🎙️", mention: { id: '111', name: 'Maria' } });
+  expect(calls.at(-1)?.params.entities).toEqual([
+    { type: 'text_mention', offset: 26, length: 5, user: { id: 111, is_bot: false, first_name: 'Maria' } },
   ]);
 });
 
