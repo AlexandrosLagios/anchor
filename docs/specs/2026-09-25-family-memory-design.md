@@ -159,7 +159,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 
 The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks".
 
-`invitation`, `memoryCaption`, `storyAdded`, and `echoCaption` clip each quoted text to 600 characters and end the clip with "…". The caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. A step may change the wording of its own lines, but no line may break section 1.
+`invitation`, `memoryCaption`, `storyAdded`, and `echoCaption` clip each quoted text to 600 characters and end the clip with "…". The caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. The step 1 session writes every line. A feature step asks that session for a wording change, and no line may break section 1.
 
 ### 4.10 Demo additions
 
@@ -512,12 +512,12 @@ Each step is one session, one branch, and one PR. Each step uses TDD, then `/cod
 | Step | Branch | Needs | Scope | Done when |
 | --- | --- | --- | --- | --- |
 | 1 Foundation | `feat/family-bot-foundation` | none | `core/*`, `features/intro.ts`, `family.service.ts`, `transports/*`, the `gemini.ts` additions, `.env.example`, and the migration fix. | The bot joins a test group and posts `intro`, and a private message gets `pointer`. |
-| 1b Demo contract | from the step 1 session | 1 | `Outgoing.album`, `Outgoing.mention`, `react` with `big`, `State.clockOffset`, and `Moment.echo`. | Each addition has a test through `FakeTransport` and `toIncoming`. |
+| 1b Demo contract | from the step 1 session | 1 | `Outgoing.album`, `Outgoing.mention`, `react` with `big`, `State.clockOffset`, `Moment.echo`, and the new lines of section 4.9. | Each addition has a test through `FakeTransport` and `toIncoming`. |
 | 2 Memory features | `feat/family-memory-features` | 1, and 1b for the sharer change | Capture and forget, memories and stories, and invitations: sections 4.1 to 4.5, 4.7, 6.2, and the sharer change of 4.10. | The flow tests of section 9 pass for every feature. |
 | 2b Demo features | `feat/family-demo-features` | 1b | `ask`, `echoes`, and `fastforward`: sections 4.6, 4.10, 6.4, and 6.6. | The flow tests of section 9 pass for the three features. |
 | 3 Team test | `fix/v1-team-test` | 2 and 2b | The team test, the fixes, the demo script, and section 11. The deploy prep is already PR 2 (`chore/anchor-bot-deploy`). | The team walks the checklist and the demo script in a Telegram group without a blocker. |
 
-Inside steps 2 and 2b, the features touch separate files, so subagents can build them in parallel. One session owns each file: the step 1 session owns `core/` and `transports/`, and steps 2 and 2b own only their feature files and their own lines.
+Inside steps 2 and 2b, the features touch separate files, so subagents can build them in parallel. One session owns each file. The step 1 session owns `core/` and `transports/`, including every line in `core/lines.ts`. Steps 2 and 2b own only their feature files and their `FEATURES` lines.
 
 A person runs `gcloud run deploy`, because the deploy costs money. The store saves only on a change, because each save on the Cloud Storage volume costs storage operations.
 
