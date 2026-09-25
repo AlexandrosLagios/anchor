@@ -53,13 +53,14 @@ Step 3 writes the v1 findings into section 11. Read section 11 before a v1.x cha
 ### 4.2 Capture
 
 1. The code rules drop unsupported messages (stickers, GIFs, video notes, documents, polls, service messages), forwarded messages, commands (text that starts with `/`), and texts that hold only links. A video is supported.
-2. The bundler groups the messages of one sender in one family. A message joins the open bundle of its sender when the message arrives within 2 minutes of the previous one.
-3. A bundle closes 2 minutes after its last message. A bundle that holds a photo or a video, and words, closes at the next tick. Words are a text, a caption, or a voice note.
-4. The code drops a closed bundle that has no photo, no video, no voice note, and fewer than 3 words. The code also drops a bundle that has a photo or a video and no words, because a bare picture has nothing to bring back.
+2. The bundler groups the messages of one sender in one family. A message joins the open bundle of its sender when the message arrives within 5 minutes of the previous one.
+3. A bundle closes 5 minutes after its last message. A bundle that holds a photo or a video, and words, closes at the next tick. Words are a text, a caption, or a voice note.
+4. The code drops a closed bundle that has no photo, no video, no voice note, and fewer than 3 words. A bundle that has a picture and no words is kept: the classification sees the picture, or the video thumbnail, and gives it a title.
 5. One Gemini call classifies the bundle (section 6.2). The call gets the texts, the first photo or the thumbnail of the first video, and the voice note of the bundle. The code never downloads a video, because a bot downloads at most 20 MB.
 6. The code saves a `family_moment` and a `sensitive` moment, and drops the rest. A `sensitive` verdict sets `moment.sensitive`. Then Anchor reacts with ❤ on the first message of the bundle.
-7. `moment.text` holds the typed words of the bundle. A bundle without typed words uses the transcript of its voice note. When both are empty, `moment.text` is the title, so `moment.text` is never empty.
-8. The code counts each outcome in `family.counters`: `rules`, `family_moment`, `logistics`, `small_talk`, `sensitive`, and `failed`.
+7. `moment.text` holds the typed words of the bundle. A bundle without typed words uses the transcript of its voice note. When both are empty, `moment.text` is the title, `moment.wordless` is true, and `moment.text` is never empty.
+8. Every line that quotes a moment uses `sharedBy(moment)`: `{sender} shared: «{text}»`, or `{sender} shared a photo: {title}` (a video, a voice note) for a wordless moment. Anchor never quotes the model's words as the sharer's words.
+9. The code counts each outcome in `family.counters`: `rules`, `family_moment`, `logistics`, `small_talk`, `sensitive`, and `failed`.
 
 The bundler uses real time, because people type in real time. Every other rule in section 4 uses the demo clock (section 4.8).
 
@@ -294,7 +295,8 @@ export type Moment = {
   by: Person;
   messageIds: string[]; // the group messages of the bundle
   savedAt: number; // demo-clock ms
-  text: string; // the sender's own words, verbatim
+  text: string; // the sender's own words, verbatim, or the title when wordless
+  wordless?: boolean; // the sharer sent no words, so text holds the model's title
   photo?: Media;
   video?: Media; // a return shows the video when the moment has one
   voice?: Media;
