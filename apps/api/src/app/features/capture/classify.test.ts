@@ -16,7 +16,7 @@ vi.mock('../../model/model', async (importOriginal) => ({
 }));
 
 const sender = { id: '1', name: 'Sofia' };
-const family: Family = { id: '-100', chatId: '-100', storytellers: [], moments: [], counters: {} };
+const family: Family = { id: '-100', chatId: '-100', members: [], moments: [], counters: {} };
 
 function event(overrides: Partial<Incoming> = {}): Incoming {
   return { chat: 'group', chatId: '-100', messageId: '1', sender, at: 0, ...overrides };

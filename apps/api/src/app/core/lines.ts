@@ -35,7 +35,7 @@ export const lines = {
     "An admin can reply /private to a grandparent's message, and I'll send them family moments in private. " +
     'Reply "Anchor, forget this" to delete a moment, or "Anchor, don\'t bring this back" to keep it without bringing it back. ' +
     'This is a test build, so please share staged photos only.',
-  storytellerStart: (name: string) =>
+  memberStart: (name: string) =>
     `${name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment.`,
   welcome: (name: string) =>
     `Hello ${name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. ` +

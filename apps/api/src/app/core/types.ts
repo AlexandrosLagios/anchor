@@ -75,7 +75,7 @@ export type Moment = {
   stories: Story[];
   lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'
   memoryPostIds: string[];
-  returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
+  returns: Record<string, { count: number; due: number }>; // private returns per member id
   echo?: string; // the id of the older moment that this moment echoes
   echoPostIds?: string[]; // the messages of the then-and-now post
 };
@@ -91,7 +91,7 @@ export type Invitation = {
   replied: boolean; // any reply, a question, or "What is this?" came
 };
 
-export type Storyteller = Person & {
+export type Member = Person & {
   started: boolean;
   lastInvitationDay?: number;
   invitation?: Invitation;
@@ -100,7 +100,7 @@ export type Storyteller = Person & {
 export type Family = {
   id: string; // the group chat id on the transport
   chatId: string; // the group chat id on the transport
-  storytellers: Storyteller[];
+  members: Member[];
   moments: Moment[];
   lastMemoryDay?: number;
   counters: Record<string, number>;
@@ -114,7 +114,7 @@ export interface Store {
   readonly state: State;
   family(id: string): Family | undefined;
   addFamily(id: string, chatId: string): Family;
-  familyOfStoryteller(userId: string): Family | undefined;
+  familyOfMember(userId: string): Family | undefined;
   save(): void;
 }
 

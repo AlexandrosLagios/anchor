@@ -91,7 +91,7 @@ test('with a token the host polls Telegram, introduces Anchor to a new group, an
   host.onApplicationShutdown();
 
   expect(JSON.parse(readFileSync(file, 'utf8')).families).toEqual([
-    { id: '-1001234567890', chatId: '-1001234567890', storytellers: [], moments: [], counters: {} },
+    { id: '-1001234567890', chatId: '-1001234567890', members: [], moments: [], counters: {} },
   ]);
 });
 

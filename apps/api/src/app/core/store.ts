@@ -12,12 +12,12 @@ export function openStore(file: string, realNow = Date.now()): Store {
     state,
     family: (id) => state.families.find((family) => family.id === id),
     addFamily(id, chatId) {
-      const family: Family = { id, chatId, storytellers: [], moments: [], counters: {} };
+      const family: Family = { id, chatId, members: [], moments: [], counters: {} };
       state.families.push(family);
       return family;
     },
-    familyOfStoryteller: (userId) =>
-      state.families.find((family) => family.storytellers.some((person) => person.id === userId)),
+    familyOfMember: (userId) =>
+      state.families.find((family) => family.members.some((person) => person.id === userId)),
     save() {
       mkdirSync(dirname(file), { recursive: true });
       writeFileSync(`${file}.tmp`, JSON.stringify(state));

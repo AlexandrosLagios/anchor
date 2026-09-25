@@ -16,7 +16,7 @@ test('a saved family survives a restart', () => {
   const file = stateFile();
   const store = openStore(file, 1000);
   const family = store.addFamily('-100', '-100');
-  family.storytellers.push({ id: '42', name: 'Nikos', started: true });
+  family.members.push({ id: '42', name: 'Nikos', started: true });
   family.counters.rules = 2;
   store.save();
 
@@ -24,12 +24,12 @@ test('a saved family survives a restart', () => {
   expect(reopened.family('-100')).toEqual({
     id: '-100',
     chatId: '-100',
-    storytellers: [{ id: '42', name: 'Nikos', started: true }],
+    members: [{ id: '42', name: 'Nikos', started: true }],
     moments: [],
     counters: { rules: 2 },
   });
-  expect(reopened.familyOfStoryteller('42')?.id).toBe('-100');
-  expect(reopened.familyOfStoryteller('7')).toBeUndefined();
+  expect(reopened.familyOfMember('42')?.id).toBe('-100');
+  expect(reopened.familyOfMember('7')).toBeUndefined();
   expect(reopened.family('-200')).toBeUndefined();
 });
 
