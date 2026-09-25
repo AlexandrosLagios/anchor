@@ -1,15 +1,13 @@
 import { Logger } from '@nestjs/common';
 import { type CallRecord, storyOf } from '../call/bridge';
 import { answered, ring } from '../call/dial';
+import { mulawWav } from '../call/ogg';
 import { expectCall, STREAM_PATH } from '../call/stream';
 import { dayIndex, slotIn } from '../core/clock';
 import { lines } from '../core/lines';
 import { tell } from '../core/tell';
 import type { Context, Family, Feature, Member, Moment, Reminder, Window } from '../core/types';
 import { shareStory } from './invitations';
-
-// ponytail: moves to lines.calling when step 5 lands it in core/lines.ts
-const CALLING = "I'm ringing you now 📞";
 
 const log = new Logger('Calls');
 
@@ -55,8 +53,11 @@ function instructions(member: Member, moment: Moment) {
 
 async function afterCall(family: Family, member: Member, moment: Moment, record: CallRecord, ctx: Context) {
   const story = storyOf(record);
-  // ponytail: a yes to the voice posts the words only until shareStory takes the call audio; the orchestrator rules on that change
-  if ((record.share === 'voice' || record.share === 'words') && story.text) await shareStory(family, member, moment, { text: story.text }, ctx);
+  if ((record.share === 'voice' || record.share === 'words') && story.text) {
+    // the private send uploads the clip once, and the group post reuses its file id
+    const sent = record.share === 'voice' && story.audio.length ? await tell(family, member, { voice: { wav: mulawWav(story.audio) }, text: lines.shared }, ctx) : undefined;
+    await shareStory(family, member, moment, { text: story.text, voice: sent?.voice }, ctx);
+  }
   if (record.tellSender) {
     await ctx
       .transport(family.id)
@@ -99,7 +100,7 @@ export async function callMember(family: Family, member: Member, ctx: Context, r
     log.warn(`Twilio refused a call to member ${member.id}: ${error}`);
     return false;
   }
-  await tell(family, member, { text: CALLING }, ctx);
+  await tell(family, member, { text: lines.calling }, ctx);
   void follow(sid, call, family, member, moment, ctx);
   return true;
 }

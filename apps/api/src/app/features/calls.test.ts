@@ -82,7 +82,7 @@ test('callMember rings the member about the newest moment that someone else shar
   expect(script().askShare).toBe(lines.call.askShare);
   expect(script().goodbye).toBe('Thank you, Nikos. Goodbye');
   expect(script().instructions).toContain(lines.call.reachPerson('Eleni'));
-  expect(texts()).toEqual([['7', "I'm ringing you now 📞"]]);
+  expect(texts()).toEqual([['7', lines.calling]]);
 });
 
 test.each([
@@ -108,7 +108,7 @@ test('an unanswered call drops the token and posts nothing', async () => {
   vi.mocked(answered).mockResolvedValue(false);
   await callMember(family, nikos, ctx);
   await expect.poll(() => forget.mock.calls.length).toBe(1);
-  expect(texts()).toEqual([['7', "I'm ringing you now 📞"]]);
+  expect(texts()).toEqual([['7', lines.calling]]);
 });
 
 test('a yes to the words posts the story in the group without a voice note', async () => {
@@ -126,7 +126,7 @@ test('a no keeps nothing from the call', async () => {
   endCall(record({ share: 'no', tellSender: false, transcript: [{ speaker: 'person', text: 'A private thought.' }] }));
   await new Promise((done) => setTimeout(done, 10));
   expect(family.moments[1].stories).toEqual([]);
-  expect(texts()).toEqual([['7', "I'm ringing you now 📞"]]);
+  expect(texts()).toEqual([['7', lines.calling]]);
 });
 
 test('a yes to telling the sender asks the sender in the group for a call', async () => {
@@ -160,7 +160,7 @@ test('a reminder call reads the reminder in the sender’s words and shares noth
   await expect.poll(() => endCall).toBeDefined();
   endCall(record({ share: 'words', tellSender: true, transcript: [{ speaker: 'person', text: 'Thanks.' }] }));
   await new Promise((done) => setTimeout(done, 10));
-  expect(texts()).toEqual([['7', "I'm ringing you now 📞"]]);
+  expect(texts()).toEqual([['7', lines.calling]]);
 });
 
 test('the calls tick rings a member who chose calls for a reminder sent in the window', async () => {
@@ -193,4 +193,16 @@ test('the daily call stays silent when nothing new was shared since the last cal
   family.moments = family.moments.filter((m) => m.id === 'old');
   await tick(NOW - 2_000, NOW);
   expect(ring).not.toHaveBeenCalled();
+});
+
+test('a yes to the voice sends the member their voice in private, then shares the voice in the group', async () => {
+  await callMember(family, nikos, ctx);
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(record({ share: 'voice', audio: [Buffer.alloc(800, 0xff)], speech: [[0, 100]], transcript: [{ speaker: 'person', text: 'Kostas held his dad’s hand.' }] }));
+  await expect.poll(() => family.moments[1].stories.length).toBe(1);
+  const privately = transport.sent[1];
+  expect(privately).toMatchObject({ chatId: '7', message: { text: lines.shared } });
+  expect((privately.message.voice as { wav: Buffer }).wav.subarray(0, 4).toString()).toBe('RIFF');
+  expect(family.moments[1].stories[0]).toMatchObject({ text: 'Kostas held his dad’s hand.', voice: { id: `voice-${privately.messageId}` } });
+  expect(transport.sent.at(-1)).toMatchObject({ chatId: '-100', message: { voice: { id: `voice-${privately.messageId}` } } });
 });
