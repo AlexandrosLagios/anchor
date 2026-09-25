@@ -7,6 +7,9 @@ on:
       - 'apps/api/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'nx.json'
+      - 'tsconfig.base.json'
       - '.github/workflows/deploy-anchor-bot.yml'
   workflow_dispatch:
 

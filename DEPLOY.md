@@ -172,7 +172,7 @@ For the demo, an admin moves the bot on cue. `/fastforward <days>` moves the dem
 
 Deploy while the family is quiet. During a rollout, the old and the new instance run together for a short time, and the last write to the record wins.
 
-- A push to `main` that changes `apps/api`, `package.json`, or `pnpm-lock.yaml` deploys a new version automatically (see "Automatic deploy"). To deploy by hand, repeat steps 1 to 3 of the deploy.
+- A push to `main` that changes `apps/api` or a root build file deploys a new version automatically (see "Automatic deploy"). To deploy by hand, repeat steps 1 to 3 of the deploy.
 - To stop the bot and the cost, delete the service. The bucket keeps the record.
 - Before a laptop run with the same token, delete the service. The service polls the token all the time.
 
@@ -182,7 +182,7 @@ gcloud run services delete anchor-bot --project=$PROJECT --region=$REGION
 
 ### Automatic deploy
 
-The workflow `.github/workflows/deploy-anchor-bot.yml` deploys `anchor-bot` when a push to `main` changes `apps/api`, `package.json`, or `pnpm-lock.yaml`. It runs `pnpm nx test api`, builds the image, pushes the image with the short commit as its tag, and deploys the image as a new revision. The revision keeps the flags, the secrets, and the volume of the service. The "Run workflow" button on the Actions tab starts the same deploy by hand.
+The workflow `.github/workflows/deploy-anchor-bot.yml` deploys `anchor-bot` when a push to `main` changes `apps/api` or a root file that the image copies (`package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `nx.json`, `tsconfig.base.json`). It runs `pnpm nx test api`, builds the image, pushes the image with the short commit as its tag, and deploys the image as a new revision. The revision keeps the flags, the secrets, and the volume of the service. The "Run workflow" button on the Actions tab starts the same deploy by hand.
 
 The workflow signs in to Google Cloud through Workload Identity Federation, so GitHub stores no key. Only a workflow run from the repository `High-Contrast-Team/anchor` on `main` gets the deployer identity.
 
@@ -209,4 +209,4 @@ gcloud iam service-accounts add-iam-policy-binding $SA --project=$PROJECT \
   --member=serviceAccount:$DEPLOYER --role=roles/iam.serviceAccountUser
 ```
 
-The deployer can push images to the `anchor` repository and deploy `anchor-bot` as `$SA`. The deployer cannot read the secrets or the record.
+The deployer can push images to the `anchor` repository and deploy `anchor-bot` as `$SA`. The deployer holds no role on the secrets or on the bucket. A deployed revision runs as `$SA` and can read both, so a merge to `main` is a deploy of trusted code.
