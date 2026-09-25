@@ -1,50 +1,67 @@
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  type User,
-} from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { firebaseConfigured, firestoreRegion, getFirebaseAuth, getFirebaseDb } from './firebase';
+const TOKEN_KEY = 'anchor_auth_token';
+const USER_KEY = 'anchor_auth_user';
 
 export type AuthUser = {
   uid: string;
-  email?: string | null;
-  displayName?: string | null;
+  email?: string;
+  displayName?: string;
+  region?: string;
 };
 
-export type Consents = {
-  terms: boolean;
-  privacy: boolean;
-  marketing: boolean;
-  at: string;
+type AuthResponse = {
+  user: AuthUser;
+  token: string;
 };
 
-function toAuthUser(user: User): AuthUser {
-  return {
-    uid: user.uid,
-    email: user.email,
-    displayName: user.displayName,
-  };
+type Listener = (user: AuthUser | null) => void;
+
+const listeners = new Set<Listener>();
+
+function readStoredUser(): AuthUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
+function persistSession(user: AuthUser | null, token: string | null) {
+  if (typeof window === 'undefined') return;
+  if (user && token) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+  }
+  for (const listener of listeners) listener(user);
+}
+
+async function parseError(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { message?: string | string[] };
+    if (Array.isArray(body.message)) return body.message.join(', ');
+    if (typeof body.message === 'string') return body.message;
+  } catch {
+    /* ignore */
+  }
+  return `Request failed (${response.status})`;
 }
 
 export async function getIdToken(): Promise<string | null> {
-  if (!firebaseConfigured()) return null;
-  const user = getFirebaseAuth().currentUser;
-  if (!user) return null;
-  return user.getIdToken();
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
 }
 
-export function watchAuth(callback: (user: AuthUser | null) => void): () => void {
-  if (!firebaseConfigured()) {
-    callback(null);
-    return () => undefined;
-  }
-  return onAuthStateChanged(getFirebaseAuth(), (user) => {
-    callback(user ? toAuthUser(user) : null);
-  });
+export function watchAuth(callback: Listener): () => void {
+  listeners.add(callback);
+  callback(readStoredUser());
+  return () => {
+    listeners.delete(callback);
+  };
 }
 
 export async function signUp(input: {
@@ -56,39 +73,48 @@ export async function signUp(input: {
   if (!input.consents.terms || !input.consents.privacy) {
     throw new Error('You must accept the Terms and Privacy Policy.');
   }
-  if (!firebaseConfigured()) {
-    throw new Error('Firebase is not configured. Set PUBLIC_FIREBASE_* env vars.');
-  }
-  const auth = getFirebaseAuth();
-  const credential = await createUserWithEmailAndPassword(auth, input.email.trim(), input.password);
-  if (input.displayName.trim()) {
-    await updateProfile(credential.user, { displayName: input.displayName.trim() });
-  }
-  const consents: Consents = {
-    terms: true,
-    privacy: true,
-    marketing: Boolean(input.consents.marketing),
-    at: new Date().toISOString(),
-  };
-  await setDoc(doc(getFirebaseDb(), 'users', credential.user.uid), {
-    email: credential.user.email,
-    displayName: input.displayName.trim() || null,
-    region: firestoreRegion,
-    createdAt: serverTimestamp(),
-    consents,
+  const response = await fetch('/api/auth/signup', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
   });
-  return toAuthUser(credential.user);
+  if (!response.ok) throw new Error(await parseError(response));
+  const data = (await response.json()) as AuthResponse;
+  persistSession(data.user, data.token);
+  return data.user;
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
-  if (!firebaseConfigured()) {
-    throw new Error('Firebase is not configured. Set PUBLIC_FIREBASE_* env vars.');
-  }
-  const credential = await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-  return toAuthUser(credential.user);
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!response.ok) throw new Error(await parseError(response));
+  const data = (await response.json()) as AuthResponse;
+  persistSession(data.user, data.token);
+  return data.user;
 }
 
 export async function logOut(): Promise<void> {
-  if (!firebaseConfigured()) return;
-  await signOut(getFirebaseAuth());
+  persistSession(null, null);
+}
+
+export async function refreshMe(): Promise<AuthUser | null> {
+  const token = await getIdToken();
+  if (!token) {
+    persistSession(null, null);
+    return null;
+  }
+  const response = await fetch('/api/auth/me', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    persistSession(null, null);
+    return null;
+  }
+  const user = (await response.json()) as AuthUser;
+  const existingToken = await getIdToken();
+  persistSession(user, existingToken);
+  return user;
 }

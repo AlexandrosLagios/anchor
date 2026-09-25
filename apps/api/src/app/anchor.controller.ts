@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Header,
   HttpCode,
@@ -9,14 +10,16 @@ import {
   NotFoundException,
   Param,
   Post,
+  Req,
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { AnchorService, Role } from './anchor.service';
 import { AuthGuard, CurrentUser, type AuthUser } from './auth.guard';
-import { download, sendWhatsApp, twiml } from './twilio';
+import { download, sendWhatsApp, twiml, validTwilioRequest } from './twilio';
 import { UserStoreService } from './user-store.service';
 
 type TwilioForm = Record<string, string | undefined>;
@@ -48,14 +51,25 @@ export class RootController {
   @Post('whatsapp')
   @HttpCode(200)
   @Header('content-type', 'text/xml')
-  whatsapp(@Body() body: TwilioForm) {
+  whatsapp(@Req() req: Request, @Body() body: TwilioForm) {
+    const params: Record<string, string> = {};
+    for (const [key, value] of Object.entries(body)) {
+      if (typeof value === 'string') params[key] = value;
+    }
+    const url = `${(process.env.PUBLIC_URL ?? '').replace(/\/$/, '')}/whatsapp`;
+    if (!validTwilioRequest(url, params, req.header('x-twilio-signature') ?? undefined)) {
+      throw new ForbiddenException('Invalid Twilio signature');
+    }
+
     const from = body.From ?? '';
     const isAudio = body.MediaContentType0?.startsWith('audio/');
     const isImage = body.MediaContentType0?.startsWith('image/');
     const text = (body.Body ?? '').trim();
+    const owner = AnchorService.whatsappOwner();
 
     (async () => {
-      const state = this.anchor.state();
+      await this.anchor.ensure(owner);
+      const state = this.anchor.state(owner);
       const waiting = state.moments.some((moment) => moment.phase === 'awaiting' || moment.phase === 'hinted');
 
       if (waiting) {
@@ -63,7 +77,7 @@ export class RootController {
           isAudio && body.MediaUrl0
             ? { data: await download(body.MediaUrl0), mimeType: body.MediaContentType0 ?? '' }
             : undefined;
-        await this.anchor.replyAsAthina({ text: text || undefined, audio });
+        await this.anchor.replyAsAthina(owner, { text: text || undefined, audio });
         return;
       }
 
@@ -72,6 +86,7 @@ export class RootController {
           ? { data: await download(body.MediaUrl0), mimeType: body.MediaContentType0 ?? '' }
           : undefined;
       const ack = await this.anchor.addMoment(
+        owner,
         {
           text: text || undefined,
           audio: isAudio ? media : undefined,
@@ -85,8 +100,6 @@ export class RootController {
     return twiml();
   }
 }
-
-// ponytail: no X-Twilio-Signature check yet — add before real family data flows through here
 @Controller('api')
 @UseGuards(AuthGuard)
 export class AnchorController {
@@ -96,36 +109,32 @@ export class AnchorController {
   ) {}
 
   @Get('state')
-  state() {
-    return this.anchor.state();
+  async state(@CurrentUser() user: AuthUser | null) {
+    const owner = AnchorService.ownerFor(user?.uid);
+    await this.anchor.ensure(owner);
+    return this.anchor.state(owner);
   }
 
   @Post('moment')
   async moment(@Body() body: MomentBody, @CurrentUser() user: AuthUser | null) {
+    const owner = AnchorService.ownerFor(user?.uid);
     const media = decodeMedia(body.mediaBase64, body.mediaMimeType);
-    const ack = await this.anchor.addMoment({
+    const ack = await this.anchor.addMoment(owner, {
       text: body.text,
       from: body.from,
       image: media?.mimeType.startsWith('image/') ? media : undefined,
       audio: media?.mimeType.startsWith('audio/') ? media : undefined,
     });
-    await this.persist(user);
-    return { ack };
-  }
-
-  /** Alias kept for the old rehearse script and muscle memory */
-  @Post('news')
-  async news(@Body() body: { text: string; from?: Role }, @CurrentUser() user: AuthUser | null) {
-    const ack = await this.anchor.addMoment({ text: body.text, from: body.from });
-    await this.persist(user);
+    await this.persist(owner);
     return { ack };
   }
 
   @Post('bring-back')
   async bringBack(@Body() body: { momentId?: string } = {}, @CurrentUser() user: AuthUser | null) {
-    const result = await this.anchor.bringBack(body.momentId);
+    const owner = AnchorService.ownerFor(user?.uid);
+    const result = await this.anchor.bringBack(owner, body.momentId);
     if (!result.ok) throw new BadRequestException(result.reason);
-    await this.persist(user);
+    await this.persist(owner);
     return result;
   }
 
@@ -134,13 +143,14 @@ export class AnchorController {
     @Body() body: { text?: string; mediaBase64?: string; mediaMimeType?: string },
     @CurrentUser() user: AuthUser | null,
   ) {
+    const owner = AnchorService.ownerFor(user?.uid);
     const media = decodeMedia(body.mediaBase64, body.mediaMimeType);
-    const result = await this.anchor.replyAsAthina({
+    const result = await this.anchor.replyAsAthina(owner, {
       text: body.text,
       audio: media?.mimeType.startsWith('audio/') ? media : undefined,
     });
     if (!result.ok) throw new BadRequestException(result.reason);
-    await this.persist(user);
+    await this.persist(owner);
     return result;
   }
 
@@ -157,16 +167,18 @@ export class AnchorController {
   @Get('demo.html')
   @Header('content-type', 'text/html; charset=utf-8')
   @Header('content-disposition', 'attachment; filename="anchor-demo.html"')
-  demo() {
+  async demo(@CurrentUser() user: AuthUser | null) {
+    const owner = AnchorService.ownerFor(user?.uid);
+    await this.anchor.ensure(owner);
     const page = readFileSync(join(__dirname, 'assets', 'index.html'), 'utf8');
-    const demo = JSON.stringify(this.anchor.demo()).replace(/</g, '\\u003c');
+    const demo = JSON.stringify(this.anchor.demo(owner)).replace(/</g, '\\u003c');
     return page.replace('<script>', () => `<script>window.DEMO = ${demo};</script>\n<script>`);
   }
 
-  private async persist(user: AuthUser | null) {
-    if (!user) return;
-    const state = this.anchor.state();
-    await this.userStore.persistSnapshot(user.uid, {
+  private async persist(owner: string) {
+    if (owner === 'demo' || owner === 'whatsapp') return;
+    const state = this.anchor.state(owner);
+    await this.userStore.persistSnapshot(owner, {
       chat: state.chat,
       moments: state.moments,
       activeId: state.activeId,

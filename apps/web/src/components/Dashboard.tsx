@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { firebaseConfigured } from '../lib/firebase';
 import { watchAuth, type AuthUser } from '../lib/auth';
 import './Dashboard.css';
 
@@ -85,12 +84,9 @@ export function Dashboard() {
   const lastSnapshot = useRef('');
   const announce = useRef('');
   const requireAuth = import.meta.env.PUBLIC_REQUIRE_AUTH === 'true' || import.meta.env.PUBLIC_REQUIRE_AUTH === '1';
-  const writesLocked = requireAuth && firebaseConfigured() && !user;
+  const writesLocked = requireAuth && !user;
 
-  useEffect(() => {
-    if (!firebaseConfigured()) return;
-    return watchAuth(setUser);
-  }, []);
+  useEffect(() => watchAuth(setUser), []);
 
   const refresh = useCallback(async () => {
     try {
