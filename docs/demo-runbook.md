@@ -22,7 +22,7 @@ Anchor takes every name from Telegram. Set the first name of each demo account t
 
 Check the bot and the group:
 
-1. Make sure that the live bot runs the v2 build: revision `anchor-bot-00007-zfm` (commit `3f5e1db`) or later. Revision `00007` takes the new first name of a renamed account, so Anchor calls the elder "Sofia". The technical runbook names the current revision.
+1. Make sure that the live bot runs the v2 build: revision `anchor-bot-00008-6cc` (commit `03ba922`) or later. Revision `00007` takes the new first name of a renamed account, so Anchor calls the elder "Sofia". Revision `00008` reads the reminder and then a family moment in one call. The technical runbook names the current revision.
 2. Use the group of the demo. A person is a member in one family only, so a new group sends Sofia's private replies to the old family.
 3. Make sure that Anchor is an admin in the group. Anchor sends an ephemeral message only as an admin. Promote Anchor at least one day before, because a move to a supergroup posts `intro` a second time.
 4. Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.
@@ -75,7 +75,7 @@ Beat 5 uses the sentence of the design, because Anchor offers a reminder only fo
 
 The script does not show the gentle help for a hesitation ("a school?"), the "Another time" buttons, or the fade of an unanswered offer. The Closer can answer about each in the Q&A.
 
-The call in beat 6 needs the batched call, which is in development: one call reads the due reminder and then the newest moment that Sofia has no story for. Until the batched call lands, the call reads only the reminder and says goodbye, so the run ends about 50 seconds earlier. The call skips Maria's moment, because Sofia told her story about it in beat 4. Sofia gives no answer to the reminder, because every word before the share question goes out with her story, and the pills must stay private. A "Yes" posts her words and her voice from the call in the group. "Just the words" posts her words without the voice. A call costs about 0.15 USD per minute, and lasts at most 10 minutes.
+The call in beat 6 reads the due reminder and then the newest moment that Sofia has no story for. When no such moment exists, the call reads only the reminder and says goodbye, so the run ends about 50 seconds earlier. The call skips Maria's moment, because Sofia told her story about it in beat 4. Sofia gives no answer to the reminder, because every word before the share question goes out with her story, and the pills must stay private. A "Yes" posts her words and her voice from the call in the group. "Just the words" posts her words without the voice. A call costs about 0.15 USD per minute, and lasts at most 10 minutes.
 
 ## If a beat fails
 
