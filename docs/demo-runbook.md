@@ -18,7 +18,7 @@ Anchor takes every name from Telegram. Set the first name of each demo account t
 
 Check the bot and the group:
 
-1. Make sure that the live bot runs `main` at `3d96948` or later, which has `/private` and `/send`. If it does not, redeploy with `DEPLOY.md` steps 1 to 3.
+1. Make sure that the live bot runs `main` at `3d96948` or later, which has `/private` and `/send`. If it does not, redeploy from a clean checkout with `git switch --detach origin/main && pnpm deploy:bot`.
 2. Use the group of the rehearsals. A person is a storyteller in one family only, so a new group sends the grandfather's private replies to the old family.
 3. Make sure that Anchor is an admin in the group. Promote Anchor at least one day before, because a move to a supergroup posts `intro` a second time.
 4. Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.
@@ -72,3 +72,14 @@ gcloud run services logs read anchor-bot --project=a11y-hack26ath-267 --region=e
 1. Before each rehearsal, do steps 1 and 2 of "Reset and prepare".
 2. Run the script with a stopwatch, and write down the time of each beat.
 3. If the run takes more than 3 minutes, cut the optional beat, then shorten the narration.
+4. After each rehearsal, run the optional beat once: the "Then and now" album shows the 1958 photo and Eleni's photo.
+5. In the group, send "Anchor, when did Nikos start school?". Anchor replies with the photo and its date, then his voice story.
+
+## Show a lookback on cue
+
+Caution: `/fastforward` moves the family clock of the whole bot for good. After `/fastforward 7`, every new moment shows a date 7 days ahead, also in the gentle help of beat 5. Run this check after the demo, or with the dev bot.
+
+1. Send `/fastforward 7` in the group. Anchor replies "⏩ It's now … on the family clock."
+2. Send `/memory` at once. The "One week ago" post appears at once.
+
+The 18:00 slot does not post on cue. On the real clock, a `/fastforward 7` at midday puts the 18:00 slot of the jump on day 6, so nothing posts until the next real 18:00.
