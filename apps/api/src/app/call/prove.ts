@@ -35,8 +35,10 @@ function fail(message: string): never {
 const publicUrl = env('ANCHOR_CALL_PUBLIC_URL');
 const openaiKey = env('OPENAI_API_KEY');
 const accountSid = env('TWILIO_ACCOUNT_SID');
+// ponytail: copies the Basic auth of twilio.ts, which does not export it; the review after the demo removes the copy
 const twilioAuth = `Basic ${Buffer.from(`${env('TWILIO_API_KEY_SID')}:${env('TWILIO_API_KEY_SECRET')}`).toString('base64')}`;
 
+// ponytail: copies the ffmpeg pipeline of transports/voice.ts with a mulaw input; the review after the demo removes the copy
 function toOgg(mulaw: Buffer): Buffer {
   const ffmpeg = spawnSync('ffmpeg', ['-f', 'mulaw', '-ar', '8000', '-ac', '1', '-i', 'pipe:0', '-c:a', 'libopus', '-b:a', '24k', '-f', 'ogg', 'pipe:1'], { input: mulaw });
   if (ffmpeg.error || ffmpeg.status !== 0) throw new Error(`ffmpeg failed: ${ffmpeg.error ?? ffmpeg.stderr.toString().trim().split('\n').at(-1)}`);
