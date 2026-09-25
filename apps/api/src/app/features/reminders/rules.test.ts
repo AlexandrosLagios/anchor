@@ -4,6 +4,7 @@ import { expect, test } from 'vitest';
 import type { Incoming } from '../../core/types';
 import { around, nextLocal, passesGate } from './rules';
 
+const FRIDAY = new Date(2026, 8, 25, 12).getTime();
 const group = (text?: string, extra: Partial<Incoming> = {}): Incoming => ({
   familyId: '-100',
   chat: 'group',
@@ -23,8 +24,11 @@ test.each([
   'The bus leaves at 17:30',
   'Pick up Maria at 5pm',
   'We meet at 8',
+  "Dad, don't forget your pills tomorrow at 8.",
+  'Remember the market today, Friday, at 10:00',
+  'Remember the bakery on Saturday morning',
 ])('%s passes the gate', (text) => {
-  expect(passesGate(group(text))).toBe(true);
+  expect(passesGate(group(text), FRIDAY)).toBe(true);
 });
 
 test.each([
@@ -36,8 +40,10 @@ test.each([
   ['a photo with no caption', group(undefined, { photo: { id: 'p' } })],
   ['a forwarded message', group('Remember your pickup tomorrow', { forwarded: true })],
   ['a price', group('The cake was 12.50')],
+  ['a weekday after tomorrow', group('@odisseasmk , remember to receive your prize on Sunday')],
+  ['a weekday after tomorrow in another case', group("Don't forget the dentist on MONDAY at 10:00")],
 ])('%s does not pass the gate', (_, event) => {
-  expect(passesGate(event)).toBe(false);
+  expect(passesGate(event, FRIDAY)).toBe(false);
 });
 
 const at = (day: number, hours: number, minutes = 0) => new Date(2026, 8, day, hours, minutes).getTime();
