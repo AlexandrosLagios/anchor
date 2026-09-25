@@ -1,0 +1,8 @@
+---
+import FamilyLayout from '../../layouts/FamilyLayout.astro';
+import { FamilyApp } from '../../components/family/FamilyApp';
+---
+
+<FamilyLayout title="Overview">
+  <FamilyApp client:load view="overview" />
+</FamilyLayout>

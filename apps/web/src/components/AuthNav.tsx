@@ -8,8 +8,8 @@ export function AuthNav() {
 
   if (user) {
     return (
-      <a href="/account" className="auth-nav-link" title={user.email ?? 'Account'}>
-        {user.displayName || user.email || 'Account'}
+      <a href="/family" className="auth-nav-link" title={user.email ?? 'Family Space'}>
+        {user.displayName || user.email || 'Family Space'}
       </a>
     );
   }
