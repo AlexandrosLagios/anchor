@@ -1,24 +1,15 @@
 import { Logger } from '@nestjs/common';
-import { cut, lines } from '../core/lines';
+import { cut, dateOf, lines } from '../core/lines';
 import type { Feature, Moment } from '../core/types';
 import * as model from '../model/model';
+import { ADDRESS, pictureOf } from './capture/filter';
 
 const logger = new Logger('Ask');
-
-const QUESTION = /^anchor\b[,:]?\s+/i;
-
-function momentDate(moment: Moment) {
-  return moment.eventDate ? new Date(`${moment.eventDate}T12:00`) : new Date(moment.savedAt);
-}
-
-function formatDate(date: Date) {
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
 
 function choiceLine(moment: Moment) {
   const stories = moment.stories.map((story) => cut(story.text, 200)).join(' | ');
   const people = moment.people.join(', ');
-  return `- id ${moment.id}: "${moment.title}", ${formatDate(momentDate(moment))}, people: ${people}, stories: ${stories}`;
+  return `- id ${moment.id}: "${moment.title}", ${dateOf(moment)}, people: ${people}, stories: ${stories}`;
 }
 
 // ponytail: every shareable moment goes into the prompt; shortlist by people or date when a record reaches thousands of moments
@@ -36,7 +27,7 @@ export const ask: Feature = {
   async handle(event, family, ctx) {
     if (event.chat !== 'group' || !family || event.forwarded) return false;
     const text = event.text ?? '';
-    const match = QUESTION.exec(text);
+    const match = ADDRESS.exec(text);
     if (!match) return false;
     const question = text.slice(match[0].length);
 
@@ -65,14 +56,19 @@ export const ask: Feature = {
     if (!moment || moment.sensitive) return notFound();
 
     const names = [...new Set(moment.stories.map((story) => story.by.name))];
-    await ctx.transport(family.id).send(event.chatId, {
-      ...(moment.video ? { video: moment.video } : moment.photo ? { photo: moment.photo } : {}),
-      text: lines.askAnswer(moment.title, formatDate(momentDate(moment)), names),
+    const { messageId } = await ctx.transport(family.id).send(event.chatId, {
+      ...pictureOf(moment),
+      text: lines.askAnswer(moment.title, dateOf(moment), names),
       replyTo: event.messageId,
     });
+    moment.memoryPostIds.push(messageId);
 
     const voiceStory = moment.stories.find((story) => story.voice);
-    if (voiceStory) await ctx.transport(family.id).send(event.chatId, { voice: voiceStory.voice });
+    if (voiceStory) {
+      const voiceSent = await ctx.transport(family.id).send(event.chatId, { voice: voiceStory.voice });
+      moment.memoryPostIds.push(voiceSent.messageId);
+    }
+    ctx.store.save();
 
     return true;
   },

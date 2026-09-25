@@ -74,7 +74,7 @@ test('a match with earlier match posts an album with the older moment first and 
       messageId: 'sent-1',
       message: {
         album: [{ photo: { id: 'photo-older' } }, { photo: { id: 'photo-newer' } }],
-        text: lines.echoCaption(dimitris.name, older.text, sofia.name, newer.text),
+        text: lines.echoCaption(older, newer),
       },
     },
   ]);
@@ -111,7 +111,7 @@ test('a match with earlier new keeps the newer moment first, the journey case', 
       messageId: 'sent-1',
       message: {
         album: [{ photo: { id: 'grandfather-photo' } }, { photo: { id: 'maria-photo' } }],
-        text: lines.echoCaption(dimitris.name, grandfather.text, sofia.name, maria.text),
+        text: lines.echoCaption(grandfather, maria),
       },
     },
   ]);
@@ -131,7 +131,7 @@ test('different eventDate values order the older event first, even when earlier 
       messageId: 'sent-1',
       message: {
         album: [{ photo: { id: 'p-new' } }, { photo: { id: 'p-match' } }],
-        text: lines.echoCaption(dimitris.name, newer.text, sofia.name, older.text),
+        text: lines.echoCaption(newer, older),
       },
     },
   ]);
@@ -207,7 +207,7 @@ test('a send failure for the first new moment does not stop the second from gett
       messageId: 'sent-1',
       message: {
         album: [{ photo: { id: 'first-photo' } }, { photo: { id: 'second-photo' } }],
-        text: lines.echoCaption(sofia.name, first.text, dimitris.name, second.text),
+        text: lines.echoCaption(first, second),
       },
     },
   ]);
@@ -331,8 +331,28 @@ test('one picture posts a single photo or video message', async () => {
 
   expect(transport.sent[0].message).toEqual({
     video: { id: 'video-only' },
-    text: lines.echoCaption(dimitris.name, older.text, sofia.name, newMoment.text),
+    text: lines.echoCaption(older, newMoment),
   });
+});
+
+test('a then-and-now post with one wordless photo names that photo by its title and quotes the other moment', async () => {
+  const { transport, family, router } = setup();
+  const older = makeMoment({ by: dimitris, savedAt: NOW - 1000, text: 'My first day, 1958', photo: { id: 'photo-older' } });
+  const newMoment = makeMoment({
+    by: sofia,
+    savedAt: NOW,
+    title: "Maria's first day at school",
+    text: "Maria's first day at school",
+    wordless: true,
+    photo: { id: 'photo-newer' },
+  });
+  family.moments.push(older, newMoment);
+  vi.mocked(ask).mockResolvedValueOnce({ momentId: older.id, earlier: 'match' });
+  await router.tick({ from: NOW - 10, to: NOW });
+
+  expect(transport.sent[0].message.text).toBe(
+    "Then and now 💛\nDimitris shared: «My first day, 1958»\nSofia shared a photo: Maria's first day at school",
+  );
 });
 
 test('no picture posts the caption as text', async () => {
@@ -343,7 +363,21 @@ test('no picture posts the caption as text', async () => {
   vi.mocked(ask).mockResolvedValueOnce({ momentId: older.id, earlier: 'match' });
   await router.tick({ from: NOW - 10, to: NOW });
 
-  expect(transport.sent[0].message).toEqual({ text: lines.echoCaption(dimitris.name, older.text, sofia.name, newMoment.text) });
+  expect(transport.sent[0].message).toEqual({ text: lines.echoCaption(older, newMoment) });
+});
+
+test('a matched echo sets echoPostId on the newer moment to the id of the post', async () => {
+  const { file, transport, family, router } = setup();
+  const older = makeMoment({ by: dimitris, savedAt: NOW - 1000, photo: { id: 'photo-older' } });
+  const newMoment = makeMoment({ by: sofia, savedAt: NOW, photo: { id: 'photo-newer' } });
+  family.moments.push(older, newMoment);
+  vi.mocked(ask).mockResolvedValueOnce({ momentId: older.id, earlier: 'match' });
+  await router.tick({ from: NOW - 10, to: NOW });
+
+  expect(transport.sent).toHaveLength(1);
+  expect(newMoment.echoPostId).toBe(transport.sent[0].messageId);
+  const reloaded = openStore(file).family('-100');
+  expect(reloaded?.moments.find((m) => m.id === newMoment.id)?.echoPostId).toBe(transport.sent[0].messageId);
 });
 
 test('the caption is cut at 1024 characters, the Telegram caption limit', async () => {
@@ -358,5 +392,5 @@ test('the caption is cut at 1024 characters, the Telegram caption limit', async 
 
   const text = transport.sent[0].message.text ?? '';
   expect(text).toHaveLength(1024);
-  expect(lines.echoCaption(olderBy.name, older.text, newerBy.name, newer.text).startsWith(text)).toBe(true);
+  expect(lines.echoCaption(older, newer).startsWith(text)).toBe(true);
 });

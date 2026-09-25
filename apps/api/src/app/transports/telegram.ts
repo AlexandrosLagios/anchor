@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { cut } from '../core/lines';
-import { Blocked, type Incoming, type Media, type Outgoing, type Person, type Transport } from '../core/types';
+import { Blocked, type Button, type Incoming, type Media, type Outgoing, type Person, type Transport } from '../core/types';
 import { httpFetch } from '../http';
 import { toOgg } from './voice';
 
@@ -21,6 +21,7 @@ type Message = {
   photo?: { file_id: string; width: number; height: number }[];
   video?: { file_id: string; mime_type?: string; thumbnail?: { file_id: string } };
   voice?: { file_id: string; mime_type?: string };
+  media_group_id?: string;
   forward_origin?: object;
   reply_to_message?: Message;
   migrate_to_chat_id?: number;
@@ -59,6 +60,7 @@ function fromMessage(message: Message, username: string): Incoming {
     video: video && { id: video.file_id, mimeType: video.mime_type },
     thumbnail: video?.thumbnail && { id: video.thumbnail.file_id, mimeType: 'image/jpeg' },
     voice: voice && { id: voice.file_id, mimeType: voice.mime_type ?? 'audio/ogg' },
+    albumId: message.media_group_id,
     forwarded: Boolean(message.forward_origin),
     unsupported: Boolean(message.animation || message.document || message.audio) || !(text || photo || video || voice || migratedTo),
     replyTo: reply && String(reply.message_id),
@@ -102,6 +104,8 @@ function encode(params: Record<string, unknown>) {
   }
   return { body: form };
 }
+
+const toButton = ({ label, data, url }: Button) => (url ? { text: label, url } : { text: label, callback_data: data });
 
 async function call<T>(token: string, method: string, params: Record<string, unknown> = {}, signal = AbortSignal.timeout(30_000)): Promise<T> {
   const response = await httpFetch(`${API}/bot${token}/${method}`, { method: 'POST', ...encode(params), signal });
@@ -175,9 +179,7 @@ export class TelegramTransport implements Transport {
     const params = {
       chat_id: chatId,
       reply_parameters,
-      reply_markup: buttons?.length
-        ? { inline_keyboard: [buttons.map(({ label, data, url }) => (url ? { text: label, url } : { text: label, callback_data: data }))] }
-        : undefined,
+      reply_markup: buttons?.length ? { inline_keyboard: buttons.map((button) => [toButton(button)]) } : undefined,
     };
     let sent: Message;
     if (video) sent = await call<Message>(this.token, 'sendVideo', { ...params, ...captioned, video: video.id });

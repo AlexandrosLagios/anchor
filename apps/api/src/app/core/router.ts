@@ -10,9 +10,10 @@ export function createRouter(features: Feature[], ctx: Context) {
       const family = event.familyId ? ctx.store.family(event.familyId) : ctx.store.familyOfStoryteller(event.sender.id);
       for (const feature of features) if (await feature.handle?.(event, family, ctx)) return;
       if (event.chat !== 'private') return;
-      const storyteller = family?.storytellers.some((person) => person.id === event.sender.id);
+      const storyteller = family?.storytellers.find((person) => person.id === event.sender.id);
+      const text = storyteller ? (storyteller.started ? lines.noInvitation : lines.notJoined) : lines.pointer;
       // a private chat id carries the transport prefix of a family id
-      await ctx.transport(family?.id ?? event.chatId).send(event.chatId, { text: storyteller ? lines.noInvitation : lines.pointer });
+      await ctx.transport(family?.id ?? event.chatId).send(event.chatId, { text });
     },
 
     async tick(window: Window) {

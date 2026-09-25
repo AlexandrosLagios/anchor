@@ -14,6 +14,7 @@ export type Incoming = {
   video?: Media;
   thumbnail?: Media; // the preview frame of the video, for the classification
   voice?: Media;
+  albumId?: string; // Telegram media_group_id: photos of one album share it
   forwarded?: boolean;
   unsupported?: boolean; // sticker, GIF, video note, document, poll, service message
   replyTo?: string;
@@ -60,7 +61,8 @@ export type Moment = {
   by: Person;
   messageIds: string[]; // the group messages of the bundle
   savedAt: number; // demo-clock ms
-  text: string; // the sender's own words, verbatim
+  text: string; // the sender's own words, verbatim, or the title when wordless
+  wordless?: boolean; // the sharer sent no words, so text holds the model's title
   photo?: Media;
   video?: Media; // a return shows the video when the moment has one
   voice?: Media;
@@ -75,6 +77,7 @@ export type Moment = {
   memoryPostIds: string[];
   returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
   echo?: string; // the id of the older moment that this moment echoes
+  echoPostId?: string; // the first message of the then-and-now post
 };
 
 export type Invitation = {
@@ -84,6 +87,8 @@ export type Invitation = {
   story?: { text: string; voice?: Media };
   shareAsked: boolean;
   helped: boolean; // the gentle help went out once
+  sentAt: number; // demo-clock ms of the delivery
+  replied: boolean; // any reply, a question, or "What is this?" came
 };
 
 export type Storyteller = Person & {

@@ -4,12 +4,15 @@ import { createRouter } from './core/router';
 import { openStore } from './core/store';
 import type { Feature } from './core/types';
 import { ask } from './features/ask';
+import { capture, forget } from './features/capture/capture';
 import { echoes } from './features/echoes';
 import { fastforward } from './features/fastforward';
 import { intro } from './features/intro';
+import { invitations } from './features/invitations';
+import { memories } from './features/memories';
 import { TelegramTransport } from './transports/telegram';
 
-const FEATURES: Feature[] = [intro, fastforward, ask, echoes];
+export const FEATURES: Feature[] = [intro, fastforward, forget, invitations, memories, ask, capture, echoes];
 
 @Injectable()
 export class FamilyService implements OnApplicationBootstrap, OnApplicationShutdown {

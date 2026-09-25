@@ -72,6 +72,12 @@ test('toIncoming keeps the largest photo size and the caption as text', () => {
   });
 });
 
+test('toIncoming maps the media group of an album photo as albumId, and leaves it unset for a single photo', () => {
+  const photo = [{ ...file('album-1'), width: 1280, height: 960 }];
+  expect(toIncoming(message({ photo, media_group_id: '13579246801357924' }), BOT)?.albumId).toBe('13579246801357924');
+  expect(toIncoming(message({ photo }), BOT)?.albumId).toBeUndefined();
+});
+
 test('toIncoming maps a voice note', () => {
   const event = toIncoming(message({ voice: { ...file('voice-1'), duration: 4, mime_type: 'audio/ogg' } }), BOT);
   expect(event).toMatchObject({ voice: { id: 'voice-1', mimeType: 'audio/ogg' }, unsupported: false });
@@ -286,13 +292,27 @@ test('send posts a photo with a caption clipped to 1024 characters, the reply, a
       reply_parameters: { message_id: 42, allow_sending_without_reply: true },
       reply_markup: {
         inline_keyboard: [
-          [
-            { text: 'Not now', callback_data: 'not-now' },
-            { text: 'Start', url: `https://t.me/${BOT}?start=-1001234567890` },
-          ],
+          [{ text: 'Not now', callback_data: 'not-now' }],
+          [{ text: 'Start', url: `https://t.me/${BOT}?start=-1001234567890` }],
         ],
       },
     },
+  });
+});
+
+test('send puts each button in its own row', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.send('222', {
+    text: 'Pick one',
+    buttons: [
+      { label: 'One', data: 'one' },
+      { label: 'Two', data: 'two' },
+      { label: 'Three', data: 'three' },
+    ],
+  });
+  expect(calls.at(-1)?.params.reply_markup).toEqual({
+    inline_keyboard: [[{ text: 'One', callback_data: 'one' }], [{ text: 'Two', callback_data: 'two' }], [{ text: 'Three', callback_data: 'three' }]],
   });
 });
 

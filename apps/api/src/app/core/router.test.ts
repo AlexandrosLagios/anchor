@@ -67,13 +67,15 @@ test('route finds the family by familyId in a group and by storyteller in privat
   expect(seen).toEqual(['-100', '-100', undefined]);
 });
 
-test('an unhandled private message gets noInvitation from a storyteller and pointer from anyone else', async () => {
+test('an unhandled private message gets noInvitation from a joined storyteller, notJoined from one who has not started or stopped, and pointer from anyone else', async () => {
   const { router, store, transport } = setup([]);
-  store.addFamily('-100', '-100').storytellers.push({ id: '42', name: 'Nikos', started: true });
+  store.addFamily('-100', '-100').storytellers.push({ id: '42', name: 'Nikos', started: true }, { id: '43', name: 'Eleni', started: false });
   await router.route(privateMessage('42'));
+  await router.route(privateMessage('43'));
   await router.route(privateMessage('7'));
   expect(transport.sent.map(({ chatId, message }) => [chatId, message.text])).toEqual([
     ['42', lines.noInvitation],
+    ['43', lines.notJoined],
     ['7', lines.pointer],
   ]);
 });
