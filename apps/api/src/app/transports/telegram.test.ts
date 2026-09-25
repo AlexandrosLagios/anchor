@@ -601,3 +601,19 @@ test('the admin menu registers /fastforward as an ephemeral command and has no /
   expect(commands).not.toContain('send');
   expect(lines.commands.admins.find(({ command }) => command === 'fastforward')).toMatchObject({ is_ephemeral: true });
 });
+
+test('edit and remove give up after 5 seconds, so a hung call never stalls the tick', async () => {
+  const signals: (AbortSignal | undefined)[] = [];
+  botApi(() => ok(true));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  fetchMock.mockImplementation(async (_url, init) => {
+    signals.push(init?.signal ?? undefined);
+    return ok(true);
+  });
+  const timeout = vi.spyOn(AbortSignal, 'timeout');
+  await telegram.edit('222', '77', { text: 'All set 💛' });
+  await telegram.remove('-1001234567890', '6819514', '222');
+  expect(timeout.mock.calls).toEqual([[5000], [5000]]);
+  expect(signals).toHaveLength(2);
+  timeout.mockRestore();
+});
