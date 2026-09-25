@@ -154,7 +154,9 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
 | `nothingToInvite(name)` | {name} has seen every moment so far. |
 
-The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks". A step may change the wording of its own lines, but no line may break section 1.
+The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks".
+
+`invitation` and `memoryCaption` clip the quoted text to 600 characters and end the clip with "…". The caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. A step may change the wording of its own lines, but no line may break section 1.
 
 ## 5. Architecture
 
@@ -416,6 +418,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - The poll calls `getUpdates` with a long-poll timeout and omits `allowed_updates`. `message`, `callback_query`, and `my_chat_member` arrive by default. The offset advances after each update.
 - A bot that is a group admin gets every group message, whatever the privacy mode.
 - `toIncoming` maps a group message, a private message, a `callback_query`, and a `my_chat_member` update that adds the bot to a group.
+- In a group, a command can arrive as `/memory@<bot username>`. `toIncoming` strips the suffix when it names this bot, so the features match `/memory`, `/invite`, `/storyteller`, and `/start` exactly. A command that names another bot stays as it is.
 - `send` uses `sendMessage`, `sendPhoto`, or `sendVoice`, with `reply_parameters: { message_id }` for a reply. A caption holds at most 1024 characters.
 - A `{ wav }` voice goes through `voice.ts`, which runs `ffmpeg -f wav -i pipe:0 -c:a libopus -b:a 32k -f ogg pipe:1`. The OGG file uploads as multipart form data, and the result returns the new `file_id` as the voice media id.
 - A `file_id` belongs to the bot, not to a chat. The bot can resend a voice note from the group in a private chat, and the reverse.
