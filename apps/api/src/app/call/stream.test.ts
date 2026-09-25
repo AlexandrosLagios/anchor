@@ -91,3 +91,13 @@ test('a frame that is not JSON is ignored', async () => {
   start(socket, 'forged');
   await closed(socket);
 });
+
+test('a start frame without its start object is refused, and the server keeps running', async () => {
+  const socket = twilio();
+  await opened(socket);
+  socket.send(JSON.stringify({ event: 'start' }));
+  await closed(socket);
+  const next = twilio();
+  await opened(next);
+  next.close();
+});

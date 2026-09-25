@@ -56,10 +56,10 @@ function accept(twilio: WebSocket, connect: () => WebSocket) {
     if (event?.event !== 'start') return;
     clearTimeout(waiting);
     twilio.off('message', onMessage);
-    const token = event.start.customParameters?.token ?? '';
+    const token = event.start?.customParameters?.token ?? '';
     const call = expected.get(token);
     if (!call) {
-      log.warn(`Refused a call stream with an unknown token (${event.start.callSid})`);
+      log.warn('Refused a call stream with an unknown token');
       return twilio.close();
     }
     expected.delete(token);
