@@ -78,7 +78,7 @@ The bundler uses real time, because people type in real time. Every other rule i
 
 ### 4.4 Group stories
 
-- A group message that replies to a memory post is a story when the message is supported, not forwarded, and holds a voice note or at least 3 words.
+- A group message that replies to a memory post is a story when the message is supported, not forwarded, and holds a voice note or at least 3 words. A reply that matches the ask pattern of section 4.6 goes to `ask` instead. A reply to a then-and-now post is not a story.
 - A voice story gets one Gemini transcription (section 6.3).
 - The code appends the story to the moment. Then Anchor reacts with ❤ on the story message.
 
@@ -119,7 +119,8 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - `/storyteller`, sent by an admin as a reply to the message of a member, registers `event.replyToSender` as a storyteller. Anchor posts `storytellerStart(name)` with a URL button to `transport.startLink(family id)`.
 - `/start` in private, from a registered storyteller, gets `welcome(name)` with the buttons "Yes, I'd like that" and "Not now" (user story 1, "Say yes myself"). Only "Yes, I'd like that" sets `started` and sends `agreed(name)`. "Not now" sends `notNow`. Nothing comes back to a storyteller before that yes. Moments shared before the yes come back after it.
 - `/stop`, or the single word "stop" in private, sets `started` to false, closes the open invitation silently, and sends `stopped`. Nothing more comes back until `/start` and a new yes. The family is not told.
-- "Anchor, forget this", sent as a reply, deletes the moment or the story that owns the replied-to message. Anchor reacts with 👌.
+- "Anchor, forget this", sent as a reply, deletes the moment or the story that owns the replied-to message. Anchor reacts with 👌. An Ask Anchor answer belongs to its moment, because `ask` adds the answer post to `memoryPostIds`.
+- A forget that replies to a then-and-now post deletes neither moment, sends no 👌, and gets `forgetWhich`. One reply never deletes two moments on a guess. `echoes` stores the post id as `Moment.echoPostId` on the newer moment.
 - "Anchor, don't bring this back", sent as a reply, sets `sensitive` on the moment that owns the replied-to message. The moment stays in the record, and Anchor reacts with 👌.
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
 - `/memory` and `/invite` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
@@ -160,6 +161,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
 | `notJoined` | Thank you 🙂 If you'd like family moments from me, send /start. |
+| `forgetWhich` | This post shows two moments. Reply "Anchor, forget this" to the photo you want me to forget. |
 | `voiceNote` | 🎤 voice note |
 | `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
 | `nothingToInvite(name)` | {name} has seen every moment so far. |
@@ -304,6 +306,7 @@ export type Moment = {
   memoryPostIds: string[];
   returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
   echo?: string; // the id of the older moment that this moment echoes
+  echoPostId?: string; // the then-and-now post, on the newer moment
 };
 
 export type Invitation = {
