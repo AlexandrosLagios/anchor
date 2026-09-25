@@ -480,14 +480,18 @@ test('a silent invitation whose moment is gone or kept quiet closes at 3 hours w
   const moment = add();
   invite(moment);
   family.moments.length = 0;
+  ctx.store.save();
   await tickAt(at(25, 15));
-  expect(saved()?.storytellers[0].invitation).toBeUndefined();
+  expect(nikos().invitation).toBeUndefined();
+  expect(saved()?.storytellers[0]).toEqual({ id: '7', name: 'Nikos', started: true });
 
   family.moments.push(moment);
   moment.sensitive = true;
   invite(moment, { sentAt: at(25, 12) });
+  ctx.store.save();
   await tickAt(at(25, 16));
   expect(nikos().invitation).toBeUndefined();
+  expect(saved()?.storytellers[0]).toEqual({ id: '7', name: 'Nikos', started: true });
   expect(transport.sent).toEqual([]);
 });
 
