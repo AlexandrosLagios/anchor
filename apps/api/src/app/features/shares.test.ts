@@ -68,6 +68,11 @@ const inGroup = (button: string, sender = '1', overrides: Partial<Incoming> = {}
   ...overrides,
 });
 
+const member = (id: string) => {
+  const found = family.members.find((item) => item.id === id);
+  if (!found) throw new Error(`no member ${id}`);
+  return found;
+};
 const messages = () => transport.sent.map(({ chatId, message }) => [chatId, message]);
 const offerButtons = (id: string) => [
   { label: lines.buttons.sendIt, data: `shr:yes:${id}` },
@@ -117,7 +122,7 @@ test('the tick makes no offer for a sensitive moment', async () => {
 });
 
 test('the tick makes no offer for a sender without choices.shares', async () => {
-  family.members.find((member) => member.id === '1')!.choices.shares = false;
+  member('1').choices.shares = false;
   add();
   await tickAt(at(25, 12), at(25, 11));
   expect(family.offers).toEqual([]);
@@ -130,18 +135,18 @@ test('the tick makes no offer for a moment outside the window', async () => {
 });
 
 test('the tick makes no offer with no recipient', async () => {
-  family.members.find((member) => member.id === '7')!.choices.moments = false;
-  family.members.find((member) => member.id === '8')!.choices.moments = false;
+  member('7').choices.moments = false;
+  member('8').choices.moments = false;
   add();
   await tickAt(at(25, 12), at(25, 11));
   expect(family.offers).toEqual([]);
 });
 
 test('the recipients exclude the sender and members without started or choices.moments', async () => {
-  const sofia = family.members.find((member) => member.id === '1')!;
+  const sofia = member('1');
   sofia.started = true;
   sofia.choices.moments = true;
-  family.members.find((member) => member.id === '8')!.started = false;
+  member('8').started = false;
   add({ by: { id: '7', name: 'Nikos' } });
   await tickAt(at(25, 12), at(25, 11));
   expect(messages()[0]).toEqual(['-100', { text: lines.shareOffer(['Sofia']), onlyFor: '7', buttons: offerButtons(family.offers[0].id) }]);
@@ -172,7 +177,7 @@ test('"No thanks" removes the offer and changes nothing else', async () => {
   expect(await shares.handle(event, family, ctx)).toBe(true);
   expect(family.offers).toEqual([]);
   expect(transport.removed).toEqual([{ chatId: '-100', messageId: transport.sent[0].messageId, onlyFor: '1' }]);
-  expect(family.members.find((member) => member.id === '1')!.choices.shares).toBe(true);
+  expect(member('1').choices.shares).toBe(true);
 });
 
 test('"Stop offering this" turns choices.shares off and edits the offer to offersOff', async () => {
@@ -181,7 +186,7 @@ test('"Stop offering this" turns choices.shares off and edits the offer to offer
   const id = family.offers[0].id;
   const event = inGroup(`shr:stop:${id}`);
   expect(await shares.handle(event, family, ctx)).toBe(true);
-  expect(family.members.find((member) => member.id === '1')!.choices.shares).toBe(false);
+  expect(member('1').choices.shares).toBe(false);
   expect(transport.edits).toEqual([{ chatId: '-100', messageId: transport.sent[0].messageId, change: { text: lines.offersOff, onlyFor: '1' } }]);
   expect(family.offers).toEqual([]);
 });
