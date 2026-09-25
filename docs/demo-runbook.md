@@ -61,13 +61,13 @@ Each beat names the action, the spoken lines, and what the audience sees. The ti
 | 6 | 3:20 | Eleni | Send `/fastforward 08:05` in the group. | Narrator, before: "Let's jump to tomorrow morning." | Only Eleni sees "⏩ It's now … 08:05 on the family clock." A few seconds later, Nikos gets his reminder in private as a voice note: "⏰ Your reminder. Eleni wrote: «…»". |
 | 7 | 3:40 | Nikos, then Eleni | The stretch goal, only when the call gate passed and the clock shows 3:50 or less. In private, say "Call me" in a voice note. Answer the phone on speaker. Answer Anchor in one sentence, say "No, thanks" to the share question, and "Yes" to the question about Eleni. | Eleni, after the group message: "I'll call you tonight, Dad." | Anchor answers "I'm ringing you now 📞", and Nikos's phone rings. Anchor opens with "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person." and reads Eleni's moment in her words. Anchor asks at most one follow-up, then "Shall I share what you told me with the family?". After his no, Anchor keeps nothing from the call. Anchor asks "Shall I tell Eleni you'd love a call?", and after his yes, the group gets "Eleni, Nikos would love a call from you 💛". Anchor says goodbye and hangs up. |
 
-### The close (4:40, or 3:40 without beat 7, Closer)
+### The close (4:40, Closer)
 
-Both screens stay on the group.
+The close starts at 4:40 after the phone call of beat 7, or at 3:40 when the team skips beat 7. Both screens stay on the group.
 
 > Nikos asked in his own words, chose what Anchor sends him, added his story by voice, and got his reminder in private. Nobody acted for him. The family saw a ❤ and a ✍.
 >
-> Anchor says it is not a person. It shares nothing without a yes, and it keeps a painful memory without ever bringing it back on its own. For a grandparent whose memory is starting to slip, seeing family moments again also helps them stay.
+> Anchor says it is not a person. It shares nothing without a yes, and it keeps a painful memory without ever bringing it back on its own.
 >
 > Anchor runs live today, in the group chat the family already uses. Anchor keeps the family's story, so nobody drops out of it.
 
