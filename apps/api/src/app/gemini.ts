@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,8 +17,25 @@ const TTS_MODELS = [
 ];
 const VOICE = process.env.GEMINI_VOICE ?? 'Sulafat';
 const CACHE = join(tmpdir(), 'anchor-gemini');
+const PROTOTYPE_STYLE = 'warm, calm and slow, like a kind family friend talking to an older woman';
+const logger = new Logger('Gemini');
 
 type Content = { type: string; text?: string; data?: string };
+type Clip = { data: Buffer; mimeType: string };
+
+/** Checks every answer field in code, because the response schema may ignore enum, minimum, and maximum. */
+export const valid = {
+  oneOf: <T extends string>(value: unknown, allowed: readonly T[]) => (allowed.includes(value as T) ? (value as T) : undefined),
+  int: (value: unknown, min: number, max: number) =>
+    typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max ? value : undefined,
+  text: (value: unknown, max?: number) => (typeof value === 'string' ? value.trim().slice(0, max) : ''),
+  strings: (value: unknown) => (Array.isArray(value) && value.every((item) => typeof item === 'string') ? (value as string[]) : []),
+  date: (value: unknown) => {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+    const time = Date.parse(`${value}T00:00:00Z`);
+    return !Number.isNaN(time) && new Date(time).toISOString().startsWith(value) ? value : undefined;
+  },
+};
 
 // ponytail: every answer is cached on disk, because the free tier allows about 10 TTS requests per model per day
 async function cached(key: string, produce: () => Promise<Buffer>): Promise<Buffer> {
@@ -58,11 +76,15 @@ async function interact(models: string[], body: object | ((model: string) => obj
 export async function ask<T>(
   prompt: string,
   schema: object,
-  options: { audio?: { data: Buffer; mimeType: string }; fast?: boolean; timeoutMs?: number } = {},
+  options: { audio?: Clip; media?: Clip[]; fast?: boolean; timeoutMs?: number } = {},
 ): Promise<T> {
   const { audio, fast, timeoutMs } = options;
-  const input = audio
-    ? [{ type: 'text', text: prompt }, { type: 'audio', data: audio.data.toString('base64'), mime_type: audio.mimeType }]
+  const media = [...(options.media ?? []), ...(audio ? [audio] : [])];
+  const input = media.length
+    ? [
+        { type: 'text', text: prompt },
+        ...media.map((item) => ({ type: item.mimeType.split('/')[0], data: item.data.toString('base64'), mime_type: item.mimeType })),
+      ]
     : prompt;
   const produce = async () => {
     const content = await interact(
@@ -72,13 +94,29 @@ export async function ask<T>(
     );
     return Buffer.from(content.filter((item) => item.type === 'text').map((item) => item.text).join(''));
   };
-  const key = `ask:${prompt}:${JSON.stringify(schema)}:${audio ? createHash('sha1').update(audio.data).digest('hex') : ''}`;
+  const hashes = media.map((item) => createHash('sha1').update(item.data).digest('hex'));
+  const key = `ask:${prompt}:${JSON.stringify(schema)}:${hashes.join(',')}`;
   return JSON.parse((await cached(key, produce)).toString());
 }
 
-export async function speak(text: string): Promise<Buffer> {
-  const audio = await cached(`speak:${VOICE}:${text}`, async () => {
-    const style = 'warm, calm and slow, like a kind family friend talking to an older woman';
+export async function transcribe(clip: Clip): Promise<string> {
+  try {
+    const result = await ask<{ transcript?: unknown }>(
+      'Transcribe this voice note verbatim. Return an empty string when nobody speaks.',
+      { type: 'object', properties: { transcript: { type: 'string' } }, required: ['transcript'] },
+      { media: [clip], fast: true, timeoutMs: 30000 },
+    );
+    return valid.text(result.transcript);
+  } catch (error) {
+    logger.warn(`Gemini transcription failed: ${error}`);
+    return '';
+  }
+}
+
+export async function speak(text: string, style = PROTOTYPE_STYLE): Promise<Buffer> {
+  // the default key predates the style, so the prototype keeps its cached clips
+  const key = style === PROTOTYPE_STYLE ? `speak:${VOICE}:${text}` : `speak:${VOICE}:${style}:${text}`;
+  const audio = await cached(key, async () => {
     const content = await interact(
       TTS_MODELS,
       (model) => ({
