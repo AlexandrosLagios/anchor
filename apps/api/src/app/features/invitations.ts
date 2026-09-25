@@ -138,8 +138,7 @@ async function deliver(family: Family, member: Member, moment: Moment, at: numbe
 
 // v2, section 4.5: an asked-for moment or a share skips the 3-hour rule and the due check, and closes the open invitation first
 export async function sendNow(family: Family, member: Member, moment: Moment, ctx: Context) {
-  member.invitation = undefined;
-  await deliver(family, member, moment, ctx.now(), ctx);
+  await deliver(family, member, moment, ctx.now(), ctx); // deliver replaces the open invitation at once
 }
 
 // the sendMe intent: the moment with the fewest returns to this member, and byPriority breaks a tie

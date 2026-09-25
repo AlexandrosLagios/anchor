@@ -76,6 +76,9 @@ async function readIntent(
   }
 }
 
+// 'none' matches no moment id
+const findAsked = (family: Family, momentId?: string) => family.moments.find((item) => item.id === momentId && !item.sensitive);
+
 async function unclearGroup(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
   await ctx.transport(family.id).send(event.chatId, { text: lines.unclear, replyTo: event.messageId, buttons: groupNextSteps(family, ctx) });
   return true;
@@ -99,7 +102,7 @@ async function groupAction(
       await postMemoryNow(family, ctx);
       return true;
     case 'find': {
-      const moment = momentId && momentId !== 'none' ? family.moments.find((item) => item.id === momentId && !item.sensitive) : undefined;
+      const moment = findAsked(family, momentId);
       if (!moment) {
         await ctx.transport(family.id).send(event.chatId, { text: lines.notFound, replyTo: event.messageId });
         return true;
@@ -155,7 +158,7 @@ async function unclearPrivate(family: Family, member: Member, ctx: Context): Pro
 }
 
 async function privateFind(momentId: string | undefined, family: Family, member: Member, ctx: Context): Promise<void> {
-  const moment = momentId && momentId !== 'none' ? family.moments.find((item) => item.id === momentId && !item.sensitive) : undefined;
+  const moment = findAsked(family, momentId);
   if (!moment) {
     await tell(family, member, { text: lines.notFound, buttons: nextSteps(member, 'find') }, ctx);
     return;

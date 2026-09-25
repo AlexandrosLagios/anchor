@@ -70,23 +70,15 @@ function findFamilyByPayload(payload: string, ctx: Context): Family | undefined 
   return ctx.store.state.families.find((item) => item.reminders.some((reminder) => reminder.id === reminderId));
 }
 
+// the payload finds the family also for a person who is not a member yet; the router answers a person with no family
 async function start(event: Incoming, family: Family | undefined, ctx: Context): Promise<boolean> {
   const payload = event.text?.slice('/start'.length).trim();
-  if (payload) {
-    const target = findFamilyByPayload(payload, ctx) ?? family;
-    if (!target) return false;
-    const member = ctx.store.joinMember(target, event.sender);
-    member.started = true;
-    ctx.store.save();
-    await tell(target, member, { text: lines.welcome(member.name), buttons: choiceButtons(member) }, ctx);
-    return true;
-  }
-  if (!family) return false;
-  const member = family.members.find((person) => person.id === event.sender.id);
-  if (!member) return false;
+  const target = (payload && findFamilyByPayload(payload, ctx)) || family;
+  if (!target) return false;
+  const member = ctx.store.joinMember(target, event.sender);
   member.started = true;
   ctx.store.save();
-  await tell(family, member, { text: lines.welcome(member.name), buttons: choiceButtons(member) }, ctx);
+  await showChoices(target, member, lines.welcome(member.name), ctx);
   return true;
 }
 

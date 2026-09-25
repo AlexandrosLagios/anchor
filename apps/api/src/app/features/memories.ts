@@ -67,11 +67,6 @@ export async function postMemoryNow(family: Family, ctx: Context): Promise<void>
   await post(family, fewest, lines.labels.fromRecord, [], ctx);
 }
 
-async function handleMemoryCommand(family: Family, ctx: Context): Promise<boolean> {
-  await postMemoryNow(family, ctx);
-  return true;
-}
-
 async function transcribeVoice(voice: Media, family: Family, ctx: Context): Promise<string> {
   try {
     const clip = await ctx.transport(family.id).download(voice);
@@ -118,7 +113,7 @@ export const memories: Feature = {
 
   async handle(event, family, ctx) {
     if (event.chat !== 'group' || !family) return false;
-    if (isCommand(event.text, '/memory')) return handleMemoryCommand(family, ctx);
+    if (isCommand(event.text, '/memory')) return postMemoryNow(family, ctx).then(() => true);
     return handleStory(event, family, ctx);
   },
 };
