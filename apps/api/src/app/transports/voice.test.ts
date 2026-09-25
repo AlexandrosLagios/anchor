@@ -5,7 +5,7 @@ import { toOgg } from './voice';
 
 const noFfmpeg = Boolean(spawnSync('ffmpeg', ['-version']).error);
 
-test.skipIf(noFfmpeg)('toOgg converts a Gemini WAV clip to OGG Opus', () => {
+test.skipIf(noFfmpeg)('toOgg converts a WAV clip to OGG Opus', () => {
   const ogg = toOgg(wav(Buffer.alloc(24000 * 2), 24000));
   expect(ogg.subarray(0, 4).toString()).toBe('OggS');
   expect(ogg.includes('OpusHead')).toBe(true);

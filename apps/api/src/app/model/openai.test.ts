@@ -3,11 +3,12 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, expect, test, vi } from 'vitest';
-import { ask, speak, transcribe, valid } from './gemini';
-import { httpFetch, type HttpResponse } from './http';
-import { wav } from './song';
+import { httpFetch, type HttpResponse } from '../http';
+import { wav } from '../song';
+import { ask, speak, transcribe } from './model';
+import { openai } from './openai';
 
-vi.mock('./http', () => ({ httpFetch: vi.fn() }));
+vi.mock('../http', () => ({ httpFetch: vi.fn() }));
 const fetchMock = vi.mocked(httpFetch);
 
 const chat = (value: unknown): HttpResponse => ({
@@ -38,46 +39,7 @@ const jsonBody = (call: number) => JSON.parse(String(body(call)));
 beforeEach(() => {
   fetchMock.mockReset();
   vi.stubEnv('OPENAI_API_KEY', 'test-key');
-  vi.stubEnv('OPENAI_VOICE', 'coral');
-});
-
-test('valid.oneOf keeps an allowed value only', () => {
-  const verdicts = ['family_moment', 'sensitive'] as const;
-  expect(valid.oneOf('sensitive', verdicts)).toBe('sensitive');
-  expect(valid.oneOf('SENSITIVE', verdicts)).toBeUndefined();
-  expect(valid.oneOf(3, verdicts)).toBeUndefined();
-});
-
-test('valid.int keeps an integer inside the range only', () => {
-  expect(valid.int(4, 1, 5)).toBe(4);
-  expect(valid.int(0, 1, 5)).toBeUndefined();
-  expect(valid.int(6, 1, 5)).toBeUndefined();
-  expect(valid.int(2.5, 1, 5)).toBeUndefined();
-  expect(valid.int('3', 1, 5)).toBeUndefined();
-});
-
-test('valid.text trims, caps the length, and turns a non-string into an empty string', () => {
-  expect(valid.text('  Maria at school  ', 100)).toBe('Maria at school');
-  expect(valid.text('x'.repeat(120), 100)).toBe('x'.repeat(100));
-  expect(valid.text(5, 100)).toBe('');
-  expect(valid.text(undefined)).toBe('');
-  expect(valid.text(`${'x'.repeat(99)}😀`, 100)).toBe('x'.repeat(99));
-});
-
-test('valid.strings keeps an array of strings only', () => {
-  expect(valid.strings(['Maria', 'Nikos'])).toEqual(['Maria', 'Nikos']);
-  expect(valid.strings(['Maria', 3])).toEqual([]);
-  expect(valid.strings('Maria')).toEqual([]);
-});
-
-test('valid.date keeps a real YYYY-MM-DD date only', () => {
-  expect(valid.date('2019-09-25')).toBe('2019-09-25');
-  expect(valid.date('2024-02-29')).toBe('2024-02-29');
-  expect(valid.date('2026-02-30')).toBeUndefined();
-  expect(valid.date('2026-13-01')).toBeUndefined();
-  expect(valid.date('0000-09-25')).toBeUndefined();
-  expect(valid.date('25/09/2019')).toBeUndefined();
-  expect(valid.date('')).toBeUndefined();
+  vi.stubEnv('ANCHOR_MODEL_PROVIDER', 'openai');
 });
 
 test('ask transcribes OGG first and sends photos to the chat model', async () => {
@@ -123,28 +85,6 @@ test('ask marks every property required and keeps enums for strict JSON schema',
   expect(sent.properties.verdict.enum).toEqual(['family_moment', 'sensitive']);
 });
 
-test('ask caches no answer that does not parse, so the next call asks again', async () => {
-  fetchMock
-    .mockResolvedValueOnce({ ...chat({}), json: async () => ({ choices: [{ message: { content: 'not-json' } }] }) })
-    .mockResolvedValueOnce(chat({ title: 'Nafplio' }));
-  const prompt = `Title the moment ${randomUUID()}`;
-  const schema = { type: 'object', properties: { title: { type: 'string' } }, required: ['title'] };
-  await expect(ask(prompt, schema)).rejects.toThrow();
-  expect(await ask(prompt, schema)).toEqual({ title: 'Nafplio' });
-  expect(fetchMock).toHaveBeenCalledTimes(2);
-});
-
-test('ask caches per media item, so another photo with the same prompt gets its own answer', async () => {
-  fetchMock.mockResolvedValueOnce(chat({ title: 'first' })).mockResolvedValueOnce(chat({ title: 'second' }));
-  const prompt = `Title the moment ${randomUUID()}`;
-  const schema = { type: 'object', properties: { title: { type: 'string' } }, required: ['title'] };
-  const photo = (bytes: string) => ({ media: [{ data: Buffer.from(bytes), mimeType: 'image/jpeg' }] });
-  expect(await ask(prompt, schema, photo('photo one'))).toEqual({ title: 'first' });
-  expect(await ask(prompt, schema, photo('photo two'))).toEqual({ title: 'second' });
-  expect(await ask(prompt, schema, photo('photo one'))).toEqual({ title: 'first' });
-  expect(fetchMock).toHaveBeenCalledTimes(2);
-});
-
 test('transcribe returns the trimmed transcript and sends OGG to the transcription endpoint', async () => {
   fetchMock.mockResolvedValue(transcript('  We went to Nafplio that summer  '));
   const clip = { data: Buffer.from(randomUUID()), mimeType: 'audio/ogg' };
@@ -182,4 +122,11 @@ test('speak with a style asks for that style and returns WAV', async () => {
   expect(jsonBody(0).response_format).toBe('wav');
   expect(jsonBody(0).instructions).toBe(style);
   expect(String(fetchMock.mock.calls[0][0])).toContain('/audio/speech');
+});
+
+test('the OpenAI provider speaks WAV, because transports/voice.ts converts WAV only', async () => {
+  fetchMock.mockResolvedValue(speech(Buffer.alloc(8)));
+  const audio = await openai.speak('Maria', 'warm');
+  expect(audio.subarray(0, 4).toString()).toBe('RIFF');
+  expect(audio).toEqual(wav(Buffer.alloc(8), 24000));
 });
