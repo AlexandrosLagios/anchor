@@ -82,8 +82,13 @@ async function start(event: Incoming, family: Family | undefined, ctx: Context):
   return true;
 }
 
+// a tap in private means the member talks to Anchor, so it starts the member again after "stop"
 async function setChoice(event: Incoming, family: Family, member: Member, ctx: Context): Promise<boolean> {
   const choice = event.button?.slice('set:'.length);
+  if (!member.started) {
+    member.started = true;
+    ctx.store.save();
+  }
   if (choice === 'done') {
     const names = shown()
       .filter((name) => member.choices[name])

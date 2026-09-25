@@ -168,6 +168,30 @@ test('the v2 demo script: Nikos joins and chooses, a share offer, his voice stor
   expect(toGroup()).toHaveLength(seenByGroup);
 });
 
+test('after stop, settings and a choice tap start Nikos again, and the next share offer reaches him', async () => {
+  const { store, family, transport, say, whisper, tick } = setup();
+  store.joinMember(family, eleni).started = true;
+  await whisper(nikos, { text: '/start -100' });
+  await whisper(nikos, { text: 'stop' });
+  const member = family.members.find((person) => person.id === nikos.id);
+  expect(member).toMatchObject({ started: false, choices: { moments: false } });
+
+  await whisper(nikos, { text: 'settings' });
+  expect(transport.sent.at(-1)?.message.text).toBe(lines.choicesScreen);
+  const screen = transport.sent.at(-1)?.messageId ?? '';
+  await whisper(nikos, { button: 'set:moments', messageId: screen });
+  await whisper(nikos, { button: 'set:done' });
+  expect(member).toMatchObject({ started: true, choices: { moments: true } });
+
+  await say(eleni, { text: maria, photo: { id: 'photo-maria' } });
+  vi.setSystemTime(Date.now() + 2000);
+  await tick();
+  const [offer] = family.offers;
+  expect(transport.sent.at(-1)?.message).toMatchObject({ text: lines.shareOffer(['Nikos']), onlyFor: eleni.id });
+  await say(eleni, { button: `shr:yes:${offer.id}`, messageId: offer.messageId, ephemeral: true });
+  expect(transport.sent.filter(({ chatId }) => chatId === nikos.id).at(-1)?.message.text).toBe(lines.invitation(family.moments[0]));
+});
+
 test('v1 cues still work: then and now, a question, and the 18:00 post one week later', async () => {
   const { store, family, transport, say, tick } = setup();
 

@@ -229,3 +229,12 @@ test('other private events from a member are left to invitations and intents', a
 test('CHOICES lists every choice used by choiceButtons', () => {
   expect(CHOICES).toEqual(['moments', 'reminders', 'shares', 'voice', 'call']);
 });
+
+test('a choice tap after stop starts the member again', async () => {
+  const member = ctx.store.joinMember(family, { id: '7', name: 'Nikos' });
+  await receive(fromNikos({ text: 'stop' }));
+  expect(member.started).toBe(false);
+  await receive(fromNikos({ button: 'set:moments', messageId: 'msg-1' }));
+  expect(member).toMatchObject({ started: true, choices: { moments: true } });
+  expect(saved()?.members[0].started).toBe(true);
+});
