@@ -120,7 +120,9 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - `/start` in private, from a registered storyteller, gets `welcome(name)` with the buttons "Yes, I'd like that" and "Not now" (user story 1, "Say yes myself"). Only "Yes, I'd like that" sets `started` and sends `agreed(name)`. "Not now" sends `notNow`. Nothing comes back to a storyteller before that yes. Moments shared before the yes come back after it.
 - `/stop`, or the single word "stop" in private, sets `started` to false, closes the open invitation silently, and sends `stopped`. Nothing more comes back until `/start` and a new yes. The family is not told.
 - "Anchor, forget this", sent as a reply, deletes the moment or the story that owns the replied-to message. Anchor reacts with 👌. An Ask Anchor answer belongs to its moment, because `ask` adds the answer post to `memoryPostIds`.
-- A forget that replies to a then-and-now post deletes neither moment, sends no 👌, and gets `forgetWhich`. "Anchor, don't bring this back" on that post changes nothing and gets `quietWhich`. One reply never deletes two moments on a guess. `echoes` stores the post id as `Moment.echoPostId` on the newer moment.
+- A forget that replies to either photo of a then-and-now post deletes neither moment and gets `forgetWhich`. "Anchor, don't bring this back" on that post changes nothing and gets `quietWhich`. One reply never deletes two moments on a guess.
+- `forgetWhich` and `quietWhich` carry one button per moment, labelled with the sender and the title cut to 40 characters, with the data `fgt:<momentId>` or `qt:<momentId>`. A tap acts on that moment only, and Anchor reacts with 👌 on the question.
+- `echoes` stores every album message id as `Moment.echoPostIds` on the newer moment. `send` returns `messageIds` for an album. This rule lands in a follow-up PR after the step 2 PR.
 - "Anchor, don't bring this back", sent as a reply, sets `sensitive` on the moment that owns the replied-to message. The moment stays in the record, and Anchor reacts with 👌.
 - The `forget` feature and the `capture` feature share the open bundles in `capture.ts`. A forget on a message of an open bundle drops that bundle at once.
 - `/memory` and `/invite` are admin commands (sections 4.3 and 4.5). A command from a member who is not an admin gets no reply.
@@ -161,8 +163,8 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
 | `notJoined` | Thank you 🙂 If you'd like family moments from me, send /start. |
-| `forgetWhich` | This post shows two moments. Reply "Anchor, forget this" to the photo you want me to forget. |
-| `quietWhich` | This post shows two moments. Reply "Anchor, don't bring this back" to the photo you don't want me to bring back. |
+| `forgetWhich` | This post shows two moments. Which one should I forget? (one button per moment) |
+| `quietWhich` | This post shows two moments. Which one should I stop bringing back? (one button per moment) |
 | `voiceNote` | 🎤 voice note |
 | `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
 | `nothingToInvite(name)` | {name} has seen every moment so far. |
@@ -307,7 +309,7 @@ export type Moment = {
   memoryPostIds: string[];
   returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
   echo?: string; // the id of the older moment that this moment echoes
-  echoPostId?: string; // the then-and-now post, on the newer moment
+  echoPostIds?: string[]; // every message of the then-and-now album, on the newer moment
 };
 
 export type Invitation = {
