@@ -177,7 +177,7 @@ v2 changes to this section:
 - `/private`, `/send`, `adminOnly` for those two commands, `privateHow`, `nobodyPrivate`, and `storytellerStart` go away.
 - `intro` carries the URL button "Choose what I send you" to `transport.startLink(family id)`.
 - `/start` with any payload belongs to the `members` feature (section 4.11). "Yes, I'd like that" and "Not now" go away, because the choices screen replaces them.
-- `/stop`, or the single word "stop" in private, turns every choice off, closes the open invitation silently, and sends `stopped`. `started` stays true, so Anchor can still answer the member.
+- `/stop`, or the single word "stop" in private, turns every choice off, sets `started` to false as in v1, closes the open invitation silently, and sends `stopped`. Anchor still answers the private messages of the member. A tap on Start starts the member again. The demo resets the grandfather with "stop" before each rehearsal.
 - The "/" menu: in a group, every member sees `/memory`, and only admins see `/memory` and `/fastforward`. `/fastforward` is an ephemeral command (`is_ephemeral`), so only the presenter sees the command. In a private chat, everyone sees `/start` and `/stop`.
 - The router fallback: `intents` handles every private message of a member, so only a person with no family gets `pointer`. `noInvitation` and `notJoined` go away.
 
