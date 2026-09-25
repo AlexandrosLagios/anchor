@@ -230,6 +230,8 @@ v2 changes to this section:
 
 The buttons read "Start", "Yes, I'd like that", "Not now", "Don't bring this back", "What is this?", "Yes, share it", and "No, thanks".
 
+v2 invitation buttons, a wording change from the user: "Not now" reads "Later, please", "Don't bring this back" reads "Don't show me this again", and "What is this?" reads "Tell me about it". The rules of section 4.5 keep the v1 names for these three buttons. The group phrase "Anchor, don't bring this back" stays as it is.
+
 `invitation`, `memoryCaption`, and `storyAdded` clip the quoted text to 600 characters, and `echoCaption` clips each of its two quotes to 450 characters. Each clip ends with "…". Every caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. The step 1 session writes every line. A feature step asks that session for a wording change, and no line may break section 1.
 
 v2 lines. Step 4 writes the lines of steps 6 and 7. Step 5 writes the lines of step 5. After step 4, step 5 owns `core/lines.ts`, and steps 6 and 7 ask the orchestrator for a wording change.
@@ -318,7 +320,8 @@ These additions put journey steps 2 and 5 on stage, and they let the live demo r
 The `reminders` feature reads a group message before `capture`, and returns `false`, so `capture` still sees the message. A reminder never enters the family record, so memories, Ask Anchor, and then and now never see a reminder.
 
 - The gate: a group text or caption that does not match the ask pattern, and that matches the code word filter. The filter matches remember, don't forget, remind, a clock time, "when we leave", "in the morning", "tonight", and "tomorrow". A voice note never passes the gate, because a gate on voice costs one transcription per group voice note.
-- The offer call (section 6.8) returns `{ offer, who, time }`. `offer` is false by default. `who` is a member id or `unknown`, and `unknown` goes to the sender.
+- The offer call (section 6.8) returns `{ offer, who, time }`. `offer` is false by default. `who` is a member id or `unknown`, and `unknown` makes no offer, because a reminder for a person who is not a member must never land on the sender.
+- A message that names a day after tomorrow (a weekday, a date, or "next week") makes no offer, because a reminder has a time and no date. The code checks the weekday names, so the rule does not depend on the model.
 - The recipient must have `choices.reminders`. Anchor sends the recipient an ephemeral `reminderOffer(who, text)` that quotes the sender's words. The buttons are "Yes, at {time}", "Another time", "No thanks", and "Stop offering reminders".
 - An empty `time` shows four times instead of "Yes, at {time}": 08:00, 12:00, 18:00, and 21:00.
 - "Another time" swaps the buttons in place for four times around the suggestion (one hour before, 30 minutes before, 30 minutes after, and one hour after), and "No thanks".
@@ -765,7 +768,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - The schema is `{ offer: boolean, who: enum, time: string }`. `who` holds the member ids and `unknown`. `time` is `HH:MM` in 24-hour local time, or an empty string.
 - The prompt says no by default. `offer` is true only when a member must remember a future action that has a time or a trigger, for example "take my pills when we leave in the morning". Plans for the whole family, past events, questions, and jokes get false.
 - The prompt maps "in the morning" to 08:00 and "tonight" to 20:00. A stated clock time wins.
-- The call uses the fast models. A failed call, or `offer` false, makes no offer. An invalid `who` counts as `unknown`. An invalid `time` counts as an empty string.
+- The call uses the fast models. A failed call, or `offer` false, makes no offer. An invalid `who` counts as `unknown`, and makes no offer. An invalid `time` counts as an empty string.
 
 ### 6.9 The call voice (v2, step 7)
 
