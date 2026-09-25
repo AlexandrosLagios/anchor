@@ -433,6 +433,22 @@ test('a keep-quiet on an open bundle makes the saved moment sensitive', async ()
   expect(saveSpy).toHaveBeenCalled(); // the tick's close() saves the new, already-sensitive moment
 });
 
+test('an open bundle survives a group migration: it saves into the family and the heart goes to the new chat id', async () => {
+  (ask as Mock).mockResolvedValue(classification);
+  const textEvent = event({ text: 'Maria on her first day' });
+  await capture.handle(textEvent, family, ctx);
+  expect(bundles).toHaveLength(1);
+
+  // intro.ts mutates the family object in place on a migration; it never replaces it
+  family.id = family.chatId = '-1009';
+
+  advance(BUNDLE_GAP_MS);
+  await tick();
+
+  expect(family.moments).toHaveLength(1);
+  expect(transport.reactions).toEqual([{ chatId: '-1009', messageId: textEvent.messageId, emoji: '❤' }]);
+});
+
 test('forget.handle and capture.handle return false for a private event', async () => {
   const privateEvent: Incoming = {
     chat: 'private',

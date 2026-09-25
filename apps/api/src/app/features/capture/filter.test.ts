@@ -1,7 +1,7 @@
 process.env.TZ = 'Europe/Athens';
 
 import { expect, test } from 'vitest';
-import type { Incoming } from '../../core/types';
+import type { Family, Incoming } from '../../core/types';
 import { BUNDLE_GAP_MS, isClosed, passesRules, typedText, wordCount, worthClassifying } from './filter';
 import type { Bundle } from './filter';
 
@@ -14,13 +14,14 @@ test('wordCount counts the words of a text and skips links', () => {
 });
 
 const sender = { id: '1', name: 'Sofia' };
+const family: Family = { id: '-100', chatId: '-100', storytellers: [], moments: [], counters: {} };
 
 function event(overrides: Partial<Incoming> = {}): Incoming {
   return { chat: 'group', chatId: '-100', messageId: '1', sender, at: 0, ...overrides };
 }
 
 function bundle(events: Incoming[]): Bundle {
-  return { familyId: '-100', sender, events };
+  return { family, sender, events };
 }
 
 test('passesRules drops an unsupported message, a forwarded message, a command, and a bare link', () => {

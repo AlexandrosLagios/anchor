@@ -3,7 +3,7 @@ process.env.TZ = 'Europe/Athens';
 import { beforeEach, expect, test, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { FakeTransport } from '../../core/fake-transport';
-import type { Incoming } from '../../core/types';
+import type { Family, Incoming } from '../../core/types';
 import { ask } from '../../model/model';
 import { classify, validate } from './classify';
 import type { Bundle } from './filter';
@@ -16,13 +16,14 @@ vi.mock('../../model/model', async (importOriginal) => ({
 }));
 
 const sender = { id: '1', name: 'Sofia' };
+const family: Family = { id: '-100', chatId: '-100', storytellers: [], moments: [], counters: {} };
 
 function event(overrides: Partial<Incoming> = {}): Incoming {
   return { chat: 'group', chatId: '-100', messageId: '1', sender, at: 0, ...overrides };
 }
 
 function bundle(events: Incoming[]): Bundle {
-  return { familyId: '-100', sender, events };
+  return { family, sender, events };
 }
 
 const valid = {

@@ -524,6 +524,51 @@ test('a silent invitation whose moment is gone or kept quiet closes at 3 hours w
   expect(transport.sent).toEqual([]);
 });
 
+test('a story reply after a keep-quiet turns the moment sensitive sends no thanks and returns false', async () => {
+  add();
+  await tickAt(at(25, 11));
+  const sentBefore = transport.sent.length;
+  family.moments[0].sensitive = true;
+
+  expect(await receive(fromNikos({ text: 'She would not let go of my hand' }))).toBe(false);
+  expect(transport.sent).toHaveLength(sentBefore);
+  expect(ask).not.toHaveBeenCalled();
+  expect(nikos().invitation).toBeUndefined();
+});
+
+test('"Yes, share it" for a moment that turned sensitive while the story waited posts nothing in the group', async () => {
+  const moment = add();
+  invite(moment, { story: { text: 'She would not let go of my hand' }, shareAsked: true });
+  moment.sensitive = true;
+
+  expect(await receive(fromNikos({ button: 'inv:share:m1' }))).toBe(false);
+  expect(transport.sent).toEqual([]);
+  expect(nikos().invitation).toBeUndefined();
+});
+
+test('a forget during a pending reply call sends nothing after the call resolves', async () => {
+  const moment = add();
+  invite(moment);
+  let answer: (value: unknown) => void;
+  vi.mocked(ask).mockReturnValue(new Promise((resolve) => (answer = resolve)));
+  const reply = receive(fromNikos({ text: 'She would not let go of my hand' }));
+  family.moments.splice(family.moments.indexOf(moment), 1);
+  answer({ transcript: '', kind: 'story' });
+
+  expect(await reply).toBe(true);
+  expect(transport.sent).toEqual([]);
+});
+
+test('"What is this?" on a moment that turned sensitive sends nothing', async () => {
+  const moment = add();
+  invite(moment);
+  moment.sensitive = true;
+
+  expect(await receive(fromNikos({ button: 'inv:what:m1' }))).toBe(false);
+  expect(transport.sent).toEqual([]);
+  expect(nikos().invitation).toBeUndefined();
+});
+
 test('"What is this?" gets tellDirectly and the voice note of the moment, keeps the invitation open, and a story still gets thanks', async () => {
   const moment = add({ voice: { id: 'voice-57' } });
   const invitation = invite(moment);
@@ -699,6 +744,17 @@ test('"Don\'t bring this back" marks the moment sensitive and closes its invitat
   await receive(fromNikos({ button: 'inv:never:m1' }));
   expect(saved()?.moments.map(({ sensitive }) => sensitive)).toEqual([true, true]);
   expect(nikos().invitation).toBeUndefined();
+  expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.dontBringBack, lines.dontBringBack]);
+});
+
+test('a repeated "Don\'t bring this back" tap sends dontBringBack again but saves nothing', async () => {
+  const moment = add();
+  await receive(fromNikos({ button: 'inv:never:m1' }));
+  const save = vi.spyOn(ctx.store, 'save');
+
+  expect(await receive(fromNikos({ button: 'inv:never:m1' }))).toBe(true);
+  expect(moment.sensitive).toBe(true);
+  expect(save).not.toHaveBeenCalled();
   expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.dontBringBack, lines.dontBringBack]);
 });
 

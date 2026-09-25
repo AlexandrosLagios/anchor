@@ -215,9 +215,16 @@ async function inPrivate(event: Incoming, family: Family, storyteller: Storytell
   if ((event.button && !action) || event.text?.startsWith('/')) return false;
   if (action === 'never') {
     const moment = family.moments.find((item) => item.id === momentId);
-    if (moment) moment.sensitive = true;
-    if (storyteller.invitation?.momentId === momentId) storyteller.invitation = undefined;
-    ctx.store.save();
+    let changed = false;
+    if (moment && !moment.sensitive) {
+      moment.sensitive = true;
+      changed = true;
+    }
+    if (storyteller.invitation?.momentId === momentId) {
+      storyteller.invitation = undefined;
+      changed = true;
+    }
+    if (changed) ctx.store.save();
     await tell(storyteller, { text: lines.dontBringBack }, family, ctx);
     return true;
   }
@@ -225,7 +232,7 @@ async function inPrivate(event: Incoming, family: Family, storyteller: Storytell
   if (action && invitation?.momentId !== momentId) return true;
   if (!invitation) return false;
   const moment = family.moments.find((item) => item.id === invitation.momentId);
-  if (!moment) {
+  if (!moment || moment.sensitive) {
     storyteller.invitation = undefined;
     ctx.store.save();
     return false;
@@ -296,7 +303,7 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
   markReplied(invitation, ctx);
   const reading: Reading =
     event.unsupported || event.forwarded ? { kind: 'other', transcript: '' } : await readReply(event, moment, ctx.transport(family.id));
-  if (storyteller.invitation !== invitation) return;
+  if (!isOpen(family, storyteller, invitation, moment)) return;
   if (reading.kind === 'story') {
     const text = event.voice ? reading.transcript || lines.voiceNote : (event.text ?? '');
     invitation.story = invitation.story

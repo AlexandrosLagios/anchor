@@ -9,6 +9,7 @@ import { wordCount } from './capture/filter';
 
 const logger = new Logger('Memories');
 const AGES = ['7', '30', '365'] as const;
+const ANCHOR_ADDRESS = /^anchor\b[,:]?\s+/i;
 
 export function dueKeys(moment: Moment, now: number): string[] {
   if (moment.sensitive) return [];
@@ -74,6 +75,7 @@ async function transcribeVoice(voice: Media, family: Family, ctx: Context): Prom
 async function handleStory(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
   const replyTo = event.replyTo;
   if (!replyTo) return false;
+  if (ANCHOR_ADDRESS.test(event.text ?? '')) return false;
   const moment = family.moments.find((item) => item.memoryPostIds.includes(replyTo));
   if (!moment || event.unsupported || event.forwarded) return false;
   if (!event.voice && wordCount(event.text) < 3) return false;

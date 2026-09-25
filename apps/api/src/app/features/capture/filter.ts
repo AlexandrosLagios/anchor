@@ -1,4 +1,4 @@
-import type { Incoming, Person } from '../../core/types';
+import type { Family, Incoming, Person } from '../../core/types';
 
 const LINK = /\b(?:https?:\/\/|www\.)\S+/gi;
 
@@ -9,7 +9,7 @@ export function wordCount(text: string | undefined): number {
 export const BUNDLE_GAP_MS = 120_000;
 
 export type Bundle = {
-  familyId: string;
+  family: Family; // a reference, so the bundle still matches after a migration changes family.id
   sender: Person;
   events: Incoming[];
   closing?: boolean; // the classification runs

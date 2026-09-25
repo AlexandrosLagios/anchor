@@ -49,7 +49,7 @@ export const forget: Feature = {
     if (!event.replyTo) return true;
 
     const replyTo = event.replyTo;
-    const openBundle = bundles.find((bundle) => bundle.familyId === family.id && bundle.events.some((e) => e.messageId === replyTo));
+    const openBundle = bundles.find((bundle) => bundle.family === family && bundle.events.some((e) => e.messageId === replyTo));
     let changed = false; // a bundle removal is in-memory only and never needs a save
 
     if (isForget) {
@@ -150,20 +150,20 @@ export const capture: Feature = {
     }
 
     const candidates = bundles.filter(
-      (bundle) => bundle.familyId === family.id && bundle.sender.id === event.sender.id && !bundle.closing,
+      (bundle) => bundle.family === family && bundle.sender.id === event.sender.id && !bundle.closing,
     );
     const open = candidates[candidates.length - 1];
     const last = open?.events[open.events.length - 1];
     if (open && last && event.at - last.at <= BUNDLE_GAP_MS) {
       open.events.push(event);
     } else {
-      bundles.push({ familyId: family.id, sender: event.sender, events: [event] });
+      bundles.push({ family, sender: event.sender, events: [event] });
     }
     return true;
   },
 
   async tick(family, _window, ctx) {
-    const due = bundles.filter((bundle) => bundle.familyId === family.id && !bundle.closing && isClosed(bundle, Date.now()));
+    const due = bundles.filter((bundle) => bundle.family === family && !bundle.closing && isClosed(bundle, Date.now()));
     await Promise.all(due.map((bundle) => close(bundle, family, ctx)));
   },
 };
