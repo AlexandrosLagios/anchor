@@ -10,7 +10,7 @@ export const STREAM_PATH = '/call/stream';
 const MAX_CALL_MS = 10 * 60_000;
 const START_TIMEOUT_MS = 10_000;
 
-export type Script = Pick<BridgeOptions, 'instructions' | 'opener' | 'askShare'>;
+export type Script = Pick<BridgeOptions, 'instructions' | 'opener' | 'askShare' | 'goodbye'>;
 interface Expected {
   script: Script;
   end: (record: CallRecord) => void;
@@ -27,7 +27,8 @@ export function expectCall(script: Script) {
 }
 
 function openRealtime() {
-  const model = process.env.ANCHOR_REALTIME_MODEL || 'gpt-realtime-2.1-mini';
+  // gpt-realtime-2.1-mini paraphrased the fixed lines and skipped the goodbye on a test call, so the default is the full model
+  const model = process.env.ANCHOR_REALTIME_MODEL || 'gpt-realtime-2.1';
   return new WebSocket(`wss://api.openai.com/v1/realtime?model=${model}`, { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` } });
 }
 

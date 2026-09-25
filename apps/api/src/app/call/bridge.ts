@@ -40,11 +40,12 @@ export interface BridgeOptions {
   instructions: string;
   opener: string;
   askShare?: string;
+  goodbye?: string;
   voice?: string;
   now?: () => number;
 }
 
-export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, askShare, voice = 'marin', now = Date.now }: BridgeOptions) {
+export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, askShare, goodbye, voice = 'marin', now = Date.now }: BridgeOptions) {
   const record: CallRecord = { audio: [], speech: [], transcript: [], latencies: [], usage: [] };
   let streamSid: string | undefined;
   let realtimeOpen = false;
@@ -57,6 +58,8 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, ask
   let playing: { item: string; start: number } | undefined;
   let speechStart = 0;
   let speechEndedAt: number | undefined;
+  let spoke = false;
+  let sayingGoodbye = false;
 
   function begin() {
     if (begun || !streamSid || !realtimeOpen) return;
@@ -72,7 +75,7 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, ask
           input: {
             format: { type: 'audio/pcmu' },
             noise_reduction: { type: 'near_field' },
-            transcription: { model: 'gpt-4o-mini-transcribe' },
+            transcription: { model: 'gpt-4o-mini-transcribe', language: 'en' },
             turn_detection: { type: 'semantic_vad', eagerness: 'auto' },
           },
           output: { format: { type: 'audio/pcmu' }, voice },
@@ -98,7 +101,7 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, ask
         ],
       },
     });
-    toRealtime({ type: 'response.create', response: { instructions: `Say exactly these words, and nothing else: ${opener}` } });
+    toRealtime(say(opener));
   }
 
   function mark(name: string) {
@@ -146,6 +149,7 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, ask
             record.latencies.push(now() - speechEndedAt);
             speechEndedAt = undefined;
           }
+          spoke = true;
           if (playing?.item !== event.item_id) playing = { item: event.item_id, start: latestTimestamp };
           toTwilio({ event: 'media', streamSid, media: { payload: event.delta } });
           mark('audio');
@@ -171,7 +175,7 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, ask
         case 'response.output_audio_transcript.done':
           if (!event.transcript?.trim()) break;
           record.transcript.push({ speaker: 'anchor', text: event.transcript.trim() });
-          if (askShare && !record.shareAsked && letters(event.transcript).includes(letters(askShare))) {
+          if (askShare && !record.shareAsked && asksToShare(event.transcript, askShare)) {
             record.shareAsked = { ms: heardMs, line: record.transcript.length - 1 };
           }
           break;
@@ -184,10 +188,20 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, ask
             mark('listen');
           }
           if (event.response?.usage) record.usage.push(event.response.usage);
-          const endCall = event.response?.output?.find((item) => item.type === 'function_call' && item.name === 'end_call');
-          if (endCall) {
-            Object.assign(record, answersOf(endCall.arguments));
+          const spokeInResponse = spoke;
+          spoke = false;
+          if (sayingGoodbye) {
             mark('hangup');
+            break;
+          }
+          const endCall = event.response?.output?.find((item) => item.type === 'function_call' && item.name === 'end_call');
+          if (!endCall) break;
+          Object.assign(record, answersOf(endCall.arguments));
+          if (spokeInResponse || !goodbye) {
+            mark('hangup');
+          } else {
+            sayingGoodbye = true;
+            toRealtime(say(goodbye));
           }
           break;
         }
@@ -218,7 +232,15 @@ export function storyOf(record: CallRecord): { text: string; audio: Buffer } {
   };
 }
 
-const letters = (text: string) => text.toLowerCase().replace(/[^a-z]/g, '');
+const say = (line: string) => ({ type: 'response.create', response: { instructions: `Say exactly these words, and nothing else: ${line}` } });
+const words = (text: string) => text.toLowerCase().split(/[^a-z]+/).filter((word) => word.length >= 4);
+
+// ponytail: a word-overlap match, because a model can paraphrase the fixed line; a scripted share turn replaces it when a follow-up reuses most of the words
+function asksToShare(line: string, askShare: string) {
+  const said = new Set(words(line));
+  const key = words(askShare);
+  return key.filter((word) => said.has(word)).length >= 0.6 * key.length;
+}
 
 function answersOf(args = '{}'): { share: Share; tellSender: boolean } {
   try {

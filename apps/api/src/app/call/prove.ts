@@ -41,7 +41,7 @@ env('OPENAI_API_KEY');
 const server = createServer();
 attachCallStream(server);
 server.listen(PORT, async () => {
-  const call = expectCall({ instructions: INSTRUCTIONS, opener: OPENER, askShare: ASK_SHARE });
+  const call = expectCall({ instructions: INSTRUCTIONS, opener: OPENER, askShare: ASK_SHARE, goodbye: 'Thank you. Goodbye.' });
   const sid = await ring(to, stream, call.token);
   console.log('calling', sid);
   if (!(await answered(sid))) {
