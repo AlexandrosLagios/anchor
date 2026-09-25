@@ -7,9 +7,11 @@ import { Logger } from '@nestjs/common';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { FakeTransport } from '../../core/fake-transport';
+import { lines } from '../../core/lines';
 import { openStore } from '../../core/store';
 import type { Context, Family, Incoming, Moment } from '../../core/types';
 import { ask } from '../../model/model';
+import { memories } from '../memories';
 import { bundles, capture, forget } from './capture';
 import { BUNDLE_GAP_MS } from './filter';
 
@@ -447,6 +449,47 @@ test('an open bundle survives a group migration: it saves into the family and th
 
   expect(family.moments).toHaveLength(1);
   expect(transport.reactions).toEqual([{ chatId: '-1009', messageId: textEvent.messageId, emoji: '❤' }]);
+});
+
+test('a forget on an echo post asks which moment, deletes nothing, and sends no reaction', async () => {
+  const saveSpy = vi.spyOn(ctx.store, 'save');
+  const m1 = moment({ id: 'm1', echoPostId: 'echo-1' });
+  family.moments.push(m1);
+
+  const forgetEcho = event({ text: 'Anchor, forget this', replyTo: 'echo-1' });
+  expect(await forget.handle(forgetEcho, family, ctx)).toBe(true);
+
+  expect(family.moments).toEqual([m1]);
+  expect(transport.reactions).toEqual([]);
+  expect(saveSpy).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.forgetWhich, replyTo: forgetEcho.messageId } }]);
+});
+
+test('a keep-quiet on an echo post asks which moment, changes nothing, and sends no reaction', async () => {
+  const saveSpy = vi.spyOn(ctx.store, 'save');
+  const m1 = moment({ id: 'm1', echoPostId: 'echo-1', sensitive: false });
+  family.moments.push(m1);
+
+  const quietEcho = event({ text: "Anchor, don't bring this back", replyTo: 'echo-1' });
+  expect(await forget.handle(quietEcho, family, ctx)).toBe(true);
+
+  expect(family.moments[0].sensitive).toBe(false);
+  expect(transport.reactions).toEqual([]);
+  expect(saveSpy).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.quietWhich, replyTo: quietEcho.messageId } }]);
+});
+
+test('a reply to an echo post is not a story: memories skips it, and capture bundles it as usual', async () => {
+  const m1 = moment({ id: 'm1', echoPostId: 'echo-1' });
+  family.moments.push(m1);
+
+  const reply = event({ text: 'That was such a lovely day', replyTo: 'echo-1' });
+  expect(await memories.handle?.(reply, family, ctx)).toBe(false);
+  expect(await capture.handle(reply, family, ctx)).toBe(true);
+
+  expect(bundles).toHaveLength(1);
+  expect(bundles[0].events).toEqual([reply]);
+  expect(m1.stories).toEqual([]);
 });
 
 test('forget.handle and capture.handle return false for a private event', async () => {

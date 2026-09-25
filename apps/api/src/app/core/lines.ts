@@ -59,6 +59,8 @@ export const lines = {
   noInvitation: "Thank you 🙂 I'll bring you a family moment soon.",
   notJoined: "Thank you 🙂 If you'd like family moments from me, send /start.",
   pointer: "Hi! I keep your family's record. Talk to me in your family group 🙂",
+  forgetWhich: 'This post shows two moments. Reply "Anchor, forget this" to the photo you want me to forget.',
+  quietWhich: 'This post shows two moments. Reply "Anchor, don\'t bring this back" to the photo you don\'t want me to bring back.',
   voiceNote: '🎤 voice note',
   nothingToShare: 'The family record is empty so far. Share a photo with a few words 🙂',
   nothingToInvite: (name: string) => `${name} has seen every moment so far.`,

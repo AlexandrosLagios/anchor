@@ -78,7 +78,9 @@ async function checkOne(family: Family, momentId: string, ctx: Context) {
       : pictures.length === 1
         ? { ...pictures[0], text: caption }
         : { text: caption };
-  await ctx.transport(family.id).send(family.chatId, message);
+  const { messageId } = await ctx.transport(family.id).send(family.chatId, message);
+  newMoment.echoPostId = messageId;
+  ctx.store.save();
 }
 
 export const echoes: Feature = {

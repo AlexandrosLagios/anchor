@@ -9,6 +9,8 @@ import { openStore } from '../core/store';
 import type { Context, Incoming, Moment, Story } from '../core/types';
 import * as model from '../model/model';
 import { ask } from './ask';
+import { forget } from './capture/capture';
+import { memories } from './memories';
 
 vi.mock('../model/model', async (importOriginal) => ({ ...(await importOriginal<typeof import('../model/model')>()), ask: vi.fn() }));
 
@@ -21,7 +23,7 @@ function setup() {
   const family = store.addFamily('-100', '-100');
   const ctx: Context = { now: () => NOW, store, transport: () => transport };
   const router = createRouter([ask], ctx);
-  return { transport, store, family, ctx, router };
+  return { file, transport, store, family, ctx, router };
 }
 
 function moment(overrides: Partial<Moment> = {}): Moment {
@@ -190,6 +192,44 @@ test('a moment deleted during the call gets notFound', async () => {
   await router.route(question);
 
   expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.notFound, replyTo: 'q1' } }]);
+});
+
+test('the answer post id lands in memoryPostIds, and the store saves it', async () => {
+  const { file, family, ctx } = setup();
+  family.moments.push(moment({ id: 'm1' }));
+  vi.mocked(model.ask).mockResolvedValue({ momentId: 'm1' });
+
+  expect(await ask.handle?.(question, family, ctx)).toBe(true);
+
+  expect(family.moments[0].memoryPostIds).toEqual(['sent-1']);
+  const reloaded = openStore(file).family('-100');
+  expect(reloaded?.moments[0].memoryPostIds).toEqual(['sent-1']);
+});
+
+test('a forget on the answer deletes the moment', async () => {
+  const { family, ctx } = setup();
+  family.moments.push(moment({ id: 'm1' }));
+  vi.mocked(model.ask).mockResolvedValue({ momentId: 'm1' });
+
+  expect(await ask.handle?.(question, family, ctx)).toBe(true);
+  const answerId = family.moments[0].memoryPostIds[0];
+
+  const forgetEvent: Incoming = { ...question, messageId: 'f1', text: 'Anchor, forget this', replyTo: answerId };
+  expect(await forget.handle?.(forgetEvent, family, ctx)).toBe(true);
+  expect(family.moments).toEqual([]);
+});
+
+test('a 3-word reply to the answer becomes a group story', async () => {
+  const { family, ctx } = setup();
+  family.moments.push(moment({ id: 'm1' }));
+  vi.mocked(model.ask).mockResolvedValue({ momentId: 'm1' });
+
+  expect(await ask.handle?.(question, family, ctx)).toBe(true);
+  const answerId = family.moments[0].memoryPostIds[0];
+
+  const storyEvent: Incoming = { ...question, messageId: 's1', text: 'She loved that day', replyTo: answerId };
+  expect(await memories.handle?.(storyEvent, family, ctx)).toBe(true);
+  expect(family.moments[0].stories.some((story) => story.text === 'She loved that day')).toBe(true);
 });
 
 test('a group text that does not start the question, and a private question, return false', async () => {

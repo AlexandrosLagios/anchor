@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Logger } from '@nestjs/common';
+import { lines } from '../../core/lines';
 import type { Context, Family, Feature, Moment } from '../../core/types';
 import { classify } from './classify';
 import type { Classification } from './classify';
@@ -38,6 +39,10 @@ function findMomentOfStory(family: Family, messageId: string): Moment | undefine
   return family.moments.find((moment) => moment.stories.some((story) => story.messageIds.includes(messageId)));
 }
 
+function findMomentOfEchoPost(family: Family, messageId: string): Moment | undefined {
+  return family.moments.find((moment) => moment.echoPostId === messageId);
+}
+
 export const forget: Feature = {
   name: 'forget',
   async handle(event, family, ctx) {
@@ -49,6 +54,12 @@ export const forget: Feature = {
     if (!event.replyTo) return true;
 
     const replyTo = event.replyTo;
+
+    if (findMomentOfEchoPost(family, replyTo)) {
+      await ctx.transport(family.id).send(event.chatId, { text: isForget ? lines.forgetWhich : lines.quietWhich, replyTo: event.messageId });
+      return true;
+    }
+
     const openBundle = bundles.find((bundle) => bundle.family === family && bundle.events.some((e) => e.messageId === replyTo));
     let changed = false; // a bundle removal is in-memory only and never needs a save
 

@@ -65,11 +65,13 @@ export const ask: Feature = {
     if (!moment || moment.sensitive) return notFound();
 
     const names = [...new Set(moment.stories.map((story) => story.by.name))];
-    await ctx.transport(family.id).send(event.chatId, {
+    const { messageId } = await ctx.transport(family.id).send(event.chatId, {
       ...(moment.video ? { video: moment.video } : moment.photo ? { photo: moment.photo } : {}),
       text: lines.askAnswer(moment.title, formatDate(momentDate(moment)), names),
       replyTo: event.messageId,
     });
+    moment.memoryPostIds.push(messageId);
+    ctx.store.save();
 
     const voiceStory = moment.stories.find((story) => story.voice);
     if (voiceStory) await ctx.transport(family.id).send(event.chatId, { voice: voiceStory.voice });

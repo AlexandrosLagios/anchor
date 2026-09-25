@@ -75,6 +75,7 @@ export type Moment = {
   memoryPostIds: string[];
   returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
   echo?: string; // the id of the older moment that this moment echoes
+  echoPostId?: string; // the first message of the then-and-now post
 };
 
 export type Invitation = {
