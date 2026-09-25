@@ -35,6 +35,7 @@ PUBLIC_PRIVACY_EMAIL=privacy@anchor.com
 PUBLIC_REQUIRE_AUTH=true
 PUBLIC_DATA_REGION=eu-central-1
 PUBLIC_SITE_URL=https://anchor-open26.vercel.app
+OPENAI_API_KEY=…                   # same secret as anchor-api; server-only, not PUBLIC_
 ```
 
 Rewrites in `apps/web/vercel.json` proxy `/api/*` and `/whatsapp` to `https://anchor-api-teal.vercel.app`.
