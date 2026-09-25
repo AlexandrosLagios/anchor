@@ -479,6 +479,18 @@ test('a keep-quiet on an echo post asks which moment, changes nothing, and sends
   expect(transport.sent).toEqual([{ chatId: '-100', messageId: 'sent-1', message: { text: lines.quietWhich, replyTo: quietEcho.messageId } }]);
 });
 
+test('a forget on an echo post whose reply send rejects still returns true and logs a warning', async () => {
+  const warnSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  const m1 = moment({ id: 'm1', echoPostId: 'echo-1' });
+  family.moments.push(m1);
+  vi.spyOn(transport, 'send').mockRejectedValue(new Error('blocked'));
+
+  const forgetEcho = event({ text: 'Anchor, forget this', replyTo: 'echo-1' });
+  expect(await forget.handle(forgetEcho, family, ctx)).toBe(true);
+
+  expect(warnSpy).toHaveBeenCalled();
+});
+
 test('a reply to an echo post is not a story: memories skips it, and capture bundles it as usual', async () => {
   const m1 = moment({ id: 'm1', echoPostId: 'echo-1' });
   family.moments.push(m1);

@@ -71,10 +71,13 @@ export const ask: Feature = {
       replyTo: event.messageId,
     });
     moment.memoryPostIds.push(messageId);
-    ctx.store.save();
 
     const voiceStory = moment.stories.find((story) => story.voice);
-    if (voiceStory) await ctx.transport(family.id).send(event.chatId, { voice: voiceStory.voice });
+    if (voiceStory) {
+      const voiceSent = await ctx.transport(family.id).send(event.chatId, { voice: voiceStory.voice });
+      moment.memoryPostIds.push(voiceSent.messageId);
+    }
+    ctx.store.save();
 
     return true;
   },

@@ -496,6 +496,16 @@ test('an invitation with no reply for 3 hours gets gentleHelp and the voice note
   expect(save).not.toHaveBeenCalled();
 });
 
+test('an invitation with no sentAt fails safe and never gets gentleHelp', async () => {
+  const moment = add({ voice: { id: 'voice-57' } });
+  invite(moment, { sentAt: undefined });
+
+  await tickAt(at(25, 20));
+
+  expect(transport.sent).toEqual([]);
+  expect(nikos().invitation).toMatchObject({ helped: false });
+});
+
 test('after any reply, a tick past 3 hours sends no gentleHelp', async () => {
   const moment = add();
   vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'story' });

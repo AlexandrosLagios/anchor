@@ -76,6 +76,7 @@ async function handleStory(event: Incoming, family: Family, ctx: Context): Promi
   const replyTo = event.replyTo;
   if (!replyTo) return false;
   if (ANCHOR_ADDRESS.test(event.text ?? '')) return false;
+  if (event.text?.startsWith('/')) return false;
   const moment = family.moments.find((item) => item.memoryPostIds.includes(replyTo));
   if (!moment || event.unsupported || event.forwarded) return false;
   if (!event.voice && wordCount(event.text) < 3) return false;

@@ -56,7 +56,11 @@ export const forget: Feature = {
     const replyTo = event.replyTo;
 
     if (findMomentOfEchoPost(family, replyTo)) {
-      await ctx.transport(family.id).send(event.chatId, { text: isForget ? lines.forgetWhich : lines.quietWhich, replyTo: event.messageId });
+      try {
+        await ctx.transport(family.id).send(event.chatId, { text: isForget ? lines.forgetWhich : lines.quietWhich, replyTo: event.messageId });
+      } catch (error) {
+        logger.warn(`echo-post reply on ${event.chatId}/${event.messageId} failed: ${error}`);
+      }
       return true;
     }
 

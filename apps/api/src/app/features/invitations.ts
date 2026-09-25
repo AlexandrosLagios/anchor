@@ -340,7 +340,7 @@ function dateOf(moment: Moment) {
 
 async function helpIfSilent(family: Family, storyteller: Storyteller, now: number, ctx: Context) {
   const invitation = storyteller.invitation;
-  if (!storyteller.started || !invitation || invitation.replied || invitation.helped || now - invitation.sentAt < 3 * 3_600_000) return;
+  if (!storyteller.started || !invitation || invitation.replied || invitation.helped || !(now - invitation.sentAt >= 3 * 3_600_000)) return;
   const moment = family.moments.find((item) => item.id === invitation.momentId);
   if (!moment || moment.sensitive) {
     storyteller.invitation = undefined;

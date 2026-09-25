@@ -303,6 +303,16 @@ test('a reply that addresses Anchor directly is a question, not a story, and add
   expect(posted.stories).toEqual([]);
 });
 
+test('a command reply to a memory post is never a story', async () => {
+  const posted = moment({ memoryPostIds: ['sent-1'] });
+  family.moments.push(posted);
+
+  const handled = await memories.handle?.(groupEvent({ text: '/help what is this', replyTo: 'sent-1', messageId: '41' }), family, ctx);
+
+  expect(handled).toBe(false);
+  expect(posted.stories).toEqual([]);
+});
+
 test('a moment that a forget deletes while transcribe runs gets no story', async () => {
   const posted = moment({ memoryPostIds: ['sent-1'] });
   family.moments.push(posted);

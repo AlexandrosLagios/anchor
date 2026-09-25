@@ -206,6 +206,22 @@ test('the answer post id lands in memoryPostIds, and the store saves it', async 
   expect(reloaded?.moments[0].memoryPostIds).toEqual(['sent-1']);
 });
 
+test('the voice story follow-up id also lands in memoryPostIds, and a forget on it deletes the moment', async () => {
+  const { family, ctx } = setup();
+  const withVoice = story({ id: 's2', by: { id: 'u3', name: 'Elena' }, text: 'I remember the tears', voice: { id: 'voice-1' } });
+  family.moments.push(moment({ id: 'm1', stories: [withVoice] }));
+  vi.mocked(model.ask).mockResolvedValue({ momentId: 'm1' });
+
+  expect(await ask.handle?.(question, family, ctx)).toBe(true);
+
+  expect(family.moments[0].memoryPostIds).toEqual(['sent-1', 'sent-2']);
+
+  const voicePostId = family.moments[0].memoryPostIds[1];
+  const forgetEvent: Incoming = { ...question, messageId: 'f1', text: 'Anchor, forget this', replyTo: voicePostId };
+  expect(await forget.handle?.(forgetEvent, family, ctx)).toBe(true);
+  expect(family.moments).toEqual([]);
+});
+
 test('a forget on the answer deletes the moment', async () => {
   const { family, ctx } = setup();
   family.moments.push(moment({ id: 'm1' }));
