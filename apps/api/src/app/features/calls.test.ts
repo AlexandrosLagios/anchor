@@ -114,7 +114,7 @@ test('an unanswered call drops the token and posts nothing', async () => {
 test('a yes to the words posts the story in the group without a voice note', async () => {
   await callMember(family, nikos, ctx);
   await expect.poll(() => endCall).toBeDefined();
-  endCall(record({ share: 'words', transcript: [{ speaker: 'person', text: 'Kostas held his dad’s hand.' }] }));
+  endCall(record({ share: 'words', shareAsked: { ms: 0, line: 1 }, transcript: [{ speaker: 'person', text: 'Kostas held his dad’s hand.' }] }));
   await expect.poll(() => family.moments[1].stories.length).toBe(1);
   expect(family.moments[1].stories[0]).toMatchObject({ by: { id: '7', name: 'Nikos' }, text: 'Kostas held his dad’s hand.', voice: undefined });
   expect(texts()).toContainEqual(['-100', lines.storyAdded('Nikos', 'Eleni', 'Kostas held his dad’s hand.')]);
@@ -198,11 +198,26 @@ test('the daily call stays silent when nothing new was shared since the last cal
 test('a yes to the voice sends the member their voice in private, then shares the voice in the group', async () => {
   await callMember(family, nikos, ctx);
   await expect.poll(() => endCall).toBeDefined();
-  endCall(record({ share: 'voice', audio: [Buffer.alloc(800, 0xff)], speech: [[0, 100]], transcript: [{ speaker: 'person', text: 'Kostas held his dad’s hand.' }] }));
+  endCall(record({ share: 'voice', shareAsked: { ms: 100, line: 1 }, audio: [Buffer.alloc(800, 0xff)], speech: [[0, 100]], transcript: [{ speaker: 'person', text: 'Kostas held his dad’s hand.' }] }));
   await expect.poll(() => family.moments[1].stories.length).toBe(1);
   const privately = transport.sent[1];
   expect(privately).toMatchObject({ chatId: '7', message: { text: lines.shared } });
   expect((privately.message.voice as { wav: Buffer }).wav.subarray(0, 4).toString()).toBe('RIFF');
   expect(family.moments[1].stories[0]).toMatchObject({ text: 'Kostas held his dad’s hand.', voice: { id: `voice-${privately.messageId}` } });
   expect(transport.sent.at(-1)).toMatchObject({ chatId: '-100', message: { voice: { id: `voice-${privately.messageId}` } } });
+});
+
+test('a yes without the share question keeps nothing', async () => {
+  await callMember(family, nikos, ctx);
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(record({ share: 'words', transcript: [{ speaker: 'person', text: 'Yes, in text.' }] }));
+  await new Promise((done) => setTimeout(done, 10));
+  expect(family.moments[1].stories).toEqual([]);
+});
+
+test('the calls tick rings a member once, even with a reminder at the daily slot', async () => {
+  nikos.choices.call = true;
+  family.reminders.push(reminder({ id: 'r1' }), reminder({ id: 'r2' }));
+  await tick(NOW - 2_000, NOW);
+  expect(ring).toHaveBeenCalledTimes(1);
 });

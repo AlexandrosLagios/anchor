@@ -12,6 +12,8 @@ import { shareStory } from './invitations';
 const log = new Logger('Calls');
 
 const DAILY_HOUR = 11;
+// a call lasts at most 10 minutes, so a stream that never arrives frees its token after 12
+const CALL_LIMIT_MS = 12 * 60_000;
 
 /** The voice speaks a line without its emoji, and without the line breaks of a chat message. */
 export const spoken = (line: string) =>
@@ -53,7 +55,7 @@ function instructions(member: Member, moment: Moment) {
 
 async function afterCall(family: Family, member: Member, moment: Moment, record: CallRecord, ctx: Context) {
   const story = storyOf(record);
-  if ((record.share === 'voice' || record.share === 'words') && story.text) {
+  if (record.shareAsked && (record.share === 'voice' || record.share === 'words') && story.text) {
     // the private send uploads the clip once, and the group post reuses its file id
     const sent = record.share === 'voice' && story.audio.length ? await tell(family, member, { voice: { wav: mulawWav(story.audio) }, text: lines.shared }, ctx) : undefined;
     await shareStory(family, member, moment, { text: story.text, voice: sent?.voice }, ctx);
@@ -69,7 +71,10 @@ async function afterCall(family: Family, member: Member, moment: Moment, record:
 async function follow(sid: string, call: ReturnType<typeof expectCall>, family: Family, member: Member, moment: Moment | undefined, ctx: Context) {
   try {
     if (!(await answered(sid))) return call.forget();
-    const record = await call.ended;
+    let limit: NodeJS.Timeout | undefined;
+    const record = await Promise.race([call.ended, new Promise<undefined>((done) => (limit = setTimeout(() => done(undefined), CALL_LIMIT_MS)))]);
+    clearTimeout(limit);
+    if (!record) return call.forget();
     if (moment) await afterCall(family, member, moment, record, ctx);
   } catch (error) {
     call.forget();
@@ -118,10 +123,11 @@ export const calls: Feature = {
     const slot = slotIn(window, DAILY_HOUR);
     for (const member of family.members) {
       if (!member.started || !member.choices.call || !member.phone) continue;
-      for (const reminder of family.reminders) {
-        if (reminder.to === member.id && reminder.sentAt !== undefined && reminder.sentAt > window.from && reminder.sentAt <= window.to) {
-          await callMember(family, member, ctx, reminder);
-        }
+      // ponytail: one call per member per tick, so a second reminder in the same window arrives in private only
+      const reminder = family.reminders.find((item) => item.to === member.id && item.sentAt !== undefined && item.sentAt > window.from && item.sentAt <= window.to);
+      if (reminder) {
+        await callMember(family, member, ctx, reminder);
+        continue;
       }
       const moment = newestMoment(family, member);
       if (slot === undefined || member.lastCallDay === dayIndex(slot) || !moment || moment.savedAt <= lastCallAt(member)) continue;
