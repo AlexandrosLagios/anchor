@@ -104,7 +104,7 @@ v2: this section says storyteller for a member who has `started` and `choices.mo
 - `byPriority` picks the first qualifying moment.
 - Anchor sends the video or the photo first. Then Anchor sends a voice note of `invitation(moment)`, with the text as the caption and the buttons "Not now", "Don't bring this back", and "What is this?". When no voice clip exists, Anchor sends the text with the buttons.
 - "What is this?", or a reply of kind `question`, gets `tellDirectly(title, date, sender)`, then the sender's voice note when the moment has one (user story 5, "Just ask"). The invitation stays open for a story, and the answer never hints that he should have known.
-- An invitation with no reply for 3 demo-clock hours gets `gentleHelp(date, title)` once, like a hesitant reply (user story 4). `Invitation.sentAt` and `Invitation.replied` drive this rule.
+- An invitation with no reply for 3 demo-clock hours gets `gentleHelp(date, title)` once, like a hesitant reply (user story 4). `Invitation.sentAt` and `Invitation.replied` drive this rule. v2: the member must still have `choices.moments`.
 - The code makes the TTS clip once per moment. The transport returns a media id for the uploaded clip, and the code stores the id in `moment.invitationVoice`.
 - After each delivered invitation, the code increments `count` and sets `due` to the slot time plus the next gap. The gaps are 1, 2, 4, 8, 16, and 32 days. After the seventh return, the moment gets no more private returns.
 - A delivered invitation counts as a return whether or not the storyteller answers. Silence is never read as forgetting, and nobody is watched.
@@ -133,6 +133,7 @@ v2: the `intents` feature takes the position of `ask` and reads every phrase. No
 
 - `intents` reads each group message that matches the ask pattern. `intents` also reads each private message that no earlier feature owns. An open invitation still owns the replies to the invitation (section 4.5).
 - In the private chat, no "Anchor" prefix is needed. A private voice note goes to the model as audio.
+- The code decides the fixed phrases before any model call: "send me", "settings", "my settings", "call me", "what did I miss", "another moment", and "stop". In the group, the check reads the text after the ask pattern, and in private, the whole text. The same check lets these phrases pass an open invitation, so the invitation never reads them as a reply. Every other text goes to the model.
 - One model call returns `{ intent, momentId }` (section 6.7). The code acts on the intent:
 
 | Intent | Group | Private |
@@ -300,6 +301,7 @@ These additions put journey steps 2 and 5 on stage, and they let the live demo r
 
 - A tap that turns on `call` without `member.phone` sends `askPhone` with the reply-keyboard button "Share my phone number" (`Button.contact`). A contact of the member's own Telegram user sets `member.phone` in E.164. Then Anchor sends `phoneSaved` and a contact card of Anchor with the number of `TWILIO_FROM`. A contact of another user changes nothing.
 - "Done" sends `choicesSaved(names)` with the private next-step buttons.
+- A tap on a choice sets `started` to true, because the member talks to Anchor in private. After "stop", "settings" and one tap start the member again.
 - A member of v1 keeps `started`, and gets `choices.moments` from the v1 `started` value.
 
 ### 4.12 Share offers (v2, step 5)
