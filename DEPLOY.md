@@ -166,16 +166,47 @@ The deploy flags do these things:
 - `TZ=Europe/Athens` puts the 11:00 and 18:00 slots on Athens time.
 - `ANCHOR_DAY_SECONDS` stays unset, so the demo clock runs at real time. Each slot fires once per day, at 11:00 and at 18:00.
 
-For the demo, an admin moves the bot on cue. `/fastforward <days>` moves the demo clock, `/memory` posts a memory at once, and `/invite` sends the invitations at once.
+For the demo, an admin moves the bot on cue. `/fastforward <days>` moves the demo clock, `/memory` posts a memory at once, and `/send` sends the invitations at once.
 
 ### Update or stop the bot
 
 Deploy while the family is quiet. During a rollout, the old and the new instance run together for a short time, and the last write to the record wins.
 
-- To deploy a new version, repeat steps 1 to 3 of the deploy.
+- A push to `main` that changes `apps/api`, `package.json`, or `pnpm-lock.yaml` deploys a new version automatically (see "Automatic deploy"). To deploy by hand, repeat steps 1 to 3 of the deploy.
 - To stop the bot and the cost, delete the service. The bucket keeps the record.
 - Before a laptop run with the same token, delete the service. The service polls the token all the time.
 
 ```bash
 gcloud run services delete anchor-bot --project=$PROJECT --region=$REGION
 ```
+
+### Automatic deploy
+
+The workflow `.github/workflows/deploy-anchor-bot.yml` deploys `anchor-bot` when a push to `main` changes `apps/api`, `package.json`, or `pnpm-lock.yaml`. It runs `pnpm nx test api`, builds the image, pushes the image with the short commit as its tag, and deploys the image as a new revision. The revision keeps the flags, the secrets, and the volume of the service. The "Run workflow" button on the Actions tab starts the same deploy by hand.
+
+The workflow signs in to Google Cloud through Workload Identity Federation, so GitHub stores no key. Only a workflow run from the repository `High-Contrast-Team/anchor` on `main` gets the deployer identity.
+
+A person with the Owner role runs this setup once, before the first run. Set the variables of "Telegram bot" first.
+
+```bash
+NUMBER=$(gcloud projects describe $PROJECT --format='value(projectNumber)')
+DEPLOYER=anchor-deployer@$PROJECT.iam.gserviceaccount.com
+
+gcloud services enable iamcredentials.googleapis.com sts.googleapis.com --project=$PROJECT
+gcloud iam service-accounts create anchor-deployer --project=$PROJECT
+gcloud iam workload-identity-pools create github --project=$PROJECT --location=global --display-name="GitHub Actions"
+gcloud iam workload-identity-pools providers create-oidc anchor --project=$PROJECT --location=global \
+  --workload-identity-pool=github --issuer-uri=https://token.actions.githubusercontent.com \
+  --attribute-mapping=google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref \
+  --attribute-condition="assertion.repository=='High-Contrast-Team/anchor' && assertion.ref=='refs/heads/main'"
+gcloud iam service-accounts add-iam-policy-binding $DEPLOYER --project=$PROJECT --role=roles/iam.workloadIdentityUser \
+  --member="principalSet://iam.googleapis.com/projects/$NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/High-Contrast-Team/anchor"
+gcloud artifacts repositories add-iam-policy-binding anchor --project=$PROJECT --location=$REGION \
+  --member=serviceAccount:$DEPLOYER --role=roles/artifactregistry.writer
+gcloud run services add-iam-policy-binding anchor-bot --project=$PROJECT --region=$REGION \
+  --member=serviceAccount:$DEPLOYER --role=roles/run.developer
+gcloud iam service-accounts add-iam-policy-binding $SA --project=$PROJECT \
+  --member=serviceAccount:$DEPLOYER --role=roles/iam.serviceAccountUser
+```
+
+The deployer can push images to the `anchor` repository and deploy `anchor-bot` as `$SA`. The deployer cannot read the secrets or the record.
