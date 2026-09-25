@@ -46,7 +46,8 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Artificial intelligence (OpenAI)</h2>
     <p>
-      To extract recallable moments, transcribe voice notes, and synthesise speech we send relevant text and audio to
+      To extract recallable moments, answer website chat questions about those moments and file names, transcribe voice
+      notes, and synthesise speech we send relevant text and audio to
       <strong>OpenAI’s API</strong> (<code>api.openai.com</code>). Prompts and media may be processed
       <strong>outside the European Union</strong> under OpenAI’s API terms. Do not submit special-category health data you
       are not prepared to share with that processor.
@@ -56,7 +57,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <ul>
       <li>Neon (Vercel Marketplace) — Postgres in EU <code>eu-central-1</code> (accounts, consents, file metadata, snapshots).</li>
       <li>Vercel — website, Nest API (Frankfurt), and Blob storage (<code>fra1</code>).</li>
-      <li>OpenAI API — moment extraction, transcription, and speech (may process outside the EU).</li>
+      <li>OpenAI API — moment extraction, website chat answers, transcription, and speech (may process outside the EU). Website chat text is sent with the request and is not stored as a transcript.</li>
       <li>Twilio — WhatsApp delivery when connected.</li>
     </ul>
 

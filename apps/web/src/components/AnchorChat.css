@@ -1,0 +1,127 @@
+.anchor-chat {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0 var(--space) calc(var(--space) * 2);
+}
+
+.anchor-chat h1 {
+  margin: 0 0 0.65rem;
+  font-family: var(--display);
+  font-size: clamp(1.85rem, 4vw, 2.4rem);
+  color: var(--brand);
+}
+
+.anchor-chat .lede {
+  margin: 0 0 1rem;
+  color: var(--ink-muted);
+}
+
+.anchor-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 16rem;
+  max-height: min(32rem, 58vh);
+  overflow: auto;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--chat-bg);
+}
+
+.anchor-empty,
+.anchor-pending {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.anchor-bubble {
+  max-width: min(92%, 32rem);
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  background: var(--bubble-anchor);
+}
+
+.anchor-bubble.user {
+  align-self: flex-end;
+  background: var(--bubble-family);
+}
+
+.anchor-who {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.anchor-text {
+  margin: 0.2rem 0 0;
+  white-space: pre-wrap;
+}
+
+.anchor-cards {
+  list-style: none;
+  margin: 0.65rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.anchor-cards li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.65rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+}
+
+.anchor-cards span {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+
+.anchor-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.85rem 0;
+}
+
+.anchor-compose {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+
+.anchor-compose label {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+.anchor-compose input {
+  min-height: var(--tap);
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #8d958f;
+  border-radius: 0.7rem;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.anchor-chat .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.anchor-chat .form-error {
+  margin: 0.75rem 0 0;
+  color: #8a1f11;
+}
