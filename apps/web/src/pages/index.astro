@@ -1,125 +1,124 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import '../components/designs/slate/slate.css';
+import { AuthNav } from '../components/AuthNav';
+import { ConsentBanner } from '../components/ConsentBanner';
+
+const description =
+  'Family memories, returning in the group chat. Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.';
 ---
 
-<BaseLayout title="Anchor" currentPath="/">
-  <section class="hero" aria-labelledby="hero-title">
-    <div class="hero-copy">
-      <h1 id="hero-title" class="hero-brand">Anchor</h1>
-      <p class="hero-line">Family memories, returning in the group chat.</p>
-      <p class="hero-support">
-        Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="/app">Try the demo</a>
-        <a class="btn btn-secondary" href="/how-it-works">How it works</a>
-      </div>
-    </div>
-    <div class="hero-visual" role="img" aria-label="Warm abstract scene suggesting a family chat glowing softly at dusk"></div>
-  </section>
-</BaseLayout>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#1a1a1a" />
+    <meta property="og:title" content="Anchor · family memories, returning" />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <title>Anchor · family memories, returning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Figtree:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="slate">
+    <a class="slate-skip" href="#main">Skip to content</a>
 
-<style>
-  .hero {
-    position: relative;
-    min-height: calc(100dvh - 8rem);
-    display: grid;
-    align-items: end;
-    overflow: hidden;
-  }
+    <header class="slate-header">
+      <a class="slate-word" href="/">Anchor</a>
+      <nav class="slate-nav" aria-label="Primary">
+        <a href="/how-it-works">How it works</a>
+        <a href="/app">Try the demo</a>
+        <a href="/privacy">Privacy</a>
+        <AuthNav client:load />
+      </nav>
+    </header>
 
-  .hero-visual {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    background:
-      linear-gradient(180deg, transparent 0%, rgba(242, 240, 235, 0.55) 45%, var(--bg) 88%),
-      radial-gradient(ellipse 80% 60% at 70% 40%, #c45c2688 0%, transparent 55%),
-      radial-gradient(ellipse 70% 50% at 20% 60%, #0f3d3acc 0%, transparent 50%),
-      linear-gradient(135deg, #1a4a46 0%, #2a5f58 35%, #8b5a3c 70%, #d4a574 100%);
-    animation: tide 18s ease-in-out infinite alternate;
-  }
+    <main id="main" class="slate-main">
+      <section class="slate-hero" aria-labelledby="slate-brand">
+        <h1 id="slate-brand" class="slate-brand">Anchor</h1>
+        <p class="slate-line">Family memories, returning in the group chat.</p>
+        <p class="slate-support">
+          Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.
+        </p>
+        <div class="slate-actions">
+          <a class="slate-btn slate-btn-primary" href="/app">Try the demo</a>
+          <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
+          <a class="slate-link" href="/signup">Create account</a>
+        </div>
+      </section>
 
-  @media (prefers-reduced-motion: reduce) {
-    .hero-visual {
-      animation: none;
-    }
-  }
+      <section class="slate-section" aria-labelledby="how-it-works">
+        <h2 id="how-it-works" class="slate-heading">How it works</h2>
+        <ol class="slate-steps">
+          <li>
+            <span class="slate-step-num" aria-hidden="true">1</span>
+            <p>The family shares a moment in the group chat — a story, a photo, a voice note.</p>
+          </li>
+          <li>
+            <span class="slate-step-num" aria-hidden="true">2</span>
+            <p>Anchor saves it quietly, so it is there when it is needed later.</p>
+          </li>
+          <li>
+            <span class="slate-step-num" aria-hidden="true">3</span>
+            <p>Athina gets a gentle cue in the same chat, at a paced moment.</p>
+          </li>
+        </ol>
+      </section>
 
-  @keyframes tide {
-    from {
-      transform: scale(1) translate3d(0, 0, 0);
-      filter: saturate(1);
-    }
-    to {
-      transform: scale(1.06) translate3d(-1.5%, -1%, 0);
-      filter: saturate(1.08);
-    }
-  }
+      <section class="slate-section" aria-labelledby="what-comes-back">
+        <h2 id="what-comes-back" class="slate-heading">What comes back</h2>
+        <p class="slate-section-lead">
+          The same kinds of things the family already shares — not a clinical exercise.
+        </p>
+        <ul class="slate-list">
+          <li>Memories and stories from the people who know her</li>
+          <li>Photos from ordinary days and bigger ones</li>
+          <li>Voice notes in familiar voices</li>
+          <li>
+            Spaced retrieval: free recall first, then a cue, then a gentle reveal if she wants it
+          </li>
+        </ul>
+      </section>
 
-  .hero-copy {
-    position: relative;
-    z-index: 1;
-    max-width: var(--max);
-    width: 100%;
-    margin: 0 auto;
-    padding: clamp(3rem, 12vh, 6rem) var(--space) calc(var(--space) * 2);
-  }
+      <section class="slate-section" aria-labelledby="where-data-lives">
+        <h2 id="where-data-lives" class="slate-heading">Where data lives</h2>
+        <p class="slate-prose">
+          Accounts and file metadata sit in Neon Postgres in the EU (<code>eu-central-1</code>).
+          Media files go to Vercel Blob in Frankfurt (<code>fra1</code>). Prompts sent to OpenAI may
+          leave the EU when the model runs. More detail is on the{' '}
+          <a class="slate-link" href="/privacy">privacy page</a>.
+        </p>
+      </section>
 
-  .hero-brand {
-    margin: 0 0 0.65rem;
-    font-family: var(--display);
-    font-size: clamp(3.25rem, 12vw, 6.5rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 0.95;
-    color: var(--brand);
-    animation: rise 0.9s ease-out both;
-  }
+      <section class="slate-section slate-close" aria-labelledby="slate-close">
+        <h2 id="slate-close" class="slate-heading slate-heading-soft">
+          Keep Athina in the conversation.
+        </h2>
+        <p class="slate-section-lead">
+          Start with the demo, read how it works, or create an account when you are ready.
+        </p>
+        <div class="slate-actions">
+          <a class="slate-btn slate-btn-primary" href="/app">Try the demo</a>
+          <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
+          <a class="slate-link" href="/signup">Create account</a>
+        </div>
+      </section>
+    </main>
 
-  .hero-line {
-    margin: 0 0 0.75rem;
-    max-width: 18ch;
-    font-family: var(--display);
-    font-size: clamp(1.45rem, 3.5vw, 2rem);
-    font-weight: 600;
-    line-height: 1.25;
-    color: var(--ink);
-    animation: rise 0.9s ease-out 0.12s both;
-  }
+    <footer class="slate-footer">
+      <p>Built on spaced retrieval: the family's own stories, returning gently so Athina keeps her place in family life.</p>
+      <nav aria-label="Footer">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/cookies">Cookies</a>
+      </nav>
+    </footer>
 
-  .hero-support {
-    margin: 0 0 1.5rem;
-    max-width: 34rem;
-    color: var(--ink-muted);
-    font-size: 1.1rem;
-    animation: rise 0.9s ease-out 0.22s both;
-  }
-
-  .hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.65rem;
-    animation: rise 0.9s ease-out 0.32s both;
-  }
-
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(0.85rem);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .hero-brand,
-    .hero-line,
-    .hero-support,
-    .hero-actions {
-      animation: none;
-    }
-  }
-</style>
+    <ConsentBanner client:load />
+  </body>
+</html>

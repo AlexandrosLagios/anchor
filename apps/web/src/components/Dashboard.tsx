@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { watchAuth, type AuthUser } from '../lib/auth';
+import { apiUrl } from '../lib/config';
 import './Dashboard.css';
 
 type Role = 'sofia' | 'maria' | 'athina' | 'anchor';
@@ -49,7 +50,7 @@ const ratings: Record<string, string> = {
 async function api<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const { getIdToken } = await import('../lib/auth');
   const token = await getIdToken();
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(apiUrl(`/api${path}`), {
     ...init,
     headers: {
       'content-type': 'application/json',
@@ -70,7 +71,7 @@ async function api<T = unknown>(path: string, init?: RequestInit): Promise<T> {
 function mediaSrc(url?: string) {
   if (!url) return undefined;
   if (url.startsWith('data:') || url.startsWith('http') || url.startsWith('/')) return url;
-  return `/api/${url}`;
+  return apiUrl(`/api/${url}`);
 }
 
 export function Dashboard() {

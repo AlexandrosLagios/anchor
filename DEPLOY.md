@@ -23,8 +23,8 @@ AUTH_JWT_SECRET=…                  # long random secret (already set on Vercel
 DATA_REGION=eu-central-1
 REQUIRE_AUTH=true
 CORS_ORIGINS=https://anchor-open26.vercel.app,https://anchor-w0nd3rland.vercel.app
-GEMINI_API_KEY=…                   # optional until AI is exercised
-GEMINI_DATA_REGION_NOTE=developer-api-global
+OPENAI_API_KEY=…                   # required for moments, recall, and speech
+OPENAI_DATA_REGION_NOTE=openai-api-global
 BLOB_READ_WRITE_TOKEN=…            # set when Blob store is linked / copied
 ```
 
@@ -47,12 +47,13 @@ pnpm dev:api
 pnpm dev:web   # proxies /api → localhost:3000
 ```
 
-## Gemini
+## OpenAI
 
-Current code uses the **Gemini Developer API** (`GEMINI_API_KEY`). Prompts may leave the EU — disclosed in Privacy.
+Current code uses the **OpenAI API** (`OPENAI_API_KEY`) for moment extraction, recall checks, transcription, and speech. Prompts may leave the EU — disclosed in Privacy.
 
 ```bash
-GEMINI_DATA_REGION_NOTE=developer-api-global
+OPENAI_DATA_REGION_NOTE=openai-api-global
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
 ## Telegram bot (`anchor-bot` on Cloud Run)
@@ -98,17 +99,17 @@ IMAGE=$REGION-docker.pkg.dev/$PROJECT/anchor/anchor-bot
    gcloud storage buckets add-iam-policy-binding gs://$BUCKET --member=serviceAccount:$SA --role=roles/storage.objectUser
    ```
 
-5. Store the bot token and the Gemini key as secrets. The commands read the values from `apps/api/.env.local`, so the values stay out of the shell history.
+5. Store the bot token and the OpenAI key as secrets. The commands read the values from `apps/api/.env.local`, so the values stay out of the shell history.
 
    ```bash
    grep '^TELEGRAM_BOT_TOKEN=' apps/api/.env.local | cut -d= -f2- | tr -d '\r\n' | gcloud secrets create anchor-telegram-bot-token --data-file=- --project=$PROJECT
-   grep '^GEMINI_API_KEY=' apps/api/.env.local | cut -d= -f2- | tr -d '\r\n' | gcloud secrets create anchor-gemini-api-key --data-file=- --project=$PROJECT
+   grep '^OPENAI_API_KEY=' apps/api/.env.local | cut -d= -f2- | tr -d '\r\n' | gcloud secrets create anchor-openai-api-key --data-file=- --project=$PROJECT
    ```
 
 6. Give the service account read access to the two secrets.
 
    ```bash
-   for secret in anchor-telegram-bot-token anchor-gemini-api-key; do
+   for secret in anchor-telegram-bot-token anchor-openai-api-key; do
      gcloud secrets add-iam-policy-binding $secret --member=serviceAccount:$SA --role=roles/secretmanager.secretAccessor --project=$PROJECT
    done
    ```
@@ -141,7 +142,7 @@ Start the deployed bot on a fresh record. Do not copy `tmp/anchor-state.json` fr
      --add-volume=name=state,type=cloud-storage,bucket=$BUCKET,mount-options="uid=1000;gid=1000" \
      --add-volume-mount=volume=state,mount-path=/data \
      --set-env-vars=ANCHOR_STATE_FILE=/data/anchor-state.json,TZ=Europe/Athens \
-     --set-secrets=TELEGRAM_BOT_TOKEN=anchor-telegram-bot-token:latest,GEMINI_API_KEY=anchor-gemini-api-key:latest
+     --set-secrets=TELEGRAM_BOT_TOKEN=anchor-telegram-bot-token:latest,OPENAI_API_KEY=anchor-openai-api-key:latest
    ```
 
 4. If the bot is already in the group, remove the bot from the group. Anchor creates the family only when Anchor joins a group.

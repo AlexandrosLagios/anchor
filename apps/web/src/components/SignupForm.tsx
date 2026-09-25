@@ -37,7 +37,7 @@ export function SignupForm() {
       <h1>Create an account</h1>
       <p className="lede">
         Your profile and moments are stored in the EU (Neon Postgres, <code>{dataRegion}</code>). Moments sent for AI
-        practice are processed by Google&apos;s Gemini API, which may run outside the EU — see{' '}
+        practice are processed by OpenAI, which may run outside the EU — see{' '}
         <a href="/privacy">Privacy</a>. Contact <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
       </p>
 

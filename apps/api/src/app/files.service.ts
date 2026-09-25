@@ -84,12 +84,18 @@ export class FilesService {
     const pathname = `users/${userId}/${randomUUID()}-${safeName}`;
     const contentType = file.mimetype || 'application/octet-stream';
 
-    const blob = await put(pathname, file.buffer, {
-      access: 'private',
-      contentType,
-      token: this.token(),
-      addRandomSuffix: false,
-    });
+    let blob: { pathname: string; url: string };
+    try {
+      blob = await put(pathname, file.buffer, {
+        access: 'private',
+        contentType,
+        token: this.token(),
+        addRandomSuffix: false,
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Blob upload failed';
+      throw new ServiceUnavailableException(`Blob upload failed: ${detail}`);
+    }
 
     try {
       const inserted = await getPool().query<FileRow>(
@@ -101,7 +107,8 @@ export class FilesService {
       return this.mapRow(inserted.rows[0]);
     } catch (error) {
       await del(blob.url, { token: this.token() }).catch(() => undefined);
-      throw error;
+      const detail = error instanceof Error ? error.message : 'Database write failed';
+      throw new ServiceUnavailableException(`Could not save file metadata: ${detail}`);
     }
   }
 

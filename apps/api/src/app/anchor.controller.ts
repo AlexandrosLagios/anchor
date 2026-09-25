@@ -43,7 +43,8 @@ export class RootController {
     return {
       ok: true,
       service: 'anchor-api',
-      geminiDataRegionNote: process.env.GEMINI_DATA_REGION_NOTE ?? 'developer-api-global',
+      aiProvider: 'openai',
+      aiDataRegionNote: process.env.OPENAI_DATA_REGION_NOTE ?? 'openai-api-global',
       requireAuth: process.env.REQUIRE_AUTH === 'true' || process.env.REQUIRE_AUTH === '1',
     };
   }

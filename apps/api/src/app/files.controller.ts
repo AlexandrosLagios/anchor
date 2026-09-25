@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -12,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { AuthGuard, CurrentUser, type AuthUser } from './auth.guard';
 import { FilesService } from './files.service';
 
@@ -27,12 +29,28 @@ export class FilesController {
   }
 
   @Post()
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: Math.floor(4.5 * 1024 * 1024) } }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: Math.floor(4.5 * 1024 * 1024), files: 1 },
+    }),
+  )
   async upload(
-    @UploadedFile() file: { buffer: Buffer; size: number; mimetype?: string; originalname?: string },
+    @UploadedFile()
+    file:
+      | {
+          buffer: Buffer;
+          size: number;
+          mimetype?: string;
+          originalname?: string;
+        }
+      | undefined,
     @CurrentUser() user: AuthUser | null,
   ) {
     requireUser(user);
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('A file is required');
+    }
     return this.files.upload(user.uid, file);
   }
 

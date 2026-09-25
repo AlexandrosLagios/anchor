@@ -25,9 +25,13 @@ async function bootstrap() {
     origin: [
       'http://localhost:4321',
       'http://127.0.0.1:4321',
+      'https://anchor-open26.vercel.app',
+      'https://anchor-openhackathon2026.vercel.app',
+      'https://anchor-api-teal.vercel.app',
       ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()) : []),
     ],
     methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
   });
   const port = process.env.PORT || 3000;
   await app.listen(port);
