@@ -1,7 +1,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { FakeTransport } from '../core/fake-transport';
 import { lines } from '../core/lines';
 import { createRouter } from '../core/router';
@@ -17,12 +17,12 @@ function setup() {
   const store = openStore(file);
   store.addFamily('-100', '-100');
   store.save();
-  const ctx: Context = { now: () => NOW + store.state.clockOffset, store, transport: () => transport };
+  const ctx: Context = { now: () => NOW + store.state.clockOffset, store, transport: () => transport, restartWindow: vi.fn() };
   const router = createRouter([fastforward], ctx);
   return { file, transport, store, ctx, router };
 }
 
-function command(text: string, chat: 'group' | 'private' = 'group'): Incoming {
+function command(text: string, chat: 'group' | 'private' = 'group', ephemeral?: boolean): Incoming {
   return {
     familyId: chat === 'group' ? '-100' : undefined,
     chat,
@@ -31,6 +31,7 @@ function command(text: string, chat: 'group' | 'private' = 'group'): Incoming {
     sender: { id: '1', name: 'Sofia' },
     at: NOW,
     text,
+    ephemeral,
   };
 }
 
@@ -98,4 +99,54 @@ test.each([
   const handled = await fastforward.handle?.(command(text, chat), store.family('-100'), ctx);
   expect(handled).toBe(false);
   expect(transport.sent).toEqual([]);
+});
+
+test("an admin's /fastforward 08:05 jumps to the next local 08:05, restarts the window, and replies only to the presenter", async () => {
+  const { file, transport, router, ctx } = setup();
+  transport.admins.add('1');
+  await router.route(command('/fastforward 08:05'));
+  expect(NOW + openStore(file).state.clockOffset).toBe(new Date(2026, 8, 26, 8, 5).getTime());
+  expect(ctx.restartWindow).toHaveBeenCalledOnce();
+  expect(transport.sent).toEqual([
+    { chatId: '-100', messageId: 'sent-1', message: { text: "⏩ It's now 26 September 2026 at 08:05 on the family clock.", onlyFor: '1' } },
+  ]);
+});
+
+test('/fastforward to a time still ahead today stays on the same day', async () => {
+  const { store, transport, router } = setup();
+  transport.admins.add('1');
+  await router.route(command('/fastforward 18:30'));
+  expect(NOW + store.state.clockOffset).toBe(new Date(2026, 8, 25, 18, 30).getTime());
+});
+
+test('a jump in days leaves the window alone', async () => {
+  const { transport, router, ctx } = setup();
+  transport.admins.add('1');
+  await router.route(command('/fastforward 7'));
+  expect(ctx.restartWindow).not.toHaveBeenCalled();
+});
+
+test.each(['/fastforward 25:00', '/fastforward 12:60', '/fastforward 8:05', '/fastforward 08:05 pm'])(
+  'invalid time %s gets the usage line and no jump',
+  async (text) => {
+    const { store, transport, router, ctx } = setup();
+    transport.admins.add('1');
+    await router.route(command(text));
+    expect(store.state.clockOffset).toBe(0);
+    expect(ctx.restartWindow).not.toHaveBeenCalled();
+    expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.fastforwardUsage]);
+  },
+);
+
+test('an ephemeral command gets every reply only for the presenter, with no reply to', async () => {
+  const { transport, router } = setup();
+  await router.route(command('/fastforward 7', 'group', true));
+  transport.admins.add('1');
+  await router.route(command('/fastforward', 'group', true));
+  await router.route(command('/fastforward 7', 'group', true));
+  expect(transport.sent.map(({ message }) => message)).toEqual([
+    { text: lines.adminOnly, onlyFor: '1' },
+    { text: lines.fastforwardUsage, onlyFor: '1' },
+    { text: "⏩ It's now 2 October 2026 at 12:00 on the family clock.", onlyFor: '1' },
+  ]);
 });
