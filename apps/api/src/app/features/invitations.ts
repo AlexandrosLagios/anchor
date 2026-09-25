@@ -21,6 +21,7 @@ import {
 import { ask, speak, valid } from '../model/model';
 import { react } from './capture/capture';
 import { isCommand, pictureOf, wordCount } from './capture/filter';
+import { nextSteps } from './members';
 
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];
 export const MAX_RETURNS = 7;
@@ -95,6 +96,7 @@ async function deliver(family: Family, member: Member, moment: Moment, at: numbe
     replied: false,
   };
   member.invitation = invitation;
+  if (moment.savedAt > (member.seenAt ?? 0)) member.seenAt = moment.savedAt;
   const count = (moment.returns[member.id]?.count ?? 0) + 1;
   moment.returns[member.id] = { count, due: afterDays(elevenOn(at), GAP_DAYS[count - 1] ?? 0) };
   ctx.store.save();
@@ -133,6 +135,24 @@ async function deliver(family: Family, member: Member, moment: Moment, at: numbe
     if (open()) member.invitation = undefined;
     ctx.store.save();
   }
+}
+
+// v2, section 4.5: an asked-for moment or a share skips the 3-hour rule and the due check, and closes the open invitation first
+export async function sendNow(family: Family, member: Member, moment: Moment, ctx: Context) {
+  member.invitation = undefined;
+  await deliver(family, member, moment, ctx.now(), ctx);
+}
+
+// the sendMe intent: the moment with the fewest returns to this member, and byPriority breaks a tie
+export async function sendMe(family: Family, member: Member, ctx: Context) {
+  const now = ctx.now();
+  const priority = byPriority(now);
+  const returns = (moment: Moment) => moment.returns[member.id]?.count ?? 0;
+  const [moment] = family.moments
+    .filter((item) => !item.sensitive && item.by.id !== member.id && returns(item) < MAX_RETURNS)
+    .sort((a, b) => returns(a) - returns(b) || priority(a, b));
+  if (moment) return sendNow(family, member, moment, ctx);
+  await tell(family, member, { text: lines.nothingNew, buttons: nextSteps(member, 'sendMe') }, ctx);
 }
 
 async function answer(event: Incoming, family: Family, text: string, ctx: Context) {

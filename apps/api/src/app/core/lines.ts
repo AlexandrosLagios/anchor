@@ -28,20 +28,44 @@ function sharedBy(moment: Moment, max = 600): string {
   return `${moment.by.name} shared ${kind}: ${moment.title}`;
 }
 
+// "Nikos", "Nikos and Eleni", or "Nikos, Eleni, and Maria"
+const and = (names: string[]) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')}, and ${names.at(-1)}`);
+
+export type ChoiceName = 'moments' | 'reminders' | 'shares' | 'voice' | 'call';
+
 export const lines = {
   intro:
     "Hi, I'm Anchor 👋 I'm not a person: I keep this family's photos and stories, each one in the words of the person who shared it. " +
     'When someone shares a moment worth keeping, I save it and react with ❤. Now and then I bring a moment back, so it stays with all of us. ' +
-    "An admin can reply /private to a grandparent's message, and I'll send them family moments in private. " +
+    'Tap the button to choose what I send you in private. ' +
     'Reply "Anchor, forget this" to delete a moment, or "Anchor, don\'t bring this back" to keep it without bringing it back. ' +
     'This is a test build, so please share staged photos only.',
   memberStart: (name: string) =>
     `${name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment.`,
   welcome: (name: string) =>
     `Hello ${name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. ` +
-    "Now and then, and a little more often for you, I'll send you a moment the family shared. " +
-    'Seeing moments again helps them stay with us. You can answer by voice or by text. ' +
-    "There's no right answer, I share nothing unless you say yes, and you can send /stop at any time. Would you like that?",
+    'I can send you family moments now and then, remind you of things, and talk to you by voice. ' +
+    "Seeing moments again helps them stay with us. Tap what you'd like. You can change it at any time: just say \"settings\".",
+  // v2, section 4.11: the join nudge, the choices screen, and the phone number
+  nudge: (name: string) => `${name}, I can send you family moments, reminders, and voice notes in private. Tap to choose 🙂`,
+  choicesScreen: 'Here is what I send you. Tap to change it 🙂',
+  choice: (on: boolean, label: string) => `${on ? '✅' : '⬜'} ${label}`,
+  // the short names of the choices, for choicesSaved
+  choiceNames: { moments: 'family moments', reminders: 'reminders', shares: 'share offers', voice: 'voice notes', call: 'phone calls' } as Record<ChoiceName, string>,
+  choicesSaved: (names: string[]) =>
+    `${names.length ? `All set 💛 You get: ${and(names)}.` : "All set. I won't send you anything for now."} Say "settings" to change this.`,
+  askPhone: 'To call you, I need your phone number. Tap the button below to share it 🙂',
+  phoneSaved: "Thank you 💛 I call from this number, so you know it's me.",
+  // v2, section 4.12: the share offers
+  shareOffer: (names: string[]) => `Shall I send this to ${and(names)} now?`,
+  shareSent: (names: string[]) => `Sent to ${and(names)} 💛`,
+  offersOff: 'Of course. I won\'t offer that again. Say "settings" to change this.',
+  // v2, section 4.6: the intents
+  unclear: "I'm not sure I understood 🙂 Here is what I can do:",
+  missed: (count: number) => `The family shared ${count} moments since we last talked 💛`,
+  nothingNew: "You're up to date 💛 Nothing new since we last talked.",
+  calling: "I'm ringing you now 📞",
+  callFailed: "I couldn't ring you just now. Shall I send you a moment here instead?",
   sharedBy,
   invitation: (moment: Moment) => `${sharedBy(moment)}\nWhat does it remind you of?`,
   memoryCaption: (label: string, moment: Moment) =>
@@ -56,7 +80,7 @@ export const lines = {
   gentleHelp: (date: string, title: string) => `No rush 🙂 This is from ${date}: ${title}. Any memory it brings is welcome.`,
   warmClose: 'Thank you 💛',
   agreed: (name: string) => `Wonderful, ${name} 💛 I'll send you the first moment soon.`,
-  stopped: "Of course. I won't send you any more moments. If you'd like them again, send /start.",
+  stopped: 'Of course. I won\'t send you anything more. If you\'d like moments again, say "settings".',
   tellDirectly: (title: string, date: string, sender: string) => `This is ${title}, from ${date}. ${sender} shared it 💛`,
   thanks: 'Thank you for the story 💛 Shall I share it with the family?',
   shared: 'Done, the family can hear it now 💛',
@@ -124,5 +148,23 @@ export const lines = {
     anotherTime: 'Another time',
     noThanks: 'No thanks',
     stopReminders: 'Stop offering reminders',
+    // v2, sections 4.6, 4.11, and 4.12
+    chooseForMe: 'Choose what I send you',
+    choices: {
+      moments: 'Family moments now and then',
+      reminders: 'Reminders when I need them',
+      shares: 'Offers to send my moments to the family',
+      voice: 'Talk to me by voice',
+      call: 'Call me on the phone',
+    } as Record<ChoiceName, string>,
+    done: 'Done',
+    sharePhone: 'Share my phone number',
+    sendIt: 'Yes, send it',
+    stopOffering: 'Stop offering this',
+    anotherMoment: 'Another moment',
+    whatDidIMiss: 'What did I miss?',
+    mySettings: 'My settings',
+    callMe: 'Call me',
+    showMemory: 'Show us a memory',
   },
 };

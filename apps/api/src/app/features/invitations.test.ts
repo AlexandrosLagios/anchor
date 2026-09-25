@@ -304,6 +304,7 @@ test('the 11:00 tick sends the photo, then the invitation voice with both button
     started: true,
     choices: DEFAULT_CHOICES,
     lastInvitationDay: dayIndex(at(25, 11)),
+    seenAt: at(25, 8),
     invitation: {
       momentId: 'm1',
       day: dayIndex(at(25, 11)),
@@ -459,7 +460,14 @@ test('a member who blocked Anchor stops getting invitations, and the return stil
   add();
   await tickAt(at(25, 11));
   const record = saved();
-  expect(record?.members[0]).toEqual({ id: '7', name: 'Nikos', started: false, choices: DEFAULT_CHOICES, lastInvitationDay: dayIndex(at(25, 11)) });
+  expect(record?.members[0]).toEqual({
+    id: '7',
+    name: 'Nikos',
+    started: false,
+    choices: DEFAULT_CHOICES,
+    lastInvitationDay: dayIndex(at(25, 11)),
+    seenAt: at(25, 8),
+  });
   expect(record?.moments[0].returns['7'].count).toBe(1);
   expect(speak).not.toHaveBeenCalled();
 });
