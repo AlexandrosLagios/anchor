@@ -366,7 +366,7 @@ test('no picture posts the caption as text', async () => {
   expect(transport.sent[0].message).toEqual({ text: lines.echoCaption(older, newMoment) });
 });
 
-test('a matched echo sets echoPostId on the newer moment to the id of the post', async () => {
+test('a matched echo sets echoPostIds on the newer moment to every message id of the album', async () => {
   const { file, transport, family, router } = setup();
   const older = makeMoment({ by: dimitris, savedAt: NOW - 1000, photo: { id: 'photo-older' } });
   const newMoment = makeMoment({ by: sofia, savedAt: NOW, photo: { id: 'photo-newer' } });
@@ -375,9 +375,10 @@ test('a matched echo sets echoPostId on the newer moment to the id of the post',
   await router.tick({ from: NOW - 10, to: NOW });
 
   expect(transport.sent).toHaveLength(1);
-  expect(newMoment.echoPostId).toBe(transport.sent[0].messageId);
+  const postIds = [transport.sent[0].messageId, `${transport.sent[0].messageId}-2`];
+  expect(newMoment.echoPostIds).toEqual(postIds);
   const reloaded = openStore(file).family('-100');
-  expect(reloaded?.moments.find((m) => m.id === newMoment.id)?.echoPostId).toBe(transport.sent[0].messageId);
+  expect(reloaded?.moments.find((m) => m.id === newMoment.id)?.echoPostIds).toEqual(postIds);
 });
 
 test('the caption is cut at 1024 characters, the Telegram caption limit', async () => {

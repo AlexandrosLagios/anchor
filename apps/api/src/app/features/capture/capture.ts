@@ -13,6 +13,7 @@ export const bundles: Bundle[] = [];
 
 const FORGET = /^anchor\b[,:]?\s+forget this\b/i;
 const KEEP_QUIET = /^anchor\b[,:]?\s+don['’]t bring this back\b/i;
+const WHICH = /^(fgt|qt):(.+)$/; // a tap on a button of forgetWhich or quietWhich
 
 function count(family: Family, key: string) {
   family.counters[key] = (family.counters[key] ?? 0) + 1;
@@ -43,6 +44,21 @@ export const forget: Feature = {
   name: 'forget',
   async handle(event, family, ctx) {
     if (event.chat !== 'group' || !family) return false;
+    const tapped = event.button?.match(WHICH);
+    if (tapped) {
+      const moment = family.moments.find((item) => item.id === tapped[2]);
+      if (!moment) return true;
+      if (tapped[1] === 'fgt') {
+        family.moments.splice(family.moments.indexOf(moment), 1);
+        ctx.store.save();
+      } else if (!moment.sensitive) {
+        moment.sensitive = true;
+        ctx.store.save();
+      }
+      await react(ctx, family, event.chatId, event.messageId, '👌');
+      return true;
+    }
+
     const text = event.text ?? '';
     const isForget = FORGET.test(text);
     const isKeepQuiet = !isForget && KEEP_QUIET.test(text);
@@ -51,9 +67,14 @@ export const forget: Feature = {
 
     const replyTo = event.replyTo;
 
-    if (family.moments.some((moment) => moment.echoPostId === replyTo)) {
+    const echoed = family.moments.find((moment) => moment.echoPostIds?.includes(replyTo));
+    if (echoed) {
+      // one reply never guesses between the two moments of a then-and-now post, so each gets a button
+      const pair = [family.moments.find((moment) => moment.id === echoed.echo), echoed].filter(Boolean);
+      const prefix = isForget ? 'fgt' : 'qt';
+      const buttons = pair.map((moment) => ({ label: lines.whichMoment(moment), data: `${prefix}:${moment.id}` }));
       try {
-        await ctx.transport(family.id).send(event.chatId, { text: isForget ? lines.forgetWhich : lines.quietWhich, replyTo: event.messageId });
+        await ctx.transport(family.id).send(event.chatId, { text: isForget ? lines.forgetWhich : lines.quietWhich, replyTo: event.messageId, buttons });
       } catch (error) {
         logger.warn(`echo-post reply on ${event.chatId}/${event.messageId} failed: ${error}`);
       }

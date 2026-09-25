@@ -38,7 +38,7 @@ export type Outgoing = {
 export class Blocked extends Error {} // send throws Blocked when the person blocked Anchor
 
 export interface Transport {
-  send(chatId: string, message: Outgoing): Promise<{ messageId: string; voice?: Media }>;
+  send(chatId: string, message: Outgoing): Promise<{ messageId: string; messageIds?: string[]; voice?: Media }>; // messageIds: every message of an album
   react(chatId: string, messageId: string, emoji: string, big?: boolean): Promise<void>;
   download(media: Media): Promise<{ data: Buffer; mimeType: string }>;
   isAdmin(chatId: string, userId: string): Promise<boolean>;
@@ -77,7 +77,7 @@ export type Moment = {
   memoryPostIds: string[];
   returns: Record<string, { count: number; due: number }>; // private returns per storyteller id
   echo?: string; // the id of the older moment that this moment echoes
-  echoPostId?: string; // the first message of the then-and-now post
+  echoPostIds?: string[]; // the messages of the then-and-now post
 };
 
 export type Invitation = {

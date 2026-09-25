@@ -337,7 +337,7 @@ test('send never cuts a caption inside an emoji', async () => {
   expect(calls.at(-1)?.params.caption).toBe('x'.repeat(1023));
 });
 
-test('send posts an album with the caption on the first item and returns the first message id', async () => {
+test('send posts an album with the caption on the first item and returns every album message id', async () => {
   const calls = botApi(() => ok([sentMessage({ message_id: 80 }), sentMessage({ message_id: 81 })]));
   const telegram = await TelegramTransport.connect('TOKEN');
   const sent = await telegram.send('-1001234567890', {
@@ -345,7 +345,7 @@ test('send posts an album with the caption on the first item and returns the fir
     text: 'y'.repeat(1100),
     buttons: [{ label: 'Not now', data: 'not-now' }],
   });
-  expect(sent).toEqual({ messageId: '80' });
+  expect(sent).toEqual({ messageId: '80', messageIds: ['80', '81'] });
   expect(calls.at(-1)).toEqual({
     url: 'https://api.telegram.org/botTOKEN/sendMediaGroup',
     method: 'sendMediaGroup',

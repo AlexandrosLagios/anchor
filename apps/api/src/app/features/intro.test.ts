@@ -72,13 +72,14 @@ test('a migration clears the message ids of the old group, because a supergroup 
     stories: [{ id: 's1', by: { id: '42', name: 'Nikos' }, at: 0, text: 'She would not let go', messageIds: ['60'] }],
     lookbacks: [],
     memoryPostIds: ['58'],
+    echoPostIds: ['59'],
     returns: {},
   };
   store.family('-100')?.moments.push(moment);
   await router.route({ ...joined, joined: undefined, messageId: '61', migratedTo: '-1009' });
 
   const moved = store.family('-1009')?.moments[0];
-  expect([moved?.messageIds, moved?.memoryPostIds, moved?.stories[0].messageIds]).toEqual([[], [], []]);
+  expect([moved?.messageIds, moved?.memoryPostIds, moved?.echoPostIds, moved?.stories[0].messageIds]).toEqual([[], [], [], []]);
   expect(moved?.text).toBe('Maria on her first day at school');
 });
 
