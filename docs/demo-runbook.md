@@ -46,12 +46,9 @@ Each beat names the user story it shows, the action, and what the audience sees.
 | 7 | 2:10 | 6. Respond without typing | Grandfather | Tap "Yes, share it". | In the group: "Nikos added a story to Eleni's moment 🎙️", as a reply to Eleni's photo, with his words quoted, his voice note, and a big ❤. His story is now part of the memory. |
 | 8 | 2:30 | | Presenter | Close: "Eleni shared a moment. Her father agreed himself, got help without a correction, and added his story by voice." | Both screens stay on the group. |
 
-Beat 5 has a second path for story 5, "Just ask". Choose one path before the rehearsals:
+Beat 5 uses the reply "a school?", because gentle help for a hesitation shows the dignity point most clearly. A model call reads the reply, so the rehearsals must show the gentle help both times.
 
-- "a school?" shows story 4: gentle help for a hesitation.
-- The "What is this?" button shows story 5: "This is Maria's first day of school, from …. Eleni shared it 💛", a direct and warm answer with no hint that he should have known.
-
-The script does not show the second criterion of story 1 (he can stop at any time) or the no-reply path of story 4. The welcome in beat 3 names /stop, and the presenter can say one sentence about each.
+The script does not show story 5 (the "What is this?" button), the second criterion of story 1 (he can stop at any time), or the no-reply path of story 4. The welcome in beat 3 names /stop, and the presenter can say one sentence about each.
 
 Optional beat, only when the clock shows less than 2:30 after beat 7: the grandfather posts his 1958 photo in the group with the caption "My first day of school, 1958". Anchor posts a "Then and now" album of the two photos.
 
@@ -59,6 +56,8 @@ Optional beat, only when the clock shows less than 2:30 after beat 7: the grandf
 
 - No ❤ after 15 seconds: narrate beat 1 and continue with beat 2. The photo still counts once the classification finishes.
 - No private message after `/send`: check that the grandfather tapped "Yes, I'd like that" in beat 3, then send `/send` again.
+- "a school?" gets "Thank you 💛" instead of the gentle help: Anchor closed the invitation. Eleni sends `/send` again, and the grandfather continues with beat 6.
+- "a school?" gets "Thank you for the story 💛" instead of the gentle help: the grandfather taps "No, thanks". Eleni sends `/send` again, and the grandfather continues with beat 6.
 - A voice note arrives late: continue the narration. The text caption says the same words.
 - Two beats fail: stop the live demo and play the screen recording.
 
