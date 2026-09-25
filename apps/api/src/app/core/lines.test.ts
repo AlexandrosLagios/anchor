@@ -9,12 +9,16 @@ test('invitation and memoryCaption clip a long quote to 600 characters that end 
   expect(lines.invitation('Sofia', 'b'.repeat(600))).toContain(`«${'b'.repeat(600)}»`);
 });
 
-test('storyAdded and echoCaption clip each quote to 600 characters', () => {
-  const long = 'a'.repeat(2000);
-  const clip = `«${'a'.repeat(599)}…»`;
-  expect(lines.storyAdded('Nikos', 'Sofia', long)).toContain(clip);
-  const echo = lines.echoCaption('Nikos', long, 'Sofia', long);
-  expect(echo.split(clip)).toHaveLength(3);
+test('storyAdded clips its quote to 600 characters', () => {
+  expect(lines.storyAdded('Nikos', 'Sofia', 'a'.repeat(2000))).toContain(`«${'a'.repeat(599)}…»`);
+});
+
+test('echoCaption clips each quote to 450 characters, so the caption stays under 1024 with both quotes closed', () => {
+  const echo = lines.echoCaption('Nikos', 'a'.repeat(2000), 'Sofia', 'b'.repeat(2000));
+  expect(echo).toContain(`«${'a'.repeat(449)}…»`);
+  expect(echo).toContain(`«${'b'.repeat(449)}…»`);
+  expect(echo.length).toBeLessThan(1024);
+  expect(echo.endsWith('…»')).toBe(true);
 });
 
 test('the clip keeps whole emoji and stays inside 600 UTF-16 units', () => {

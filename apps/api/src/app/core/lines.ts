@@ -11,8 +11,8 @@ export function cut(text: string, max: number): string {
   return kept;
 }
 
-// keeps a memory caption under the Telegram limit of 1024 characters and the invitation voice note short
-const clip = (text: string) => (text.length > 600 ? `${cut(text, 599)}…` : text);
+// keeps every caption under the Telegram limit of 1024 characters and the invitation voice note short
+const clip = (text: string, max = 600) => (text.length > max ? `${cut(text, max - 1)}…` : text);
 
 export const lines = {
   intro:
@@ -47,7 +47,7 @@ export const lines = {
   dontBringBack: "Of course. I'll keep it, and I won't bring it back.",
   storyAdded: (name: string, sender: string, story: string) => `${name} added a story to ${sender}'s moment 🎙️\n«${clip(story)}»`,
   echoCaption: (olderSender: string, olderText: string, newerSender: string, newerText: string) =>
-    `Then and now 💛\n${olderSender} shared: «${clip(olderText)}»\n${newerSender} shared: «${clip(newerText)}»`,
+    `Then and now 💛\n${olderSender} shared: «${clip(olderText, 450)}»\n${newerSender} shared: «${clip(newerText, 450)}»`,
   fastforwarded: (date: string) => `⏩ It's now ${date} on the family clock.`,
   fastforwardUsage: 'Send /fastforward and a number of days, for example /fastforward 7.',
   askAnswer: (title: string, date: string, names: string[]) =>
