@@ -9,8 +9,9 @@ import { expectCall, type Script } from '../call/stream';
 import { FakeTransport } from '../core/fake-transport';
 import { lines } from '../core/lines';
 import { openStore } from '../core/store';
-import type { Context, Family, Member, Moment } from '../core/types';
-import { callMember } from './calls';
+import { dayIndex } from '../core/clock';
+import type { Context, Family, Member, Moment, Reminder } from '../core/types';
+import { callMember, calls } from './calls';
 
 vi.mock('../call/dial', () => ({ ring: vi.fn(), answered: vi.fn() }));
 vi.mock('../call/stream', async (importOriginal) => ({ ...(await importOriginal<typeof import('../call/stream')>()), expectCall: vi.fn() }));
@@ -134,4 +135,62 @@ test('a yes to telling the sender asks the sender in the group for a call', asyn
   endCall(record({ share: 'no', tellSender: true }));
   await expect.poll(() => transport.sent.length).toBe(2);
   expect(transport.sent[1]).toMatchObject({ chatId: '-100', message: { text: lines.wouldLoveCall('Nikos', 'Eleni'), mention: { id: '1', name: 'Eleni' } } });
+});
+
+const reminder = (overrides: Partial<Reminder>): Reminder => ({
+  id: 'r1',
+  to: '7',
+  from: { id: '1', name: 'Eleni' },
+  text: 'Take your pills with you when we leave 💊',
+  sourceId: '90',
+  time: '08:00',
+  status: 'sent',
+  sentAt: NOW,
+  ...overrides,
+});
+
+const tick = (from: number, to: number) => calls.tick?.(family, { from, to }, ctx);
+
+test('a reminder call reads the reminder in the sender’s words and shares nothing', async () => {
+  expect(await callMember(family, nikos, ctx, reminder({}))).toBe(true);
+  expect(script().opener).toBe(
+    "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person. Your reminder. Eleni wrote: «Take your pills with you when we leave»",
+  );
+  expect(script().askShare).toBeUndefined();
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(record({ share: 'words', tellSender: true, transcript: [{ speaker: 'person', text: 'Thanks.' }] }));
+  await new Promise((done) => setTimeout(done, 10));
+  expect(texts()).toEqual([['7', "I'm ringing you now 📞"]]);
+});
+
+test('the calls tick rings a member who chose calls for a reminder sent in the window', async () => {
+  nikos.choices.call = true;
+  const later = NOW + 60_000;
+  family.reminders.push(reminder({ id: 'r1', sentAt: later }), reminder({ id: 'r2', sentAt: NOW }), reminder({ id: 'r3', to: '1', sentAt: later }));
+  await tick(later - 2_000, later);
+  expect(ring).toHaveBeenCalledTimes(1);
+  expect(script().opener).toContain('Your reminder. Eleni wrote');
+});
+
+test('the calls tick rings nobody who did not choose calls', async () => {
+  family.reminders.push(reminder({}));
+  await tick(NOW - 2_000, NOW);
+  expect(ring).not.toHaveBeenCalled();
+});
+
+test('the daily call rings once at 11:00 when the family shared a moment since the last call', async () => {
+  nikos.choices.call = true;
+  await tick(NOW - 2_000, NOW);
+  expect(ring).toHaveBeenCalledTimes(1);
+  expect(nikos.lastCallDay).toBe(dayIndex(NOW));
+  await tick(NOW, NOW + 2_000);
+  expect(ring).toHaveBeenCalledTimes(1);
+});
+
+test('the daily call stays silent when nothing new was shared since the last call', async () => {
+  nikos.choices.call = true;
+  nikos.lastCallDay = dayIndex(NOW) - 1;
+  family.moments = family.moments.filter((m) => m.id === 'old');
+  await tick(NOW - 2_000, NOW);
+  expect(ring).not.toHaveBeenCalled();
 });
