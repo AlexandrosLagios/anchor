@@ -494,3 +494,110 @@ test('startLink opens a private chat with the payload and rejects an invalid pay
   expect(() => telegram.startLink('family 1')).toThrow();
   expect(() => telegram.startLink('x'.repeat(65))).toThrow();
 });
+
+test('toIncoming maps an ephemeral command with its ephemeral message id', () => {
+  expect(toIncoming(message({ message_id: 0, ephemeral_message_id: 900, text: `/fastforward@${BOT} 7` }), BOT)).toMatchObject({
+    chat: 'group',
+    messageId: '900',
+    ephemeral: true,
+    text: '/fastforward 7',
+  });
+  expect(toIncoming(message({ text: 'hello' }), BOT)?.ephemeral).toBeUndefined();
+});
+
+test('toIncoming maps a tap on an ephemeral message with its ephemeral message id', () => {
+  const tap = button(group);
+  tap.callback_query.message = { ...tap.callback_query.message, message_id: 0, ephemeral_message_id: 901 } as typeof tap.callback_query.message;
+  expect(toIncoming(tap, BOT)).toMatchObject({ familyId: '-1001234567890', chat: 'group', messageId: '901', ephemeral: true, button: 'not-now' });
+});
+
+test('toIncoming maps a shared contact with its Telegram user id', () => {
+  const shared = message({ chat: privateChat, from: nikos, contact: { phone_number: '306912345678', first_name: 'Nikos', user_id: 222 } });
+  expect(toIncoming(shared, BOT)).toMatchObject({ chat: 'private', unsupported: false, contact: { phone: '306912345678', userId: '222' } });
+  const card = message({ chat: privateChat, from: nikos, contact: { phone_number: '+302101234567', first_name: 'Eleni' } });
+  expect(toIncoming(card, BOT)?.contact).toEqual({ phone: '+302101234567', userId: undefined });
+});
+
+test('send with onlyFor sends an ephemeral message and returns the ephemeral message id', async () => {
+  const calls = botApi(() => ok(sentMessage({ message_id: 0, ephemeral_message_id: 6819514 })));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  const sent = await telegram.send('-1001234567890', { text: 'Shall I send this to Nikos now?', buttons: [{ label: 'Yes, send it', data: 'shr:yes:a1' }], onlyFor: '222' });
+  expect(sent).toEqual({ messageId: '6819514', voice: undefined });
+  expect(calls.at(-1)).toMatchObject({
+    method: 'sendMessage',
+    params: {
+      chat_id: '-1001234567890',
+      text: 'Shall I send this to Nikos now?',
+      ephemeral_message_parameters: { receiver_user_id: 222 },
+      reply_markup: { inline_keyboard: [[{ text: 'Yes, send it', callback_data: 'shr:yes:a1' }]] },
+    },
+  });
+});
+
+test('send posts a contact card', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.send('222', { contact: { phone: '+15551234567', name: 'Anchor' } });
+  expect(calls.at(-1)).toMatchObject({ method: 'sendContact', params: { chat_id: '222', phone_number: '+15551234567', first_name: 'Anchor' } });
+});
+
+test('send turns a contact button into a one-time reply keyboard', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.send('222', { text: 'To call you, I need your phone number.', buttons: [{ label: 'Share my phone number', contact: true }] });
+  expect(calls.at(-1)?.params.reply_markup).toEqual({
+    keyboard: [[{ text: 'Share my phone number', request_contact: true }]],
+    one_time_keyboard: true,
+    resize_keyboard: true,
+  });
+});
+
+test('edit replaces the text, or only the buttons, of a message', async () => {
+  const calls = botApi(() => ok(true));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.edit('222', '77', { text: 'All set 💛', buttons: [{ label: 'My settings', data: 'nxt:settings' }] });
+  expect(calls.at(-1)).toMatchObject({
+    method: 'editMessageText',
+    params: { chat_id: '222', message_id: 77, text: 'All set 💛', reply_markup: { inline_keyboard: [[{ text: 'My settings', callback_data: 'nxt:settings' }]] } },
+  });
+  await telegram.edit('222', '77', { buttons: [{ label: '✅ Family moments now and then', data: 'set:moments' }] });
+  expect(calls.at(-1)).toMatchObject({
+    method: 'editMessageReplyMarkup',
+    params: { chat_id: '222', message_id: 77, reply_markup: { inline_keyboard: [[{ text: '✅ Family moments now and then', callback_data: 'set:moments' }]] } },
+  });
+});
+
+test('edit with onlyFor edits an ephemeral message', async () => {
+  const calls = botApi(() => ok(true));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.edit('-1001234567890', '6819514', { text: 'Sent to Nikos 💛', onlyFor: '222' });
+  expect(calls.at(-1)).toEqual({
+    url: 'https://api.telegram.org/botTOKEN/editEphemeralMessageText',
+    method: 'editEphemeralMessageText',
+    params: { chat_id: '-1001234567890', receiver_user_id: 222, ephemeral_message_id: 6819514, text: 'Sent to Nikos 💛' },
+  });
+  await telegram.edit('-1001234567890', '6819514', { buttons: [], onlyFor: '222' });
+  expect(calls.at(-1)).toMatchObject({
+    method: 'editEphemeralMessageReplyMarkup',
+    params: { chat_id: '-1001234567890', receiver_user_id: 222, ephemeral_message_id: 6819514, reply_markup: { inline_keyboard: [] } },
+  });
+});
+
+test('remove deletes a message, or an ephemeral message with onlyFor', async () => {
+  const calls = botApi(() => ok(true));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.remove('222', '77');
+  expect(calls.at(-1)).toMatchObject({ method: 'deleteMessage', params: { chat_id: '222', message_id: 77 } });
+  await telegram.remove('-1001234567890', '6819514', '222');
+  expect(calls.at(-1)).toMatchObject({
+    method: 'deleteEphemeralMessage',
+    params: { chat_id: '-1001234567890', receiver_user_id: 222, ephemeral_message_id: 6819514 },
+  });
+});
+
+test('the admin menu registers /fastforward as an ephemeral command and has no /private or /send', () => {
+  const commands = [...lines.commands.group, ...lines.commands.admins, ...lines.commands.private].map(({ command }) => command);
+  expect(commands).not.toContain('private');
+  expect(commands).not.toContain('send');
+  expect(lines.commands.admins.find(({ command }) => command === 'fastforward')).toMatchObject({ is_ephemeral: true });
+});

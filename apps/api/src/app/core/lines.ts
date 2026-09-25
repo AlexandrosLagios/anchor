@@ -74,6 +74,7 @@ export const lines = {
   offersOff: `Of course. I won't offer that again. Say "settings" to change this.`,
   reminder: (who: string, text: string) => `⏰ Your reminder. ${who} wrote: «${clip(text)}»`,
   fastforwardUsage: 'Send /fastforward and a number of days or a time, for example /fastforward 7 or /fastforward 08:05.',
+  calling: "I'm ringing you now 📞",
   // v2, section 4.15: the phone call
   call: {
     opening: (name: string) => `Hello ${name}, this is Anchor, the family's record keeper. I'm not a person.`,
@@ -102,13 +103,12 @@ export const lines = {
     group: [{ command: 'memory', description: 'Share a family memory in the group now' }],
     admins: [
       { command: 'memory', description: 'Share a family memory in the group now' },
-      { command: 'private', description: 'Reply to a message: that person gets family moments in private' },
-      { command: 'send', description: 'Send a family moment now to each person who gets them in private' },
-      { command: 'fastforward', description: 'Move the family clock forward, for example /fastforward 7' },
+      // v2: an ephemeral command, so only the presenter sees it
+      { command: 'fastforward', description: 'Move the family clock, for example /fastforward 7 or /fastforward 08:05', is_ephemeral: true },
     ],
     private: [
-      { command: 'start', description: 'Get family moments from me' },
-      { command: 'stop', description: 'Stop getting family moments' },
+      { command: 'start', description: 'Choose what I send you' },
+      { command: 'stop', description: 'Stop everything I send you' },
     ],
   },
   buttons: {
