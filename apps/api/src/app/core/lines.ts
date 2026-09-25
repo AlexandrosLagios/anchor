@@ -24,10 +24,10 @@ export const lines = {
   storytellerStart: (name: string) =>
     `${name}, the family would love your stories 💛 Tap Start, and now and then I'll send you a family moment.`,
   welcome: (name: string) =>
-    `Hello ${name} 🙂 I'm Anchor. I keep your family's photos and stories, and I'm not a person. ` +
+    `Hello ${name} 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. ` +
     "Now and then, and a little more often for you, I'll send you a moment the family shared. " +
-    'Seeing moments again helps them stay with us. Tell me what it brings back, by voice or by text. ' +
-    "There's no right answer, and I share nothing unless you say yes.",
+    'Seeing moments again helps them stay with us. You can answer by voice or by text. ' +
+    "There's no right answer, I share nothing unless you say yes, and you can send /stop at any time. Would you like that?",
   invitation: (sender: string, text: string) => `${sender} shared: «${clip(text)}»\nWhat does it remind you of?`,
   memoryCaption: (label: string, sender: string, text: string) =>
     `${label} 💛\n${sender} shared: «${clip(text)}»\nReply with a story or a voice note to add it to the family record.`,
@@ -40,6 +40,9 @@ export const lines = {
   },
   gentleHelp: (date: string, title: string) => `No rush 🙂 This is from ${date}: ${title}. Any memory it brings is welcome.`,
   warmClose: 'Thank you 💛',
+  agreed: (name: string) => `Wonderful, ${name} 💛 I'll send you the first moment soon.`,
+  stopped: "Of course. I won't send you any more moments. If you'd like them again, send /start.",
+  tellDirectly: (title: string, date: string, sender: string) => `This is ${title}, from ${date}. ${sender} shared it 💛`,
   thanks: 'Thank you for the story 💛 Shall I share it with the family?',
   shared: 'Done, the family can hear it now 💛',
   notShared: "Of course. I won't share it.",
@@ -60,8 +63,10 @@ export const lines = {
   nothingToInvite: (name: string) => `${name} has seen every moment so far.`,
   buttons: {
     start: 'Start',
+    agree: "Yes, I'd like that",
     notNow: 'Not now',
     dontBringBack: "Don't bring this back",
+    whatIsThis: 'What is this?',
     share: 'Yes, share it',
     dontShare: 'No, thanks',
   },

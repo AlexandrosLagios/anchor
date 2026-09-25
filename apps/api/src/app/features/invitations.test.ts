@@ -33,6 +33,7 @@ const invitationText = lines.invitation('Sofia', 'Maria on her first day at scho
 const inviteButtons = (id: string) => [
   { label: lines.buttons.notNow, data: `inv:later:${id}` },
   { label: lines.buttons.dontBringBack, data: `inv:never:${id}` },
+  { label: lines.buttons.whatIsThis, data: `inv:what:${id}` },
 ];
 const shareButtons = (id: string) => [
   { label: lines.buttons.share, data: `inv:share:${id}` },
@@ -66,7 +67,16 @@ const add = (overrides: Partial<Moment> = {}) => {
 const nikos = () => family.storytellers[0];
 
 const invite = (moment: Moment, overrides: Partial<Invitation> = {}) => {
-  nikos().invitation = { momentId: moment.id, day: dayIndex(now), messageIds: [], shareAsked: false, helped: false, ...overrides };
+  nikos().invitation = {
+    momentId: moment.id,
+    day: dayIndex(now),
+    messageIds: [],
+    shareAsked: false,
+    helped: false,
+    sentAt: now,
+    replied: false,
+    ...overrides,
+  };
   return nikos().invitation;
 };
 
@@ -156,15 +166,87 @@ test('/storyteller from a member who is not an admin, or with no replied-to memb
   expect(transport.sent).toEqual([]);
 });
 
-test('/start from a storyteller gets welcome, and any other person or group message is left to the next feature', async () => {
+test('/start from a storyteller asks for a yes and leaves started alone, and any other person or group message is left to the next feature', async () => {
   nikos().started = false;
+  const welcome = {
+    text: lines.welcome('Nikos'),
+    buttons: [
+      { label: lines.buttons.agree, data: 'inv:agree' },
+      { label: lines.buttons.notNow, data: 'inv:decline' },
+    ],
+  };
   expect(await receive(fromNikos({ text: '/start -100' }))).toBe(true);
-  expect(saved()?.storytellers[0].started).toBe(true);
-  expect(messages()).toEqual([['7', { text: lines.welcome('Nikos') }]]);
+  expect(nikos().started).toBe(false);
+  expect(messages()).toEqual([['7', welcome]]);
 
   expect(await receive({ ...fromNikos({ text: '/start' }), chatId: '8', sender: { id: '8', name: 'Eleni' } })).toBe(false);
   expect(await receive(inGroup({ text: 'Maria on her first day at school' }))).toBe(false);
   expect(transport.sent).toHaveLength(1);
+
+  nikos().started = true;
+  await receive(fromNikos({ text: '/start' }));
+  expect(nikos().started).toBe(true);
+  expect(messages()[1]).toEqual(['7', welcome]);
+});
+
+test('"Not now" on the welcome sends notNow and changes nothing, and nothing comes back before the yes', async () => {
+  nikos().started = false;
+  add();
+  const save = vi.spyOn(ctx.store, 'save');
+  expect(await receive(fromNikos({ button: 'inv:decline' }))).toBe(true);
+  expect(nikos().started).toBe(false);
+  expect(save).not.toHaveBeenCalled();
+  expect(messages()).toEqual([['7', { text: lines.notNow }]]);
+
+  await tickAt(at(25, 11));
+  transport.admins.add('1');
+  await receive(inGroup({ text: '/invite' }));
+  expect(transport.sent).toHaveLength(1);
+  expect(nikos().invitation).toBeUndefined();
+});
+
+test('"Yes, I\'d like that" sets started and sends agreed, and the next 11:00 slot brings back a moment shared before the yes', async () => {
+  nikos().started = false;
+  add({ savedAt: at(24, 8) });
+  now = at(25, 9);
+  expect(await receive(fromNikos({ button: 'inv:agree' }))).toBe(true);
+  expect(saved()?.storytellers[0].started).toBe(true);
+  expect(messages()).toEqual([['7', { text: lines.agreed('Nikos') }]]);
+
+  await tickAt(at(25, 11));
+  expect(nikos().invitation?.momentId).toBe('m1');
+  expect(messages().slice(1)).toEqual([
+    ['7', { photo: { id: 'photo-57' } }],
+    ['7', { voice: { wav }, text: invitationText, buttons: inviteButtons('m1') }],
+  ]);
+});
+
+test('/stop and "Stop." end the returns, close the open invitation silently, and tell the family nothing', async () => {
+  const moment = add();
+  for (const text of ['/stop', 'Stop.', ' stop! ', 'STOP']) {
+    nikos().started = true;
+    invite(moment);
+    expect(await receive(fromNikos({ text }))).toBe(true);
+    expect(saved()?.storytellers[0]).toEqual({ id: '7', name: 'Nikos', started: false });
+  }
+  expect(ask).not.toHaveBeenCalled();
+  expect(messages()).toEqual(Array(4).fill(['7', { text: lines.stopped }]));
+
+  await tickAt(at(26, 11));
+  expect(transport.sent).toHaveLength(4);
+});
+
+test('/stop works before the yes, and a stop inside a longer text is a reply', async () => {
+  nikos().started = false;
+  await receive(fromNikos({ text: '/stop' }));
+  expect(messages()).toEqual([['7', { text: lines.stopped }]]);
+
+  nikos().started = true;
+  invite(add());
+  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'story' });
+  await receive(fromNikos({ text: 'Stop by the old school' }));
+  expect(ask).toHaveBeenCalledTimes(1);
+  expect(nikos().started).toBe(true);
 });
 
 test('the 11:00 tick sends the photo, then the invitation voice with both buttons, and schedules the next return', async () => {
@@ -184,7 +266,15 @@ test('the 11:00 tick sends the photo, then the invitation voice with both button
     name: 'Nikos',
     started: true,
     lastInvitationDay: dayIndex(at(25, 11)),
-    invitation: { momentId: 'm1', day: dayIndex(at(25, 11)), messageIds: ['sent-1', 'sent-2'], shareAsked: false, helped: false },
+    invitation: {
+      momentId: 'm1',
+      day: dayIndex(at(25, 11)),
+      messageIds: ['sent-1', 'sent-2'],
+      shareAsked: false,
+      helped: false,
+      sentAt: at(25, 11),
+      replied: false,
+    },
   });
 
   const save = vi.spyOn(ctx.store, 'save');
@@ -292,12 +382,18 @@ test('a story reply gets thanks with the share buttons once, and a second story 
   expect(await receive(fromNikos({ text: 'Then she ran in' }))).toBe(true);
 
   const [prompt, schema, options] = vi.mocked(ask).mock.calls[0];
-  for (const part of ["Maria's first day at school", 'Sofia', 'Maria on her first day at school', 'She would not let go of my hand']) {
+  for (const part of [
+    "Maria's first day at school",
+    'Sofia',
+    'Maria on her first day at school',
+    'She would not let go of my hand',
+    '- question: ',
+  ]) {
     expect(prompt).toContain(part);
   }
   expect(schema).toEqual({
     type: 'object',
-    properties: { transcript: { type: 'string' }, kind: { type: 'string', enum: ['story', 'unsure', 'other'] } },
+    properties: { transcript: { type: 'string' }, kind: { type: 'string', enum: ['story', 'unsure', 'question', 'other'] } },
     required: ['transcript', 'kind'],
   });
   expect(options).toEqual({ media: [], fast: true });
@@ -307,6 +403,8 @@ test('a story reply gets thanks with the share buttons once, and a second story 
     messageIds: [],
     shareAsked: true,
     helped: false,
+    sentAt: now,
+    replied: true,
     story: { text: 'She would not let go of my hand\nThen she ran in' },
   });
   expect(messages()).toEqual([['7', { text: lines.thanks, buttons: shareButtons('m1') }]]);
@@ -333,11 +431,125 @@ test('a first unsure reply gets gentleHelp and the voice note of the moment, and
     ['7', { text: lines.gentleHelp('25 September 2026', "Maria's first day at school") }],
     ['7', { voice: { id: 'voice-57' } }],
   ]);
-  expect(saved()?.storytellers[0].invitation).toEqual({ momentId: 'm1', day: dayIndex(now), messageIds: [], shareAsked: false, helped: true });
+  expect(saved()?.storytellers[0].invitation).toEqual({
+    momentId: 'm1',
+    day: dayIndex(now),
+    messageIds: [],
+    shareAsked: false,
+    helped: true,
+    sentAt: now,
+    replied: true,
+  });
 
   await receive(fromNikos({ text: 'which one?' }));
   expect(transport.sent[2].message).toEqual({ text: lines.warmClose });
   expect(saved()?.storytellers[0].invitation).toBeUndefined();
+});
+
+test('an invitation with no reply for 3 hours gets gentleHelp and the voice note of the moment once', async () => {
+  add({ voice: { id: 'voice-57' } });
+  await tickAt(at(25, 11));
+  const save = vi.spyOn(ctx.store, 'save');
+  await tickAt(at(25, 13, 59));
+  expect(transport.sent).toHaveLength(2);
+  expect(save).not.toHaveBeenCalled();
+
+  await tickAt(at(25, 14));
+  expect(messages().slice(2)).toEqual([
+    ['7', { text: lines.gentleHelp('25 September 2026', "Maria's first day at school") }],
+    ['7', { voice: { id: 'voice-57' } }],
+  ]);
+  expect(saved()?.storytellers[0].invitation).toMatchObject({ momentId: 'm1', helped: true, replied: false });
+
+  save.mockClear();
+  await tickAt(at(25, 18));
+  expect(transport.sent).toHaveLength(4);
+  expect(save).not.toHaveBeenCalled();
+});
+
+test('after any reply, a tick past 3 hours sends no gentleHelp', async () => {
+  const moment = add();
+  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'story' });
+  invite(moment);
+  await receive(fromNikos({ text: 'She would not let go of my hand' }));
+  await tickAt(at(25, 16));
+  expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.thanks]);
+});
+
+test('a silent invitation whose moment is gone or kept quiet closes at 3 hours without a message', async () => {
+  const moment = add();
+  invite(moment);
+  family.moments.length = 0;
+  await tickAt(at(25, 15));
+  expect(saved()?.storytellers[0].invitation).toBeUndefined();
+
+  family.moments.push(moment);
+  moment.sensitive = true;
+  invite(moment, { sentAt: at(25, 12) });
+  await tickAt(at(25, 16));
+  expect(nikos().invitation).toBeUndefined();
+  expect(transport.sent).toEqual([]);
+});
+
+test('"What is this?" gets tellDirectly and the voice note of the moment, keeps the invitation open, and a story still gets thanks', async () => {
+  const moment = add({ voice: { id: 'voice-57' } });
+  const invitation = invite(moment);
+  expect(await receive(fromNikos({ button: 'inv:what:m1' }))).toBe(true);
+  expect(messages()).toEqual([
+    ['7', { text: lines.tellDirectly("Maria's first day at school", '25 September 2026', 'Sofia') }],
+    ['7', { voice: { id: 'voice-57' } }],
+  ]);
+  expect(saved()?.storytellers[0].invitation).toMatchObject({ momentId: 'm1', helped: false, replied: true });
+  expect(ask).not.toHaveBeenCalled();
+
+  await tickAt(at(25, 16));
+  expect(transport.sent).toHaveLength(2);
+
+  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'story' });
+  await receive(fromNikos({ text: 'She would not let go of my hand' }));
+  expect(transport.sent[2].message).toEqual({ text: lines.thanks, buttons: shareButtons('m1') });
+  expect(nikos().invitation).toBe(invitation);
+});
+
+test('a stale "What is this?" sends nothing', async () => {
+  add({ id: 'm2' });
+  invite(add());
+  expect(await receive(fromNikos({ button: 'inv:what:m2' }))).toBe(true);
+  nikos().invitation = undefined;
+  expect(await receive(fromNikos({ button: 'inv:what:m1' }))).toBe(true);
+  expect(transport.sent).toEqual([]);
+});
+
+test('a question reply gets tellDirectly and keeps the invitation open, and a later unsure reply still gets gentleHelp', async () => {
+  invite(add({ eventDate: '1958-06-01' }));
+  vi.mocked(ask).mockResolvedValueOnce({ transcript: '', kind: 'question' }).mockResolvedValueOnce({ transcript: '', kind: 'unsure' });
+  await receive(fromNikos({ text: 'who is that?' }));
+  expect(messages()).toEqual([['7', { text: lines.tellDirectly("Maria's first day at school", '1 June 1958', 'Sofia') }]]);
+  expect(saved()?.storytellers[0].invitation).toMatchObject({ momentId: 'm1', helped: false, replied: true });
+
+  await receive(fromNikos({ text: 'a school?' }));
+  expect(transport.sent[1].message).toEqual({ text: lines.gentleHelp('1 June 1958', "Maria's first day at school") });
+  expect(nikos().invitation?.helped).toBe(true);
+});
+
+test('a question while a story waits for the share buttons still gets tellDirectly', async () => {
+  const waiting = invite(add(), { story: { text: 'She ran in' }, shareAsked: true, replied: true });
+  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'question' });
+  await receive(fromNikos({ text: 'what is this?' }));
+  expect(messages()).toEqual([['7', { text: lines.tellDirectly("Maria's first day at school", '25 September 2026', 'Sofia') }]]);
+  expect(nikos().invitation).toBe(waiting);
+});
+
+test('a reply marks the invitation replied before its call returns, so the silent-invitation help never interleaves', async () => {
+  const invitation = invite(add());
+  let answer: (value: unknown) => void;
+  vi.mocked(ask).mockReturnValue(new Promise((resolve) => (answer = resolve)));
+  const reply = receive(fromNikos({ text: 'She would not let go of my hand' }));
+  expect(invitation.replied).toBe(true);
+  await tickAt(at(25, 16));
+  answer({ transcript: '', kind: 'story' });
+  await reply;
+  expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.thanks]);
 });
 
 test('gentleHelp dates the moment by its event date when it has one', async () => {

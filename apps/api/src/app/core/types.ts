@@ -84,6 +84,8 @@ export type Invitation = {
   story?: { text: string; voice?: Media };
   shareAsked: boolean;
   helped: boolean; // the gentle help went out once
+  sentAt: number; // demo-clock ms of the delivery
+  replied: boolean; // any reply, a question, or "What is this?" came
 };
 
 export type Storyteller = Person & {

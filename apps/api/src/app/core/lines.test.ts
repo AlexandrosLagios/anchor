@@ -27,3 +27,19 @@ test('the clip keeps whole emoji and stays inside 600 UTF-16 units', () => {
   expect(lines.invitation('Sofia', `${'a'.repeat(596)}🇬🇷🇬🇷`)).toContain(`«${'a'.repeat(596)}…»`);
   expect(lines.memoryCaption('One week ago', 'Sofia', '😀'.repeat(700))).toContain(`«${'😀'.repeat(299)}…»`);
 });
+
+test('the consent, stop, and just-ask lines read as the design writes them', () => {
+  expect(lines.welcome('Nikos')).toBe(
+    "Hello Nikos 🙂 I'm Anchor. I'm not a person: I keep your family's photos and stories. " +
+      "Now and then, and a little more often for you, I'll send you a moment the family shared. " +
+      'Seeing moments again helps them stay with us. You can answer by voice or by text. ' +
+      "There's no right answer, I share nothing unless you say yes, and you can send /stop at any time. Would you like that?",
+  );
+  expect(lines.agreed('Nikos')).toBe("Wonderful, Nikos 💛 I'll send you the first moment soon.");
+  expect(lines.stopped).toBe("Of course. I won't send you any more moments. If you'd like them again, send /start.");
+  expect(lines.tellDirectly("Maria's first day at school", '25 September 2026', 'Sofia')).toBe(
+    "This is Maria's first day at school, from 25 September 2026. Sofia shared it 💛",
+  );
+  expect(lines.buttons.agree).toBe("Yes, I'd like that");
+  expect(lines.buttons.whatIsThis).toBe('What is this?');
+});

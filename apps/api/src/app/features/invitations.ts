@@ -21,13 +21,14 @@ import { wordCount } from './capture/filter';
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];
 export const MAX_RETURNS = 7;
 const VOICE_STYLE = 'warm, calm and slow, like a kind family friend talking to a grandparent';
-const KINDS = ['story', 'unsure', 'other'] as const;
+const KINDS = ['story', 'unsure', 'question', 'other'] as const;
 const REPLY_SCHEMA = {
   type: 'object',
   properties: { transcript: { type: 'string' }, kind: { type: 'string', enum: KINDS } },
   required: ['transcript', 'kind'],
 };
-const BUTTON = /^inv:(later|never|share|keep):(.+)$/;
+const BUTTON = /^inv:(later|never|share|keep|what):(.+)$/;
+const STOP = /^stop[.!]?$/i;
 const logger = new Logger('Invitations');
 
 type Reading = { kind: (typeof KINDS)[number]; transcript: string };
@@ -94,7 +95,15 @@ const isOpen = (family: Family, storyteller: Storyteller, invitation: Invitation
   storyteller.invitation === invitation && family.moments.includes(moment) && !moment.sensitive;
 
 async function deliver(family: Family, storyteller: Storyteller, moment: Moment, at: number, ctx: Context) {
-  const invitation: Invitation = { momentId: moment.id, day: dayIndex(at), messageIds: [], shareAsked: false, helped: false };
+  const invitation: Invitation = {
+    momentId: moment.id,
+    day: dayIndex(at),
+    messageIds: [],
+    shareAsked: false,
+    helped: false,
+    sentAt: ctx.now(),
+    replied: false,
+  };
   storyteller.invitation = invitation;
   const count = (moment.returns[storyteller.id]?.count ?? 0) + 1;
   moment.returns[storyteller.id] = { count, due: afterDays(elevenOn(at), GAP_DAYS[count - 1] ?? 0) };
@@ -111,6 +120,7 @@ async function deliver(family: Family, storyteller: Storyteller, moment: Moment,
   const buttons = [
     { label: lines.buttons.notNow, data: `inv:later:${moment.id}` },
     { label: lines.buttons.dontBringBack, data: `inv:never:${moment.id}` },
+    { label: lines.buttons.whatIsThis, data: `inv:what:${moment.id}` },
   ];
   try {
     const picture = moment.video ? { video: moment.video } : moment.photo && { photo: moment.photo };
@@ -173,11 +183,32 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
 
 async function inPrivate(event: Incoming, family: Family, storyteller: Storyteller, ctx: Context): Promise<boolean> {
   if (isCommand(event.text, '/start')) {
+    const buttons = [
+      { label: lines.buttons.agree, data: 'inv:agree' },
+      { label: lines.buttons.notNow, data: 'inv:decline' },
+    ];
+    await tell(storyteller, { text: lines.welcome(storyteller.name), buttons }, family, ctx);
+    return true;
+  }
+  if (isCommand(event.text, '/stop') || STOP.test(event.text?.trim() ?? '')) {
+    if (storyteller.started || storyteller.invitation) {
+      storyteller.started = false;
+      storyteller.invitation = undefined;
+      ctx.store.save();
+    }
+    await tell(storyteller, { text: lines.stopped }, family, ctx);
+    return true;
+  }
+  if (event.button === 'inv:agree') {
     if (!storyteller.started) {
       storyteller.started = true;
       ctx.store.save();
     }
-    await tell(storyteller, { text: lines.welcome(storyteller.name) }, family, ctx);
+    await tell(storyteller, { text: lines.agreed(storyteller.name) }, family, ctx);
+    return true;
+  }
+  if (event.button === 'inv:decline') {
+    await tell(storyteller, { text: lines.notNow }, family, ctx);
     return true;
   }
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
@@ -199,9 +230,26 @@ async function inPrivate(event: Incoming, family: Family, storyteller: Storytell
     ctx.store.save();
     return false;
   }
-  if (action) await settle(action, invitation, moment, family, storyteller, ctx);
+  if (action === 'what') {
+    markReplied(invitation, ctx);
+    await explain(tellDirectly(moment), invitation, moment, family, storyteller, ctx);
+  } else if (action) await settle(action, invitation, moment, family, storyteller, ctx);
   else await reply(event, invitation, moment, family, storyteller, ctx);
   return true;
+}
+
+function markReplied(invitation: Invitation, ctx: Context) {
+  if (invitation.replied) return;
+  invitation.replied = true;
+  ctx.store.save();
+}
+
+const gentleHelp = (moment: Moment) => lines.gentleHelp(dateOf(moment), moment.title);
+const tellDirectly = (moment: Moment) => lines.tellDirectly(moment.title, dateOf(moment), moment.by.name);
+
+async function explain(text: string, invitation: Invitation, moment: Moment, family: Family, storyteller: Storyteller, ctx: Context) {
+  await tell(storyteller, { text }, family, ctx);
+  if (moment.voice && isOpen(family, storyteller, invitation, moment)) await tell(storyteller, { voice: moment.voice }, family, ctx);
 }
 
 async function settle(action: string, invitation: Invitation, moment: Moment, family: Family, storyteller: Storyteller, ctx: Context) {
@@ -245,6 +293,7 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
 }
 
 async function reply(event: Incoming, invitation: Invitation, moment: Moment, family: Family, storyteller: Storyteller, ctx: Context) {
+  markReplied(invitation, ctx);
   const reading: Reading =
     event.unsupported || event.forwarded ? { kind: 'other', transcript: '' } : await readReply(event, moment, ctx.transport(family.id));
   if (storyteller.invitation !== invitation) return;
@@ -264,12 +313,12 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
     await tell(storyteller, { text: lines.thanks, buttons }, family, ctx);
     return;
   }
+  if (reading.kind === 'question') return explain(tellDirectly(moment), invitation, moment, family, storyteller, ctx);
   if (invitation.story) return;
   if (reading.kind === 'unsure' && !invitation.helped) {
     invitation.helped = true;
     ctx.store.save();
-    await tell(storyteller, { text: lines.gentleHelp(dateOf(moment), moment.title) }, family, ctx);
-    if (moment.voice && isOpen(family, storyteller, invitation, moment)) await tell(storyteller, { voice: moment.voice }, family, ctx);
+    await explain(gentleHelp(moment), invitation, moment, family, storyteller, ctx);
     return;
   }
   storyteller.invitation = undefined;
@@ -280,6 +329,20 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
 function dateOf(moment: Moment) {
   const date = moment.eventDate ? new Date(`${moment.eventDate}T12:00`) : new Date(moment.savedAt);
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+async function helpIfSilent(family: Family, storyteller: Storyteller, now: number, ctx: Context) {
+  const invitation = storyteller.invitation;
+  if (!storyteller.started || !invitation || invitation.replied || invitation.helped || now - invitation.sentAt < 3 * 3_600_000) return;
+  const moment = family.moments.find((item) => item.id === invitation.momentId);
+  if (!moment || moment.sensitive) {
+    storyteller.invitation = undefined;
+    ctx.store.save();
+    return;
+  }
+  invitation.helped = true;
+  ctx.store.save();
+  await explain(gentleHelp(moment), invitation, moment, family, storyteller, ctx);
 }
 
 async function readReply(event: Incoming, moment: Moment, transport: Transport): Promise<Reading> {
@@ -305,7 +368,8 @@ function replyPrompt(event: Incoming, moment: Moment) {
     'When the reply holds a voice note, set transcript to its words, verbatim. Otherwise set transcript to an empty string.',
     'Set kind to one of these values:',
     '- story: a detail, a feeling, or a memory that the moment brings back.',
-    '- unsure: a hesitation or a question, for example "a school?".',
+    '- unsure: a hesitation, for example "a school?".',
+    '- question: a direct question about what the moment is, for example "who is that?" or "what is this?".',
     '- other: an acknowledgement, for example "ok" or an emoji.',
   ].join('\n');
 }
@@ -322,14 +386,15 @@ export const invitations: Feature = {
 
   async tick(family, window, ctx) {
     const slot = slotIn(window, 11);
-    if (slot === undefined) return;
     for (const storyteller of family.storytellers) {
-      if (!storyteller.started || storyteller.lastInvitationDay === dayIndex(slot)) continue;
-      storyteller.invitation = undefined;
-      storyteller.lastInvitationDay = dayIndex(slot);
-      const [moment] = family.moments.filter((item) => qualifies(item, storyteller.id, slot)).sort(byPriority(slot));
-      if (moment) await deliver(family, storyteller, moment, slot, ctx);
-      else ctx.store.save();
+      if (slot !== undefined && storyteller.started && storyteller.lastInvitationDay !== dayIndex(slot)) {
+        storyteller.invitation = undefined;
+        storyteller.lastInvitationDay = dayIndex(slot);
+        const [moment] = family.moments.filter((item) => qualifies(item, storyteller.id, slot)).sort(byPriority(slot));
+        if (moment) await deliver(family, storyteller, moment, slot, ctx);
+        else ctx.store.save();
+      }
+      await helpIfSilent(family, storyteller, window.to, ctx);
     }
   },
 };
