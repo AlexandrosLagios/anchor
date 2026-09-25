@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import type { NextFunction, Request, Response } from 'express';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AppModule } from './app/app.module';
@@ -34,6 +35,10 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Authorization', 'Content-Type'],
   });
+  if (process.env.ANCHOR_BOT_ONLY === 'true') {
+    // the public bot answers only its health check over HTTP, so the website API and the WhatsApp webhook stay closed
+    app.use((request: Request, response: Response, next: NextFunction) => (request.method === 'GET' && request.path === '/' ? next() : response.status(404).end()));
+  }
   attachCallStream(app.getHttpServer());
   const port = process.env.PORT || 3000;
   await app.listen(port);

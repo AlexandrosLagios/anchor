@@ -194,3 +194,64 @@ pnpm deploy:bot
 You need Docker, and `gcloud` signed in with deploy rights on the project. A few 409 lines during the rollout are expected, because the old revision polls until it shuts down.
 
 The project gives no account the IAM admin role, and it blocks service-account keys, so an automatic deploy from GitHub Actions is not possible. Run the script after each merge that changes `apps/api`.
+
+### Phone calls
+
+Anchor rings a member through Twilio and talks through OpenAI Realtime (spec section 4.15). Twilio opens a WebSocket to `/call/stream` on `anchor-bot`, so the service must accept requests without IAM. The call stream accepts a stream only with the one-time token that Anchor issued for that call.
+
+Caution: set `ANCHOR_BOT_ONLY=true` before you open the service. Without the variable, a public `anchor-bot` serves the website API and the WhatsApp webhook. The webhook sends the Twilio key to any media URL in a request, because `TWILIO_AUTH_TOKEN` is empty. With `ANCHOR_BOT_ONLY=true`, the service answers only `GET /` and the call stream.
+
+Each step changes the live service, so each step needs the user's go.
+
+1. Store the Twilio key secret, and give the service account read access to the secret.
+
+   ```bash
+   grep '^TWILIO_API_KEY_SECRET=' apps/api/.env.local | cut -d= -f2- | tr -d '\r\n' | gcloud secrets create anchor-twilio-api-key-secret --data-file=- --project=$PROJECT
+   gcloud secrets add-iam-policy-binding anchor-twilio-api-key-secret --member=serviceAccount:$SA --role=roles/secretmanager.secretAccessor --project=$PROJECT
+   ```
+
+2. Set the guard, the call variables, and a request timeout of 15 minutes. A call lasts at most 10 minutes, and Cloud Run closes a WebSocket at the request timeout.
+
+   ```bash
+   URL=$(gcloud run services describe anchor-bot --project=$PROJECT --region=$REGION --format='value(status.url)')
+   envval() { grep "^$1=" apps/api/.env.local | cut -d= -f2- | tr -d '\r\n'; }
+   gcloud run services update anchor-bot --project=$PROJECT --region=$REGION --timeout=900 \
+     --update-env-vars=ANCHOR_BOT_ONLY=true,ANCHOR_PUBLIC_URL=$URL,TWILIO_ACCOUNT_SID=$(envval TWILIO_ACCOUNT_SID),TWILIO_API_KEY_SID=$(envval TWILIO_API_KEY_SID),TWILIO_FROM=$(envval TWILIO_FROM) \
+     --update-secrets=TWILIO_API_KEY_SECRET=anchor-twilio-api-key-secret:latest
+   ```
+
+3. Open the service to requests without IAM.
+
+   ```bash
+   gcloud run services add-iam-policy-binding anchor-bot --member=allUsers --role=roles/run.invoker --region=$REGION --project=$PROJECT
+   ```
+
+4. Check the guard. `GET /` returns 200, and `POST /whatsapp` returns 404.
+
+   ```bash
+   curl -s -o /dev/null -w '%{http_code}\n' $URL/
+   curl -s -o /dev/null -w '%{http_code}\n' -X POST $URL/whatsapp
+   ```
+
+5. In the private chat, send "Anchor, call me". The phone of the member rings from `TWILIO_FROM`.
+
+To close the service again, remove the binding:
+
+```bash
+gcloud run services remove-iam-policy-binding anchor-bot --member=allUsers --role=roles/run.invoker --region=$REGION --project=$PROJECT
+```
+
+`pnpm deploy:bot` keeps the binding, the variables, and the timeout. A full `gcloud run deploy` with the flags of "Deploy" sets `--no-allow-unauthenticated` again.
+
+The call reads these variables:
+
+| Variable | Value |
+| --- | --- |
+| `ANCHOR_BOT_ONLY` | `true` on `anchor-bot`. Unset everywhere else. |
+| `ANCHOR_PUBLIC_URL` | The `https://` URL of `anchor-bot`. Twilio connects to `wss://` on the same host. |
+| `ANCHOR_REALTIME_MODEL` | Optional. The default is `gpt-realtime-2.1`. |
+| `TWILIO_FROM` | The Twilio number that Anchor calls from, in E.164. |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY_SID` | Plain variables. |
+| `TWILIO_API_KEY_SECRET` | The secret `anchor-twilio-api-key-secret`. |
+
+A call to a Greek mobile needs Greece in the Twilio voice geo permissions. Low-risk numbers for Greece are on.
