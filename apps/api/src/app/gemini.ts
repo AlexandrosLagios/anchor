@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { httpFetch } from './http';
+import { cut } from './core/lines';
 import { wav } from './song';
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
@@ -28,10 +29,10 @@ export const valid = {
   oneOf: <T extends string>(value: unknown, allowed: readonly T[]) => (allowed.includes(value as T) ? (value as T) : undefined),
   int: (value: unknown, min: number, max: number) =>
     typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max ? value : undefined,
-  text: (value: unknown, max?: number) => (typeof value === 'string' ? value.trim().slice(0, max) : ''),
+  text: (value: unknown, max = Infinity) => (typeof value === 'string' ? cut(value.trim(), max) : ''),
   strings: (value: unknown) => (Array.isArray(value) && value.every((item) => typeof item === 'string') ? (value as string[]) : []),
   date: (value: unknown) => {
-    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || Number(value.slice(0, 4)) < 1000) return undefined;
     const time = Date.parse(`${value}T00:00:00Z`);
     return !Number.isNaN(time) && new Date(time).toISOString().startsWith(value) ? value : undefined;
   },
@@ -83,7 +84,11 @@ export async function ask<T>(
   const input = media.length
     ? [
         { type: 'text', text: prompt },
-        ...media.map((item) => ({ type: item.mimeType.split('/')[0], data: item.data.toString('base64'), mime_type: item.mimeType })),
+        ...media.map((item) => ({
+          type: item.mimeType.startsWith('image/') ? 'image' : 'audio',
+          data: item.data.toString('base64'),
+          mime_type: item.mimeType,
+        })),
       ]
     : prompt;
   const produce = async () => {
@@ -92,7 +97,9 @@ export async function ask<T>(
       { input, response_format: { type: 'text', mime_type: 'application/json', schema } },
       timeoutMs ?? (fast ? 9000 : 45000),
     );
-    return Buffer.from(content.filter((item) => item.type === 'text').map((item) => item.text).join(''));
+    const text = content.filter((item) => item.type === 'text').map((item) => item.text).join('');
+    JSON.parse(text); // throws before the cache stores an answer that does not parse
+    return Buffer.from(text);
   };
   const hashes = media.map((item) => createHash('sha1').update(item.data).digest('hex'));
   const key = `ask:${prompt}:${JSON.stringify(schema)}:${hashes.join(',')}`;
@@ -114,7 +121,7 @@ export async function transcribe(clip: Clip): Promise<string> {
 }
 
 export async function speak(text: string, style = PROTOTYPE_STYLE): Promise<Buffer> {
-  // the default key predates the style, so the prototype keeps its cached clips
+  // ponytail: the default key predates the style, so the prototype keeps its cached clips; drop the branch with the prototype
   const key = style === PROTOTYPE_STYLE ? `speak:${VOICE}:${text}` : `speak:${VOICE}:${style}:${text}`;
   const audio = await cached(key, async () => {
     const content = await interact(

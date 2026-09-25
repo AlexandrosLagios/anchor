@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { cut } from '../core/lines';
 import { Blocked, type Incoming, type Media, type Outgoing, type Transport } from '../core/types';
 import { httpFetch } from '../http';
 import { toOgg } from './voice';
@@ -22,6 +23,7 @@ type Message = {
   voice?: { file_id: string; mime_type?: string };
   forward_origin?: object;
   reply_to_message?: Message;
+  migrate_to_chat_id?: number;
   animation?: object;
   document?: object;
   audio?: object;
@@ -46,6 +48,7 @@ function fromMessage(message: Message, username: string): Incoming {
   );
   const photo = message.photo?.reduce((largest, size) => (size.width * size.height > largest.width * largest.height ? size : largest));
   const { video, voice, reply_to_message: reply } = message;
+  const migratedTo = message.migrate_to_chat_id ? String(message.migrate_to_chat_id) : undefined;
   return {
     ...place(message.chat),
     messageId: String(message.message_id),
@@ -57,9 +60,10 @@ function fromMessage(message: Message, username: string): Incoming {
     thumbnail: video?.thumbnail && { id: video.thumbnail.file_id, mimeType: 'image/jpeg' },
     voice: voice && { id: voice.file_id, mimeType: voice.mime_type ?? 'audio/ogg' },
     forwarded: Boolean(message.forward_origin),
-    unsupported: Boolean(message.animation || message.document || message.audio) || !(text || photo || video || voice),
+    unsupported: Boolean(message.animation || message.document || message.audio) || !(text || photo || video || voice || migratedTo),
     replyTo: reply && String(reply.message_id),
     replyToSender: reply?.from && person(reply.from),
+    migratedTo,
   };
 }
 
@@ -78,7 +82,7 @@ export function toIncoming(update: Update, username: string): Incoming | undefin
   return undefined;
 }
 
-// ponytail: the only upload is a voice note
+// ponytail: the only upload is a voice note, so every Buffer goes up as <key>.ogg; pass a file name when a second upload kind appears
 function encode(params: Record<string, unknown>) {
   if (!Object.values(params).some((value) => Buffer.isBuffer(value))) {
     return { headers: { 'content-type': 'application/json' }, body: JSON.stringify(params) };
@@ -95,7 +99,8 @@ async function call<T>(token: string, method: string, params: Record<string, unk
   const response = await httpFetch(`${API}/bot${token}/${method}`, { method: 'POST', ...encode(params), signal });
   const reply = (await response.json()) as { ok: boolean; result: T; error_code?: number; description?: string };
   if (reply.ok) return reply.result;
-  if (reply.error_code === 403) throw new Blocked(reply.description);
+  // a user id is positive and a group id negative, so only a 403 from a private chat means the person blocked Anchor
+  if (reply.error_code === 403 && typeof params.chat_id === 'string' && !params.chat_id.startsWith('-')) throw new Blocked(reply.description);
   if (reply.error_code === 409) throw new Error(`Another process polls this token: ${reply.description}`);
   throw new Error(`Telegram ${method} ${reply.error_code}: ${reply.description}`);
 }
@@ -106,9 +111,16 @@ export class TelegramTransport implements Transport {
     readonly username: string,
   ) {}
 
-  static async connect(token: string) {
-    const me = await call<User>(token, 'getMe');
-    return new TelegramTransport(token, me.username ?? '');
+  static async connect(token: string, signal?: AbortSignal) {
+    for (;;) {
+      try {
+        const me = await call<User>(token, 'getMe');
+        return new TelegramTransport(token, me.username ?? '');
+      } catch (error) {
+        logger.error(`getMe failed, retrying in 5 s: ${error}`);
+        await sleep(5000, undefined, { signal });
+      }
+    }
   }
 
   // ponytail: one update at a time, so a slow feature delays the next update; add a queue per chat when that hurts
@@ -117,7 +129,9 @@ export class TelegramTransport implements Transport {
     while (!signal.aborted) {
       let updates: Update[] = [];
       try {
-        updates = await call(this.token, 'getUpdates', { offset, timeout: 30 }, AbortSignal.any([signal, AbortSignal.timeout(40_000)]));
+        // limit 1 confirms each update before the next one, so a restart repeats at most the update in flight
+        const params = { offset, timeout: 30, limit: 1, allowed_updates: [] };
+        updates = await call(this.token, 'getUpdates', params, AbortSignal.any([signal, AbortSignal.timeout(40_000)]));
       } catch (error) {
         if (signal.aborted) break;
         logger.error(`${error}`);
@@ -132,7 +146,7 @@ export class TelegramTransport implements Transport {
           const event = toIncoming(update, this.username);
           if (event) await route(event);
         } catch (error) {
-          logger.error(`Update ${update.update_id} failed: ${error}`, (error as Error).stack);
+          logger.error(`Update ${update.update_id} failed: ${error}`, error instanceof Error ? error.stack : undefined);
         }
       }
     }
@@ -146,12 +160,12 @@ export class TelegramTransport implements Transport {
         ? { inline_keyboard: [buttons.map(({ label, data, url }) => (url ? { text: label, url } : { text: label, callback_data: data }))] }
         : undefined,
     };
-    const caption = text?.slice(0, 1024);
+    const caption = text && cut(text, 1024);
     let sent: Message;
-    if (photo) sent = await call<Message>(this.token, 'sendPhoto', { ...params, photo: photo.id, caption });
-    else if (video) sent = await call<Message>(this.token, 'sendVideo', { ...params, video: video.id, caption });
+    if (video) sent = await call<Message>(this.token, 'sendVideo', { ...params, video: video.id, caption });
+    else if (photo) sent = await call<Message>(this.token, 'sendPhoto', { ...params, photo: photo.id, caption });
     else if (voice) sent = await call<Message>(this.token, 'sendVoice', { ...params, voice: 'wav' in voice ? toOgg(voice.wav) : voice.id, caption });
-    else sent = await call<Message>(this.token, 'sendMessage', { ...params, text: text?.slice(0, 4096) });
+    else sent = await call<Message>(this.token, 'sendMessage', { ...params, text: text && cut(text, 4096) });
     return { messageId: String(sent.message_id), voice: sent.voice && { id: sent.voice.file_id, mimeType: sent.voice.mime_type } };
   }
 

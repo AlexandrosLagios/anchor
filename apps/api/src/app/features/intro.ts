@@ -4,6 +4,15 @@ import type { Feature } from '../core/types';
 export const intro: Feature = {
   name: 'intro',
   async handle(event, family, ctx) {
+    if (event.migratedTo) {
+      if (!family) return true;
+      const shell = ctx.store.family(event.migratedTo);
+      // Telegram announces the new supergroup with a join before the migration, and that join made an empty family
+      if (shell && !shell.moments.length && !shell.storytellers.length) ctx.store.state.families.splice(ctx.store.state.families.indexOf(shell), 1);
+      family.id = family.chatId = event.migratedTo;
+      ctx.store.save();
+      return true;
+    }
     if (!event.joined || !event.familyId) return false;
     const joined = family ?? ctx.store.addFamily(event.familyId, event.chatId);
     ctx.store.save();

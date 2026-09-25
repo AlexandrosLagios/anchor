@@ -7,6 +7,7 @@ export class FakeTransport implements Transport {
   readonly files = new Map<string, { data: Buffer; mimeType: string }>();
 
   async send(chatId: string, message: Outgoing) {
+    if ([message.photo, message.video, message.voice].filter(Boolean).length > 1) throw new Error('An Outgoing sets at most one of photo, video, and voice');
     const messageId = `sent-${this.sent.length + 1}`;
     this.sent.push({ chatId, messageId, message });
     const voice = message.voice && ('wav' in message.voice ? { id: `voice-${messageId}`, mimeType: 'audio/ogg' } : message.voice);

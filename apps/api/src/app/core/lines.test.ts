@@ -9,6 +9,9 @@ test('invitation and memoryCaption clip a long quote to 600 characters that end 
   expect(lines.invitation('Sofia', 'b'.repeat(600))).toContain(`«${'b'.repeat(600)}»`);
 });
 
-test('the clip never splits an emoji', () => {
-  expect(lines.invitation('Sofia', `${'a'.repeat(598)}😀😀😀`)).toContain(`«${'a'.repeat(598)}😀…»`);
+test('the clip keeps whole emoji and stays inside 600 UTF-16 units', () => {
+  expect(lines.invitation('Sofia', `${'a'.repeat(597)}😀😀😀`)).toContain(`«${'a'.repeat(597)}😀…»`);
+  expect(lines.invitation('Sofia', `${'a'.repeat(597)}👨‍👩‍👧 end`)).toContain(`«${'a'.repeat(597)}…»`);
+  expect(lines.invitation('Sofia', `${'a'.repeat(596)}🇬🇷🇬🇷`)).toContain(`«${'a'.repeat(596)}…»`);
+  expect(lines.memoryCaption('One week ago', 'Sofia', '😀'.repeat(700))).toContain(`«${'😀'.repeat(299)}…»`);
 });

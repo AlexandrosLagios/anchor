@@ -170,6 +170,24 @@ test('toIncoming keeps a command that names another bot', () => {
   expect(toIncoming(message({ text: '/memory@other_bot' }), BOT)?.text).toBe('/memory@other_bot');
 });
 
+test('toIncoming maps a group that became a supergroup to its new chat id', () => {
+  const basicGroup = { id: -5486664452, title: 'The Pappas family', type: 'group', all_members_are_administrators: false };
+  expect(toIncoming(message({ chat: basicGroup, message_id: 7, migrate_to_chat_id: -1003906123893 }), BOT)).toMatchObject({
+    familyId: '-5486664452',
+    chat: 'group',
+    chatId: '-5486664452',
+    migratedTo: '-1003906123893',
+    unsupported: false,
+  });
+});
+
+test('toIncoming keeps the first message of the new supergroup unsupported', () => {
+  const groupBot = { id: 1087968824, is_bot: true, first_name: 'Group', username: 'GroupAnonymousBot' };
+  const event = toIncoming(message({ message_id: 1, from: groupBot, sender_chat: group, migrate_from_chat_id: -5486664452 }), BOT);
+  expect(event).toMatchObject({ unsupported: true });
+  expect(event?.migratedTo).toBeUndefined();
+});
+
 test('toIncoming ignores an edited message', () => {
   expect(toIncoming({ update_id: 1, edited_message: { message_id: 42, chat: group, date, text: 'typo' } } as Update, BOT)).toBeUndefined();
 });
@@ -202,26 +220,39 @@ function botApi(answer: (method: string) => HttpResponse = () => ok(sentMessage(
   return calls;
 }
 
-test('poll advances the offset past each update, also when routing fails, and answers every button press', async () => {
+test('poll takes one update at a time, advances past each one also when routing fails, and answers every button press', async () => {
   const stop = new AbortController();
-  let polls = 0;
+  const pending = [message({ chat: privateChat, from: nikos, text: 'hello' }, 7), button(privateChat, 8)];
   const calls = botApi((method) => {
     if (method !== 'getUpdates') return ok(true);
-    polls += 1;
-    if (polls === 1) return ok([message({ chat: privateChat, from: nikos, text: 'hello' }, 7), button(privateChat, 8)]);
-    stop.abort();
-    return ok([]);
+    const next = pending.shift();
+    if (!next) stop.abort();
+    return ok(next ? [next] : []);
   });
   const telegram = await TelegramTransport.connect('TOKEN');
   const routed: string[] = [];
   await telegram.poll(async (event) => {
     routed.push(event.messageId);
-    if (routed.length === 1) throw new Error('a feature failed');
+    if (routed.length === 1) throw undefined;
   }, stop.signal);
 
-  expect(calls.filter(({ method }) => method === 'getUpdates').map(({ params }) => params.offset)).toEqual([undefined, 9]);
+  const polls = calls.filter(({ method }) => method === 'getUpdates').map(({ params }) => params);
+  expect(polls.map(({ offset }) => offset)).toEqual([undefined, 8, 9]);
+  expect(polls[0]).toMatchObject({ timeout: 30, limit: 1, allowed_updates: [] });
   expect(routed).toEqual(['42', '50']);
   expect(calls.filter(({ method }) => method === 'answerCallbackQuery').map(({ params }) => params.callback_query_id)).toEqual(['q8']);
+});
+
+test('connect retries getMe 5 seconds after a failure', { timeout: 15_000 }, async () => {
+  let attempts = 0;
+  fetchMock.mockImplementation(async () => {
+    attempts += 1;
+    if (attempts === 1) throw new TypeError('fetch failed');
+    return ok(anchorBot);
+  });
+  const telegram = await TelegramTransport.connect('TOKEN');
+  expect(attempts).toBe(2);
+  expect(telegram.startLink('abc')).toBe(`https://t.me/${BOT}?start=abc`);
 });
 
 test('send posts a photo with a caption clipped to 1024 characters, the reply, and the buttons', async () => {
@@ -264,6 +295,20 @@ test('send posts a video by its file id with the caption', async () => {
   expect(calls.at(-1)).toMatchObject({ method: 'sendVideo', params: { chat_id: '222', video: 'video-1', caption: 'Sofia shared: «Our trip»' } });
 });
 
+test('send shows the video when a message also sets a photo', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.send('222', { photo: { id: 'large' }, video: { id: 'video-1' }, text: 'Our trip' });
+  expect(calls.at(-1)?.method).toBe('sendVideo');
+});
+
+test('send never cuts a caption inside an emoji', async () => {
+  const calls = botApi();
+  const telegram = await TelegramTransport.connect('TOKEN');
+  await telegram.send('222', { photo: { id: 'large' }, text: `${'x'.repeat(1023)}😀 and more` });
+  expect(calls.at(-1)?.params.caption).toBe('x'.repeat(1023));
+});
+
 test('send posts text with sendMessage', async () => {
   const calls = botApi();
   const telegram = await TelegramTransport.connect('TOKEN');
@@ -292,6 +337,14 @@ test('send throws Blocked when the person blocked Anchor', async () => {
   botApi(() => failed(403, 'Forbidden: bot was blocked by the user'));
   const telegram = await TelegramTransport.connect('TOKEN');
   await expect(telegram.send('222', { text: 'hello' })).rejects.toBeInstanceOf(Blocked);
+});
+
+test('a 403 from a group is an ordinary error, not Blocked', async () => {
+  botApi(() => failed(403, 'Forbidden: bot was kicked from the supergroup chat'));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  const sending = telegram.send('-1001234567890', { text: 'hello' });
+  await expect(sending).rejects.toThrow(/kicked/);
+  await expect(sending).rejects.not.toBeInstanceOf(Blocked);
 });
 
 test('react sets ❤ without the emoji variation selector', async () => {

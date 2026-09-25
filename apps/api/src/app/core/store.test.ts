@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
@@ -42,6 +42,14 @@ test('a file that does not parse moves aside and the store starts empty', () => 
   expect(corrupt).toHaveLength(1);
   expect(readFileSync(join(file, '..', corrupt[0]), 'utf8')).toBe('{"clockStart": 1000, "fami');
   expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ clockStart: 5000, families: [] });
+});
+
+test('a state file that cannot be read stays where it is, and the store throws', () => {
+  const file = stateFile();
+  mkdirSync(file);
+  expect(() => openStore(file, 5000)).toThrow(/EISDIR/);
+  expect(statSync(file).isDirectory()).toBe(true);
+  expect(readdirSync(join(file, '..'))).toEqual(['state.json']);
 });
 
 test('a file with the wrong shape counts as corrupt', () => {

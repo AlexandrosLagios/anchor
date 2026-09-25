@@ -28,8 +28,9 @@ export function openStore(file: string, realNow = Date.now()): Store {
 
 function load(file: string): State | undefined {
   if (!existsSync(file)) return undefined;
+  const text = readFileSync(file, 'utf8');
   try {
-    const state = JSON.parse(readFileSync(file, 'utf8')) as State;
+    const state = JSON.parse(text) as State;
     if (typeof state.clockStart === 'number' && Array.isArray(state.families)) return state;
     throw new Error('not a State');
   } catch (error) {

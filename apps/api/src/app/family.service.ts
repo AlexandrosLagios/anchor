@@ -1,8 +1,9 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import { statSync } from 'node:fs';
 import { demoNow } from './core/clock';
 import { createRouter } from './core/router';
 import { openStore } from './core/store';
-import type { Context, Feature } from './core/types';
+import type { Feature } from './core/types';
 import { intro } from './features/intro';
 import { TelegramTransport } from './transports/telegram';
 
@@ -16,7 +17,10 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
 
   onApplicationBootstrap() {
     const token = process.env.TELEGRAM_BOT_TOKEN;
-    if (token) this.start(token).catch((error) => this.logger.error(`The family bot stopped: ${error}`));
+    if (!token) return;
+    this.start(token).catch((error) => {
+      if (!this.stop.signal.aborted) this.logger.error(`The family bot stopped: ${error}`);
+    });
   }
 
   onApplicationShutdown() {
@@ -25,28 +29,35 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
   }
 
   private async start(token: string) {
-    const store = openStore(process.env.ANCHOR_STATE_FILE || 'tmp/anchor-state.json');
-    const daySeconds = Number(process.env.ANCHOR_DAY_SECONDS) || 86400;
-    const telegram = await TelegramTransport.connect(token);
-    if (this.stop.signal.aborted) return;
-    const ctx: Context = { now: () => demoNow(store.state.clockStart, daySeconds), store, transport: () => telegram };
-    const router = createRouter(FEATURES, ctx);
+    const file = process.env.ANCHOR_STATE_FILE || 'tmp/anchor-state.json';
+    const store = openStore(file);
+    const daySeconds = Number(process.env.ANCHOR_DAY_SECONDS) > 0 ? Number(process.env.ANCHOR_DAY_SECONDS) : 86400;
+    const telegram = await TelegramTransport.connect(token, this.stop.signal);
+    const now = () => demoNow(store.state.clockStart, daySeconds);
+    const router = createRouter(FEATURES, { now, store, transport: () => telegram });
 
-    let from = ctx.now();
+    // the tick never saves, so the first window reaches back to the last save, and a restart skips no slot
+    let from = demoNow(store.state.clockStart, daySeconds, statSync(file).mtimeMs);
     let ticking = false;
     this.timer = setInterval(async () => {
       if (ticking) return;
       ticking = true;
-      const to = ctx.now();
+      const to = now();
       try {
         await router.tick({ from, to });
+      } catch (error) {
+        this.logger.error(`The tick failed: ${error}`);
       } finally {
         from = to;
         ticking = false;
       }
     }, 2000);
 
-    this.logger.log(`The family bot polls Telegram as @${telegram.username}, one demo day every ${daySeconds} s`);
-    await telegram.poll((event) => router.route(event), this.stop.signal);
+    try {
+      this.logger.log(`The family bot polls Telegram as @${telegram.username}, one demo day every ${daySeconds} s`);
+      await telegram.poll((event) => router.route(event), this.stop.signal);
+    } finally {
+      clearInterval(this.timer);
+    }
   }
 }

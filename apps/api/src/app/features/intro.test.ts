@@ -42,6 +42,20 @@ test('joining the same group again posts intro again and keeps one family', asyn
   expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.intro, lines.intro]);
 });
 
+test('a group that became a supergroup keeps its family under the new chat id and gets no message', async () => {
+  const { file, transport, store, router } = setup();
+  await router.route(joined);
+  store.family('-100')?.storytellers.push({ id: '42', name: 'Nikos', started: true });
+  const supergroup = { ...joined, familyId: '-1009', chatId: '-1009' };
+  await router.route(supergroup);
+  await router.route({ ...joined, joined: undefined, messageId: '7', migratedTo: '-1009' });
+
+  expect(openStore(file).state.families).toEqual([
+    { id: '-1009', chatId: '-1009', storytellers: [{ id: '42', name: 'Nikos', started: true }], moments: [], counters: {} },
+  ]);
+  expect(transport.sent.map(({ chatId }) => chatId)).toEqual(['-100', '-1009']);
+});
+
 test('intro leaves every other event to the next feature', async () => {
   const { store, transport } = setup();
   const handled = await intro.handle?.({ ...joined, joined: undefined, text: 'hello' }, undefined, {

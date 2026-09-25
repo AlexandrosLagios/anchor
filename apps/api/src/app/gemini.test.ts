@@ -45,6 +45,7 @@ test('valid.text trims, caps the length, and turns a non-string into an empty st
   expect(valid.text('x'.repeat(120), 100)).toBe('x'.repeat(100));
   expect(valid.text(5, 100)).toBe('');
   expect(valid.text(undefined)).toBe('');
+  expect(valid.text(`${'x'.repeat(99)}😀`, 100)).toBe('x'.repeat(99));
 });
 
 test('valid.strings keeps an array of strings only', () => {
@@ -58,6 +59,7 @@ test('valid.date keeps a real YYYY-MM-DD date only', () => {
   expect(valid.date('2024-02-29')).toBe('2024-02-29');
   expect(valid.date('2026-02-30')).toBeUndefined();
   expect(valid.date('2026-13-01')).toBeUndefined();
+  expect(valid.date('0000-09-25')).toBeUndefined();
   expect(valid.date('25/09/2019')).toBeUndefined();
   expect(valid.date('')).toBeUndefined();
 });
@@ -76,6 +78,20 @@ test('ask sends each media item as an image or audio input after the prompt', as
     { type: 'image', data: Buffer.from('jpeg bytes').toString('base64'), mime_type: 'image/jpeg' },
     { type: 'audio', data: Buffer.from('ogg bytes').toString('base64'), mime_type: 'audio/ogg' },
   ]);
+});
+
+test('ask keeps the audio option an audio input whatever its mime type', async () => {
+  fetchMock.mockResolvedValue(json({ ok: true }));
+  await ask(`Describe the voice note ${randomUUID()}`, { type: 'object' }, { audio: { data: Buffer.from('voice'), mimeType: '' } });
+  expect(request(0).input[1].type).toBe('audio');
+});
+
+test('ask caches no answer that does not parse, so the next call asks again', async () => {
+  fetchMock.mockResolvedValueOnce(answer([])).mockResolvedValueOnce(json({ title: 'Nafplio' }));
+  const prompt = `Title the moment ${randomUUID()}`;
+  await expect(ask(prompt, { type: 'object' })).rejects.toThrow();
+  expect(await ask(prompt, { type: 'object' })).toEqual({ title: 'Nafplio' });
+  expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 
 test('ask caches per media item, so another photo with the same prompt gets its own answer', async () => {

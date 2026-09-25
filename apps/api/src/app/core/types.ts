@@ -18,6 +18,7 @@ export type Incoming = {
   unsupported?: boolean; // sticker, GIF, video note, document, poll, service message
   replyTo?: string;
   replyToSender?: { id: string; name: string }; // the sender of the replied-to message
+  migratedTo?: string; // the new chat id when the group became a supergroup
   button?: string; // the data of a pressed button
   joined?: boolean; // Anchor joined this group
 };
