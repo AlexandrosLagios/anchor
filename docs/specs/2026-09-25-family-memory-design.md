@@ -52,11 +52,11 @@ Step 3 writes the v1 findings into section 11. Read section 11 before a v1.x cha
 
 ### 4.2 Capture
 
-1. The code rules drop unsupported messages (stickers, GIFs, videos, documents, polls, service messages), forwarded messages, commands (text that starts with `/`), and texts that hold only links.
+1. The code rules drop unsupported messages (stickers, GIFs, video notes, documents, polls, service messages), forwarded messages, commands (text that starts with `/`), and texts that hold only links. A video is supported.
 2. The bundler groups the messages of one sender in one family. A message joins the open bundle of its sender when the message arrives within 2 minutes of the previous one.
-3. A bundle closes 2 minutes after its last message. A bundle that holds a photo and words closes at the next tick. Words are a text, a caption, or a voice note.
-4. The code drops a closed bundle that has no photo, no voice note, and fewer than 3 words. The code also drops a bundle that has a photo and no words, because a bare photo has nothing to bring back.
-5. One Gemini call classifies the bundle (section 6.2). The call gets the texts, the first photo, and the voice note of the bundle.
+3. A bundle closes 2 minutes after its last message. A bundle that holds a photo or a video, and words, closes at the next tick. Words are a text, a caption, or a voice note.
+4. The code drops a closed bundle that has no photo, no video, no voice note, and fewer than 3 words. The code also drops a bundle that has a photo or a video and no words, because a bare picture has nothing to bring back.
+5. One Gemini call classifies the bundle (section 6.2). The call gets the texts, the first photo or the thumbnail of the first video, and the voice note of the bundle. The code never downloads a video, because a bot downloads at most 20 MB.
 6. The code saves a `family_moment` and a `sensitive` moment, and drops the rest. A `sensitive` verdict sets `moment.sensitive`. Then Anchor reacts with ❤ on the first message of the bundle.
 7. `moment.text` holds the typed words of the bundle. A bundle without typed words uses the transcript of its voice note. When both are empty, `moment.text` is the title, so `moment.text` is never empty.
 8. The code counts each outcome in `family.counters`: `rules`, `family_moment`, `logistics`, `small_talk`, `sensitive`, and `failed`.
@@ -71,7 +71,7 @@ The bundler uses real time, because people type in real time. Every other rule i
 - When several keys are due for one moment, the code posts one memory. The anniversary wins, and otherwise the highest age wins. The code marks every due key as done.
 - The code skips every moment whose `sensitive` flag is true.
 - `byPriority` in `core/priority.ts` orders the due moments: anniversary first, then the higher salience, then the older `savedAt`.
-- The post is the photo with the caption `memoryCaption(label, sender, text)`, which quotes the sender's own words. A moment without a photo posts the caption as text. The code adds the message id of the post to `moment.memoryPostIds`.
+- The post is the video or the photo with the caption `memoryCaption(label, sender, text)`, which quotes the sender's own words. The video wins when the moment has both. A moment without a photo posts the caption as text. The code adds the message id of the post to `moment.memoryPostIds`.
 - An admin sends `/memory` in the group to post a memory at once. `/memory` posts the first due moment with its label.
 - When no moment is due, `/memory` posts the moment with the fewest memory posts, with the label `fromRecord`. `byPriority` breaks a tie.
 - `/memory` does not change `lastMemoryDay`. When the family has no moment, `/memory` gets `nothingToShare`.
@@ -89,7 +89,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 - The 11:00 slot sends at most one invitation per started storyteller per day.
 - A moment qualifies when the storyteller did not send it, it is not sensitive, and it is at least 3 demo-clock hours old. `moment.returns[storytellerId].due` must be at or before now. A missing entry counts as due.
 - `byPriority` picks the first qualifying moment.
-- Anchor sends the photo first. Then Anchor sends a voice note of `invitation(sender, text)`, with the text as the caption and the buttons "Not now" and "Don't bring this back". When no voice clip exists, Anchor sends the text with the buttons.
+- Anchor sends the video or the photo first. Then Anchor sends a voice note of `invitation(sender, text)`, with the text as the caption and the buttons "Not now" and "Don't bring this back". When no voice clip exists, Anchor sends the text with the buttons.
 - The code makes the TTS clip once per moment. The transport returns a media id for the uploaded clip, and the code stores the id in `moment.invitationVoice`.
 - After each delivered invitation, the code increments `count` and sets `due` to the slot time plus the next gap. The gaps are 1, 2, 4, 8, 16, and 32 days. After the seventh return, the moment gets no more private returns.
 - A delivered invitation counts as a return whether or not the storyteller answers. Silence is never read as forgetting, and nobody is watched.
@@ -108,7 +108,7 @@ Moments come back to a storyteller more often than to the group, in private, at 
 
 - A group message that matches `/^anchor\b[,:]?\s+/i` is a question. The `forget` feature runs first, so "Anchor, forget this" never reaches `ask`.
 - One Gemini call picks one moment id from an enum of the ids of the family, or `none` (section 6.4).
-- Anchor replies to the question with the photo and the caption `askAnswer(title, date, names)`. The first voice story follows by its media id.
+- Anchor replies to the question with the video or the photo and the caption `askAnswer(title, date, names)`. The first voice story follows by its media id.
 - `none`, or a failed call, gets `notFound`.
 
 ### 4.7 Commands and fixed replies
@@ -154,7 +154,9 @@ Moments come back to a storyteller more often than to the group, in private, at 
 | `nothingToShare` | The family record is empty so far. Share a photo with a few words 🙂 |
 | `nothingToInvite(name)` | {name} has seen every moment so far. |
 
-The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks". A step may change the wording of its own lines, but no line may break section 1.
+The buttons read "Start", "Not now", "Don't bring this back", "Yes, share it", and "No, thanks".
+
+`invitation` and `memoryCaption` clip the quoted text to 600 characters and end the clip with "…". The caption then stays under the Telegram limit of 1024 characters, and the invitation voice note stays short. A step may change the wording of its own lines, but no line may break section 1.
 
 ## 5. Architecture
 
@@ -212,9 +214,11 @@ export type Incoming = {
   at: number; // real time in ms
   text?: string; // text or caption
   photo?: Media; // the largest size
+  video?: Media;
+  thumbnail?: Media; // the preview frame of the video, for the classification
   voice?: Media;
   forwarded?: boolean;
-  unsupported?: boolean; // sticker, GIF, video, document, poll, service message
+  unsupported?: boolean; // sticker, GIF, video note, document, poll, service message
   replyTo?: string;
   replyToSender?: { id: string; name: string }; // the sender of the replied-to message
   button?: string; // the data of a pressed button
@@ -223,7 +227,8 @@ export type Incoming = {
 
 export type Outgoing = {
   text?: string; // the caption when photo or voice is set
-  photo?: Media; // set at most one of photo and voice
+  photo?: Media; // set at most one of photo, video, and voice
+  video?: Media;
   voice?: Media | { wav: Buffer };
   buttons?: Button[];
   replyTo?: string;
@@ -257,6 +262,7 @@ export type Moment = {
   savedAt: number; // demo-clock ms
   text: string; // the sender's own words, verbatim
   photo?: Media;
+  video?: Media; // a return shows the video when the moment has one
   voice?: Media;
   salience: number; // 1 to 5
   sensitive: boolean; // Anchor never brings the moment back
@@ -416,7 +422,9 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - The poll calls `getUpdates` with a long-poll timeout and omits `allowed_updates`. `message`, `callback_query`, and `my_chat_member` arrive by default. The offset advances after each update.
 - A bot that is a group admin gets every group message, whatever the privacy mode.
 - `toIncoming` maps a group message, a private message, a `callback_query`, and a `my_chat_member` update that adds the bot to a group.
-- `send` uses `sendMessage`, `sendPhoto`, or `sendVoice`, with `reply_parameters: { message_id }` for a reply. A caption holds at most 1024 characters.
+- In a group, a command can arrive as `/memory@<bot username>`. `toIncoming` strips the suffix when it names this bot, so the features match `/memory`, `/invite`, `/storyteller`, and `/start` exactly. A command that names another bot stays as it is.
+- `toIncoming` maps `message.video` to `video`, and the video's `thumbnail` to `thumbnail`. A `video_note` maps to `unsupported`.
+- `send` uses `sendMessage`, `sendPhoto`, `sendVideo`, or `sendVoice`, with `reply_parameters: { message_id }` for a reply. A caption holds at most 1024 characters. A video goes out by its `file_id`, so the 20 MB download limit never applies to it.
 - A `{ wav }` voice goes through `voice.ts`, which runs `ffmpeg -f wav -i pipe:0 -c:a libopus -b:a 32k -f ogg pipe:1`. The OGG file uploads as multipart form data, and the result returns the new `file_id` as the voice media id.
 - A `file_id` belongs to the bot, not to a chat. The bot can resend a voice note from the group in a private chat, and the reverse.
 - `react` uses `setMessageReaction` with `{ type: 'emoji', emoji }`. The allowed list holds ❤ as U+2764 without U+FE0F, and it holds 👌.

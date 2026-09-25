@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { ask, speak } from './gemini';
 import { ATHINA, familyNote, nextGap, rate, Rating, scheduleNext } from './protocol';
 import { sendWhatsApp } from './twilio';
+import { UserStoreService } from './user-store.service';
 
 export type Role = 'sofia' | 'maria' | 'athina' | 'anchor';
 
@@ -39,6 +40,17 @@ export type Moment = {
 };
 
 type Clip = { data: Buffer; mimeType: string };
+
+type Session = {
+  familyNumber?: string;
+  chat: ChatLine[];
+  moments: Moment[];
+  activeId?: string;
+  hydrated: boolean;
+};
+
+const DEMO = 'demo';
+const WHATSAPP = 'whatsapp';
 
 type Extracted = {
   caption: string;
@@ -97,18 +109,44 @@ export class AnchorService {
   private readonly logger = new Logger(AnchorService.name);
   private readonly audio = new Map<string, Clip>();
   private readonly media = new Map<string, Clip>();
-  private familyNumber?: string;
-  private chat: ChatLine[] = [];
-  private moments: Moment[] = [];
-  private activeId?: string;
+  private readonly sessions = new Map<string, Session>();
 
-  state() {
+  constructor(private readonly store: UserStoreService) {}
+
+  static ownerFor(uid?: string | null) {
+    return uid || DEMO;
+  }
+
+  static whatsappOwner() {
+    return WHATSAPP;
+  }
+
+  async ensure(owner: string): Promise<Session> {
+    let session = this.sessions.get(owner);
+    if (!session) {
+      session = { chat: [], moments: [], hydrated: false };
+      this.sessions.set(owner, session);
+    }
+    if (!session.hydrated && owner !== DEMO && owner !== WHATSAPP) {
+      const snap = await this.store.loadSnapshot(owner);
+      if (snap) {
+        session.chat = snap.chat;
+        session.moments = snap.moments;
+        session.activeId = snap.activeId;
+      }
+      session.hydrated = true;
+    }
+    return session;
+  }
+
+  state(owner: string) {
+    const session = this.sessions.get(owner) ?? { chat: [], moments: [], hydrated: true };
     return {
-      chat: this.chat,
-      moments: this.moments,
-      activeId: this.activeId,
-      due: this.dueMoments(),
-      whatsapp: Boolean(this.familyNumber),
+      chat: session.chat,
+      moments: session.moments,
+      activeId: session.activeId,
+      due: this.dueMoments(session),
+      whatsapp: Boolean(session.familyNumber),
       person: ATHINA,
     };
   }
@@ -117,7 +155,8 @@ export class AnchorService {
     return this.audio.get(id) ?? this.media.get(id);
   }
 
-  demo() {
+  demo(owner: string) {
+    const session = this.sessions.get(owner) ?? { chat: [], moments: [], hydrated: true };
     const embed = (url?: string) => {
       if (!url?.includes('media/') && !url?.includes('audio/')) return url;
       const id = url.replace(/\.(wav|bin)$/, '').replace(/^\/?(api\/)?(media|audio)\//, '');
@@ -125,17 +164,19 @@ export class AnchorService {
       return clip ? `data:${clip.mimeType};base64,${clip.data.toString('base64')}` : undefined;
     };
     return {
-      chat: this.chat.map((line) => ({ ...line, mediaUrl: embed(line.mediaUrl) })),
-      moments: this.moments,
+      chat: session.chat.map((line) => ({ ...line, mediaUrl: embed(line.mediaUrl) })),
+      moments: session.moments,
       person: ATHINA,
     };
   }
 
   async addMoment(
+    owner: string,
     input: { text?: string; audio?: { data: Buffer; mimeType: string }; image?: { data: Buffer; mimeType: string }; from?: Role },
     whatsappFrom?: string,
   ) {
-    if (whatsappFrom) this.familyNumber = whatsappFrom;
+    const session = await this.ensure(owner);
+    if (whatsappFrom) session.familyNumber = whatsappFrom;
     const sender = input.from ?? 'sofia';
     let mediaUrl: string | undefined;
     let mediaType: string | undefined;
@@ -153,7 +194,7 @@ export class AnchorService {
     }
 
     const placeholder = input.text?.trim() || (input.audio ? '🎤 voice note' : input.image ? '📷 photo' : '…');
-    this.push(sender, placeholder, mediaUrl);
+    this.push(session, sender, placeholder, mediaUrl);
 
     const extracted = await ask<Extracted>(
       `You write for Anchor, an AI member of a family WhatsApp group that practises present-day memories with Athina through spaced retrieval.\n` +
@@ -187,8 +228,8 @@ export class AnchorService {
       cued: false,
       phase: 'idle',
     };
-    this.moments.unshift(moment);
-    this.push('anchor', moment.ack);
+    session.moments.unshift(moment);
+    this.push(session, 'anchor', moment.ack);
     void this.prepare(moment.question);
     void this.prepare(moment.hint);
     void this.prepare(moment.praise);
@@ -197,29 +238,31 @@ export class AnchorService {
   }
 
   /** Starts a re-encounter for the next due moment (or a chosen id). */
-  async bringBack(momentId?: string) {
+  async bringBack(owner: string, momentId?: string) {
+    const session = await this.ensure(owner);
     const moment =
-      (momentId ? this.moments.find((item) => item.id === momentId) : undefined) ??
-      this.dueMoments()[0] ??
-      this.moments.find((item) => item.phase === 'idle');
+      (momentId ? session.moments.find((item) => item.id === momentId) : undefined) ??
+      this.dueMoments(session)[0] ??
+      session.moments.find((item) => item.phase === 'idle');
     if (!moment) return { ok: false as const, reason: 'No moment ready to bring back' };
     if (moment.phase === 'awaiting' || moment.phase === 'hinted') {
       return { ok: false as const, reason: "Already waiting for Athina's reply" };
     }
 
-    this.activeId = moment.id;
+    session.activeId = moment.id;
     moment.phase = 'awaiting';
     moment.cued = false;
-    this.push('anchor', moment.question, moment.mediaUrl);
+    this.push(session, 'anchor', moment.question, moment.mediaUrl);
 
-    if (this.familyNumber) {
-      await sendWhatsApp(this.familyNumber, moment.question).catch((error) => this.logger.error(error));
+    if (session.familyNumber) {
+      await sendWhatsApp(session.familyNumber, moment.question).catch((error) => this.logger.error(error));
     }
     return { ok: true as const, momentId: moment.id, question: moment.question };
   }
 
-  async replyAsAthina(input: { text?: string; audio?: { data: Buffer; mimeType: string } }) {
-    const moment = this.moments.find((item) => item.id === this.activeId);
+  async replyAsAthina(owner: string, input: { text?: string; audio?: { data: Buffer; mimeType: string } }) {
+    const session = await this.ensure(owner);
+    const moment = session.moments.find((item) => item.id === session.activeId);
     if (!moment || (moment.phase !== 'awaiting' && moment.phase !== 'hinted')) {
       return { ok: false as const, reason: 'Nothing is waiting for a reply' };
     }
@@ -232,22 +275,22 @@ export class AnchorService {
       mediaUrl = `/api/media/${id}.bin`;
       speech = await this.transcribe(input.audio.data, input.audio.mimeType);
     }
-    this.push('athina', speech || '…', mediaUrl);
+    this.push(session, 'athina', speech || '…', mediaUrl);
 
     const recalled = await this.recalled(moment, speech);
     if (!recalled && moment.phase === 'awaiting') {
       moment.phase = 'hinted';
       moment.cued = true;
-      this.push('anchor', moment.hint);
-      if (this.familyNumber) sendWhatsApp(this.familyNumber, moment.hint).catch((error) => this.logger.error(error));
+      this.push(session, 'anchor', moment.hint);
+      if (session.familyNumber) sendWhatsApp(session.familyNumber, moment.hint).catch((error) => this.logger.error(error));
       return { ok: true as const, outcome: 'cued' as const };
     }
 
     const rating = rate(recalled ? 1 : 0, 1, moment.cued);
     const closing = recalled ? moment.praise : moment.reveal;
-    this.push('anchor', closing);
-    this.finish(moment, rating);
-    if (this.familyNumber) sendWhatsApp(this.familyNumber, closing).catch((error) => this.logger.error(error));
+    this.push(session, 'anchor', closing);
+    this.finish(session, moment, rating);
+    if (session.familyNumber) sendWhatsApp(session.familyNumber, closing).catch((error) => this.logger.error(error));
     return { ok: true as const, outcome: rating };
   }
 
@@ -260,23 +303,23 @@ export class AnchorService {
     return result.transcript.trim();
   }
 
-  private dueMoments() {
+  private dueMoments(session: Session) {
     const now = Date.now();
-    return this.moments.filter(
+    return session.moments.filter(
       (moment) => moment.phase === 'idle' && new Date(moment.nextDue).getTime() <= now,
     );
   }
 
-  private finish(moment: Moment, rating: Rating) {
+  private finish(session: Session, moment: Moment, rating: Rating) {
     moment.rating = rating;
     moment.gapDays = nextGap(moment.gapDays, rating);
     moment.nextDue = scheduleNext(moment.gapDays);
     moment.phase = 'idle';
-    this.activeId = undefined;
+    session.activeId = undefined;
     const note = familyNote(rating, moment.memory);
     if (note) {
-      this.push('anchor', note);
-      if (this.familyNumber) sendWhatsApp(this.familyNumber, note).catch((error) => this.logger.error(error));
+      this.push(session, 'anchor', note);
+      if (session.familyNumber) sendWhatsApp(session.familyNumber, note).catch((error) => this.logger.error(error));
     }
   }
 
@@ -296,8 +339,8 @@ export class AnchorService {
     }
   }
 
-  private push(from: Role, text: string, mediaUrl?: string) {
-    this.chat.push({ id: randomUUID(), from, text, mediaUrl, at: new Date().toISOString() });
+  private push(session: Session, from: Role, text: string, mediaUrl?: string) {
+    session.chat.push({ id: randomUUID(), from, text, mediaUrl, at: new Date().toISOString() });
   }
 
   private async prepare(text: string) {

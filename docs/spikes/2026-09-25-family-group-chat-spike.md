@@ -47,7 +47,7 @@ The registration website is out of scope for this spike.
 
 ### Deployment
 
-- `DEPLOY.md` deploys the API to Cloud Run with the default settings. Firebase Hosting sends `/api/**` to the Cloud Run service (`firebase.json`).
+- `DEPLOY.md` deploys the API to Vercel project `anchor-api`. The website rewrites `/api/*` and `/whatsapp` to that host.
 - By default, Cloud Run allocates CPU only during request processing. The `--no-cpu-throttling` flag allocates CPU for the whole lifecycle of the instance. [21]
 - A service with no traffic scales in to its minimum number of instances, which is zero by default. [22]
 - The Cloud Run filesystem is in memory. The data does not persist when the instance stops. [22]

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { httpFetch } from './http';
 import { wav } from './song';
@@ -14,17 +15,25 @@ const TTS_MODELS = [
   'gemini-2.5-flash-preview-tts',
 ];
 const VOICE = process.env.GEMINI_VOICE ?? 'Sulafat';
-const CACHE = join(process.cwd(), 'tmp', 'gemini');
+const CACHE = join(tmpdir(), 'anchor-gemini');
 
 type Content = { type: string; text?: string; data?: string };
 
 // ponytail: every answer is cached on disk, because the free tier allows about 10 TTS requests per model per day
 async function cached(key: string, produce: () => Promise<Buffer>): Promise<Buffer> {
   const file = join(CACHE, createHash('sha1').update(key).digest('hex'));
-  if (existsSync(file)) return readFileSync(file);
+  try {
+    if (existsSync(file)) return readFileSync(file);
+  } catch {
+    /* cache miss */
+  }
   const data = await produce();
-  mkdirSync(CACHE, { recursive: true });
-  writeFileSync(file, data);
+  try {
+    mkdirSync(CACHE, { recursive: true });
+    writeFileSync(file, data);
+  } catch {
+    /* Vercel filesystem is ephemeral; the answer is still returned */
+  }
   return data;
 }
 
