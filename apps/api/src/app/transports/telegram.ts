@@ -9,7 +9,7 @@ const API = 'https://api.telegram.org';
 const GROUP_TYPES = ['group', 'supergroup'];
 const logger = new Logger('Telegram');
 
-type User = { id: number; first_name: string; username?: string };
+type User = { id: number; is_bot?: boolean; first_name: string; username?: string };
 type Chat = { id: number; type: string };
 type Message = {
   message_id: number;
@@ -62,7 +62,7 @@ function fromMessage(message: Message, username: string): Incoming {
     forwarded: Boolean(message.forward_origin),
     unsupported: Boolean(message.animation || message.document || message.audio) || !(text || photo || video || voice || migratedTo),
     replyTo: reply && String(reply.message_id),
-    replyToSender: reply?.from && person(reply.from),
+    replyToSender: reply?.from && !reply.from.is_bot ? person(reply.from) : undefined,
     migratedTo,
   };
 }
