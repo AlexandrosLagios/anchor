@@ -86,6 +86,14 @@ test('toIncoming maps a reply with the sender of the replied-to message', () => 
   });
 });
 
+test('toIncoming leaves replyToSender unset for a reply to a bot', () => {
+  const anchorBot = { id: 999, is_bot: true, first_name: 'Anchor' };
+  const reply_to_message = { message_id: 41, from: anchorBot, chat: group, date, text: 'One week ago 💛' };
+  const event = toIncoming(message({ text: '/storyteller', reply_to_message }), BOT);
+  expect(event?.replyTo).toBe('41');
+  expect(event?.replyToSender).toBeUndefined();
+});
+
 test('toIncoming flags a forwarded message', () => {
   const forward_origin = { type: 'user', sender_user: nikos, date };
   expect(toIncoming(message({ text: 'Look at this', forward_origin }), BOT)?.forwarded).toBe(true);
