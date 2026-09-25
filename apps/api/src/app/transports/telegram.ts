@@ -12,7 +12,8 @@ const logger = new Logger('Telegram');
 type User = { id: number; is_bot?: boolean; first_name: string; username?: string };
 type Chat = { id: number; type: string };
 type Message = {
-  message_id: number;
+  message_id: number; // 0 for an ephemeral message
+  ephemeral_message_id?: number;
   date: number;
   chat: Chat;
   from?: User;
@@ -21,6 +22,7 @@ type Message = {
   photo?: { file_id: string; width: number; height: number }[];
   video?: { file_id: string; mime_type?: string; thumbnail?: { file_id: string } };
   voice?: { file_id: string; mime_type?: string };
+  contact?: { phone_number: string; user_id?: number };
   media_group_id?: string;
   forward_origin?: object;
   reply_to_message?: Message;
@@ -38,6 +40,13 @@ export type Update = {
 
 const person = (user?: User) => ({ id: String(user?.id ?? ''), name: user?.first_name ?? '' });
 
+// an ephemeral command, or a tap on an ephemeral message, carries message_id 0 and its own ephemeral_message_id
+function identify(message: Message) {
+  return message.message_id === 0 && message.ephemeral_message_id !== undefined
+    ? { messageId: String(message.ephemeral_message_id), ephemeral: true }
+    : { messageId: String(message.message_id) };
+}
+
 function place(chat: Chat) {
   const group = GROUP_TYPES.includes(chat.type);
   return { familyId: group ? String(chat.id) : undefined, chat: group ? ('group' as const) : ('private' as const), chatId: String(chat.id) };
@@ -48,11 +57,11 @@ function fromMessage(message: Message, username: string): Incoming {
     bot.toLowerCase() === username.toLowerCase() ? name : command,
   );
   const photo = message.photo?.reduce((largest, size) => (size.width * size.height > largest.width * largest.height ? size : largest));
-  const { video, voice, reply_to_message: reply } = message;
+  const { video, voice, contact, reply_to_message: reply } = message;
   const migratedTo = message.migrate_to_chat_id ? String(message.migrate_to_chat_id) : undefined;
   return {
     ...place(message.chat),
-    messageId: String(message.message_id),
+    ...identify(message),
     sender: person(message.from),
     at: message.date * 1000,
     text,
@@ -60,9 +69,10 @@ function fromMessage(message: Message, username: string): Incoming {
     video: video && { id: video.file_id, mimeType: video.mime_type },
     thumbnail: video?.thumbnail && { id: video.thumbnail.file_id, mimeType: 'image/jpeg' },
     voice: voice && { id: voice.file_id, mimeType: voice.mime_type ?? 'audio/ogg' },
+    contact: contact && { phone: contact.phone_number, userId: contact.user_id === undefined ? undefined : String(contact.user_id) },
     albumId: message.media_group_id,
     forwarded: Boolean(message.forward_origin),
-    unsupported: Boolean(message.animation || message.document || message.audio) || !(text || photo || video || voice || migratedTo),
+    unsupported: Boolean(message.animation || message.document || message.audio) || !(text || photo || video || voice || contact || migratedTo),
     replyTo: reply && String(reply.message_id),
     replyToSender: reply?.from && !reply.from.is_bot ? person(reply.from) : undefined,
     migratedTo,
@@ -73,7 +83,7 @@ export function toIncoming(update: Update, username: string): Incoming | undefin
   const { message, callback_query: query, my_chat_member: change } = update;
   if (message) return fromMessage(message, username);
   if (query?.message) {
-    return { ...place(query.message.chat), messageId: String(query.message.message_id), sender: person(query.from), at: Date.now(), button: query.data };
+    return { ...place(query.message.chat), ...identify(query.message), sender: person(query.from), at: Date.now(), button: query.data };
   }
   const joined =
     change &&
@@ -106,6 +116,21 @@ function encode(params: Record<string, unknown>) {
 }
 
 const toButton = ({ label, data, url }: Button) => (url ? { text: label, url } : { text: label, callback_data: data });
+const inline = (buttons: Button[]) => ({ inline_keyboard: buttons.map((button) => [toButton(button)]) });
+
+// a contact button works only in a reply keyboard, which Telegram shows in private chats only
+function markup(buttons?: Button[]) {
+  if (!buttons?.length) return undefined;
+  if (!buttons.some((button) => button.contact)) return inline(buttons);
+  return { keyboard: buttons.map(({ label }) => [{ text: label, request_contact: true }]), one_time_keyboard: true, resize_keyboard: true };
+}
+
+// an ephemeral message has its own methods, which name the receiver next to the ephemeral message id
+function target(chatId: string, messageId: string, onlyFor?: string) {
+  return onlyFor
+    ? { chat_id: chatId, receiver_user_id: Number(onlyFor), ephemeral_message_id: Number(messageId) }
+    : { chat_id: chatId, message_id: Number(messageId) };
+}
 
 async function call<T>(token: string, method: string, params: Record<string, unknown> = {}, signal = AbortSignal.timeout(30_000)): Promise<T> {
   const response = await httpFetch(`${API}/bot${token}/${method}`, { method: 'POST', ...encode(params), signal });
@@ -175,7 +200,7 @@ export class TelegramTransport implements Transport {
     }
   }
 
-  async send(chatId: string, { text, photo, video, voice, album, mention, buttons, replyTo }: Outgoing) {
+  async send(chatId: string, { text, photo, video, voice, album, contact, mention, buttons, replyTo, onlyFor }: Outgoing) {
     const reply_parameters = replyTo ? { message_id: Number(replyTo), allow_sending_without_reply: true } : undefined;
     const caption = text && cut(text, 1024);
     const captioned = { caption, caption_entities: mentionIn(caption, mention) };
@@ -190,26 +215,30 @@ export class TelegramTransport implements Transport {
     const params = {
       chat_id: chatId,
       reply_parameters,
-      reply_markup: buttons?.length ? { inline_keyboard: buttons.map((button) => [toButton(button)]) } : undefined,
+      reply_markup: markup(buttons),
+      ephemeral_message_parameters: onlyFor ? { receiver_user_id: Number(onlyFor) } : undefined,
     };
     let sent: Message;
     if (video) sent = await call<Message>(this.token, 'sendVideo', { ...params, ...captioned, video: video.id });
     else if (photo) sent = await call<Message>(this.token, 'sendPhoto', { ...params, ...captioned, photo: photo.id });
     else if (voice) sent = await call<Message>(this.token, 'sendVoice', { ...params, ...captioned, voice: 'wav' in voice ? toOgg(voice.wav) : voice.id });
+    else if (contact) sent = await call<Message>(this.token, 'sendContact', { ...params, phone_number: contact.phone, first_name: contact.name });
     else {
       const message = text && cut(text, 4096);
       sent = await call<Message>(this.token, 'sendMessage', { ...params, text: message, entities: mentionIn(message, mention) });
     }
-    return { messageId: String(sent.message_id), voice: sent.voice && { id: sent.voice.file_id, mimeType: sent.voice.mime_type } };
+    return { messageId: identify(sent).messageId, voice: sent.voice && { id: sent.voice.file_id, mimeType: sent.voice.mime_type } };
   }
 
-  // ponytail: step 5 lands the Telegram ephemeral-message edit and delete calls of section 7
-  async edit(): Promise<void> {
-    throw new Error('Transport.edit lands in step 5');
+  async edit(chatId: string, messageId: string, { text, buttons, onlyFor }: { text?: string; buttons?: Button[]; onlyFor?: string }) {
+    const method = onlyFor ? 'editEphemeralMessage' : 'editMessage';
+    const params = { ...target(chatId, messageId, onlyFor), reply_markup: buttons && inline(buttons) };
+    if (text === undefined) await call(this.token, `${method}ReplyMarkup`, params);
+    else await call(this.token, `${method}Text`, { ...params, text: cut(text, 4096) });
   }
 
-  async remove(): Promise<void> {
-    throw new Error('Transport.remove lands in step 5');
+  async remove(chatId: string, messageId: string, onlyFor?: string) {
+    await call(this.token, onlyFor ? 'deleteEphemeralMessage' : 'deleteMessage', target(chatId, messageId, onlyFor));
   }
 
   async react(chatId: string, messageId: string, emoji: string, big?: boolean) {
