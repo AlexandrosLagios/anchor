@@ -24,9 +24,10 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>What we collect</h2>
     <ul>
-      <li>Account data: email, display name, authentication identifiers (Nest JWT sessions).</li>
-      <li>Consent records: acceptance of Terms and Privacy, optional marketing preference, timestamps.</li>
+      <li>Account data: email, display name, Firebase Auth UID.</li>
+      <li>Consent records: acceptance of Terms and Privacy, optional marketing preference, timestamps (Firestore).</li>
       <li>Family moments: text, photos, or voice notes you submit in the demo or via WhatsApp.</li>
+      <li>Uploaded files: Blob objects plus Neon metadata keyed by Firebase UID.</li>
       <li>Technical logs needed to run the service (security, errors).</li>
     </ul>
 
@@ -39,9 +40,9 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Where data is stored (EU sovereignty)</h2>
     <p>
-      Account profiles, consent records, and authenticated moment metadata are stored in <strong>Neon Postgres on AWS
-      Frankfurt (<code>eu-central-1</code>)</strong>, connected via the Vercel Marketplace. Optional media assets use
-      <strong>Vercel Blob in Frankfurt (<code>fra1</code>)</strong>.
+      Account profiles and consent records are stored in <strong>Firebase Auth + Firestore in Europe multi-region
+      (<code>eur3</code>)</strong>. Optional media assets use <strong>Vercel Blob in Frankfurt (<code>fra1</code>)</strong>
+      with file metadata in <strong>Neon Postgres on AWS Frankfurt (<code>eu-central-1</code>)</strong>.
     </p>
 
     <h2>Artificial intelligence (Gemini)</h2>
@@ -54,7 +55,8 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Processors</h2>
     <ul>
-      <li>Neon (Vercel Marketplace) — Postgres in EU <code>eu-central-1</code>.</li>
+      <li>Google Firebase — Authentication and Firestore (<code>eur3</code>).</li>
+      <li>Neon (Vercel Marketplace) — Postgres in EU <code>eu-central-1</code> (file metadata / snapshots).</li>
       <li>Vercel — website, Nest API (Frankfurt), and Blob storage (<code>fra1</code>).</li>
       <li>Google Gemini API — AI extraction and TTS (may process outside the EU).</li>
       <li>Twilio — WhatsApp delivery when connected.</li>
@@ -62,9 +64,9 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Retention</h2>
     <p>
-      Account and Postgres data are kept while your account exists, or until you request deletion. Anonymous in-memory
-      demo state on the API may reset when the server restarts. Cached Gemini answers on the API filesystem are ephemeral
-      operational caches.
+      Account and Firestore data are kept while your account exists, or until you request deletion. Neon file metadata and
+      Blob objects follow the same account lifetime. Anonymous in-memory demo state on the API may reset when the server
+      restarts. Cached Gemini answers on the API filesystem are ephemeral operational caches.
     </p>
 
     <h2>Your rights</h2>

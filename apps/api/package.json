@@ -2,7 +2,7 @@
   "name": "anchor-api",
   "private": true,
   "version": "0.0.0",
-  "description": "Anchor NestJS API (Vercel Fluid + Neon)",
+  "description": "Anchor NestJS API (Vercel Fluid + Firebase Auth + Neon/Blob)",
   "scripts": {
     "start": "node ../../dist/apps/api/main.js"
   },
@@ -12,11 +12,11 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@vercel/blob": "^2.8.0",
-    "bcryptjs": "^3.0.3",
-    "jsonwebtoken": "^9.0.2",
+    "firebase-admin": "^14.5.0",
     "multer": "^2.4.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "jose": "^4.15.9"
   }
 }

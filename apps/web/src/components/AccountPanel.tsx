@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { dataRegion, privacyEmail } from '../lib/config';
-import { logOut, refreshMe, watchAuth, type AuthUser } from '../lib/auth';
+import { firebaseConfigured, firestoreRegion, privacyEmail } from '../lib/firebase';
+import { logOut, watchAuth, type AuthUser } from '../lib/auth';
 import { FileDrop } from './FileDrop';
 import './AuthForms.css';
 
@@ -8,10 +8,21 @@ export function AccountPanel() {
   const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
 
   useEffect(() => {
-    const stop = watchAuth(setUser);
-    void refreshMe().then(setUser);
-    return stop;
+    if (!firebaseConfigured()) {
+      setUser(null);
+      return;
+    }
+    return watchAuth(setUser);
   }, []);
+
+  if (!firebaseConfigured()) {
+    return (
+      <div className="auth-panel">
+        <h1>Your account</h1>
+        <p className="lede">Configure Firebase to manage accounts.</p>
+      </div>
+    );
+  }
 
   if (user === undefined) {
     return (
@@ -51,7 +62,7 @@ export function AccountPanel() {
         <div>
           <dt>Data region</dt>
           <dd>
-            Neon EU <code>{user.region || dataRegion}</code>
+            EU Firestore <code>{firestoreRegion}</code>
           </dd>
         </div>
         <div>
@@ -62,7 +73,8 @@ export function AccountPanel() {
         </div>
       </dl>
       <p className="lede">
-        To exercise GDPR rights (access, erasure, portability), email {privacyEmail} from this address.
+        To exercise GDPR rights (access, erasure, portability), email {privacyEmail} from this address, or delete your
+        account via Firebase console during the prototype.
       </p>
       <div className="actions">
         <a className="btn btn-primary" href="/app">

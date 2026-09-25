@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { firebaseConfigured } from '../lib/firebase';
 import { signIn } from '../lib/auth';
 import './AuthForms.css';
 
@@ -7,6 +8,15 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  if (!firebaseConfigured()) {
+    return (
+      <div className="auth-panel" role="status">
+        <h1>Sign in</h1>
+        <p className="lede">Firebase is not configured yet. Set the public Firebase env vars to enable accounts.</p>
+      </div>
+    );
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
