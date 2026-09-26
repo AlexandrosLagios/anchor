@@ -911,3 +911,49 @@ test('group: a title word counts only in a request about a subject', async () =>
   await router.route({ ...groupEvent, text: 'photos of the tofu?' });
   expect(model.ask).toHaveBeenCalledTimes(1);
 });
+
+test('group: "more memories of Lucy?" leaves out the moments of the latest group memory, and says so when none is left', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  const lucy = (id: string, tags: string[]) => moment({ id, tags, people: [], photo: { id: `photo-${id}` } });
+  family.moments.push(lucy('l1', ['Lucy']), lucy('l2', ['Lucy']), lucy('d1', ['dog']), lucy('d2', ['dog']));
+  const picks = [['l1', 'l2'], ['l1', 'l2', 'd1', 'd2'], ['d1', 'd2']];
+  const prompts: string[] = [];
+  vi.mocked(model.ask).mockImplementation(async (prompt) => {
+    if (prompt.includes('caption')) return { caption: '' };
+    prompts.push(prompt);
+    return { intent: 'memory', momentId: 'none', momentIds: picks.shift() };
+  });
+
+  await router.route({ ...groupEvent, text: 'memories of Lucy?' });
+  expect(family.lastShown?.sort()).toEqual(['l1', 'l2']);
+  await router.route({ ...groupEvent, text: 'more memories of Lucy?' });
+  await router.route({ ...groupEvent, text: 'other photos of Lucy?' });
+
+  expect(prompts[0]).not.toContain('asks for more or other moments');
+  expect(prompts[1]).toContain('asks for more or other moments');
+  expect(transport.sent[1].message.album).toEqual(['d1', 'd2'].map((id) => ({ photo: { id: `photo-${id}` } })));
+  expect(transport.sent[2].message).toMatchObject({ text: lines.noMoreMoments, replyTo: 'g1' });
+});
+
+test('group: "Show me Lucy" reaches the intent call with no memory word', async () => {
+  const { family, router } = setup();
+  member(family);
+  family.moments.push(moment({ tags: ['Lucy'] }));
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'unclear', momentId: 'none', momentIds: [] });
+
+  await router.route({ ...groupEvent, text: 'Show me Lucy' });
+
+  expect(model.ask).toHaveBeenCalledOnce();
+});
+
+test('private: "A memory of Lucy" sends a Lucy moment with its picture, not the next invitation', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+  family.moments.push(moment({ id: 'm1' }), moment({ id: 'l1', tags: ['Lucy'] }), moment({ id: 'l2', tags: ['Lucy'], photo: { id: 'photo-l2' } }));
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'none', momentIds: ['l1', 'l2'], time: '' });
+
+  await router.route({ ...privateEvent, text: 'A memory of Lucy' });
+
+  expect(transport.sent).toEqual([expect.objectContaining({ chatId: m.id, message: expect.objectContaining({ photo: { id: 'photo-l2' } }) })]);
+});

@@ -50,6 +50,12 @@ export function privateIntent(text: string | undefined): ReturnType<typeof fixed
   return fixedIntent(text);
 }
 
+// "a memory of Lucy", "more photos?", or "remind me about my pills" asks Anchor for something, so an open invitation never reads it as a story
+const REQUEST =
+  /^(?:(?:can|could|would|will) you |please )?(?:(?:show|send|give) (?:me|us) )?(?:(?:a|an|another|some|more|other) )?(?:memor(?:y|ies)|photos?|pictures?|pics|moments?)(?:\s+(?:of|about|with|from)\b|[?.!]?$)|^(?:please )?remind me (?:to|about)\b/i;
+
+export const asksAnchor = (text: string | undefined) => wordCount(text) <= 6 && REQUEST.test(text?.trim() ?? '');
+
 export const isCommand = (text: string | undefined, command: string) => text === command || !!text?.startsWith(`${command} `);
 
 export function pictureOf(moment: Moment): { photo: Media } | { video: Media } | undefined {

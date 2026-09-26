@@ -82,6 +82,7 @@ async function captionFor(label: string, tag: string, moments: Moment[]): Promis
 async function post(family: Family, moment: Moment, label: string, keys: string[], ctx: Context, asked?: Moment[]) {
   moment.lookbacks.push(...keys);
   const { moments: collection, tag } = collectionOf(family, moment, asked);
+  family.lastShown = collection.map((item) => item.id);
   const message =
     collection.length > 1
       ? { album: collection.flatMap((item) => pictureOf(item) ?? []), text: await captionFor(label, tag, collection) }

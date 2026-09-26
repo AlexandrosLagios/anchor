@@ -11,6 +11,7 @@ import { lines } from '../core/lines';
 import { openStore } from '../core/store';
 import { Blocked, type Choices, type Context, type Family, type Incoming, type Invitation, type Moment, type Outgoing } from '../core/types';
 import { ask, speak } from '../model/model';
+import { asksAnchor } from './capture/filter';
 import { invitations, nextSlot, qualifies } from './invitations';
 
 const DEFAULT_CHOICES: Choices = { moments: true, reminders: true, shares: true, voice: false, call: false };
@@ -368,7 +369,7 @@ test('a story reply gets thanks with the share buttons once, and a second story 
   }
   expect(schema).toEqual({
     type: 'object',
-    properties: { transcript: { type: 'string' }, kind: { type: 'string', enum: ['story', 'unsure', 'question', 'other'] } },
+    properties: { transcript: { type: 'string' }, kind: { type: 'string', enum: ['story', 'unsure', 'question', 'request', 'other'] } },
     required: ['transcript', 'kind'],
   });
   expect(options).toEqual({ media: [], fast: true });
@@ -479,6 +480,26 @@ test('a fixed phrase while an invitation is open goes to intents, and the invita
   expect(nikos().invitation).toBe(invitation);
   expect(transport.sent).toEqual([]);
   expect(ask).not.toHaveBeenCalled();
+});
+
+test('a request to Anchor while an invitation is open goes to intents, and the invitation stays open', async () => {
+  const moment = add();
+  const invitation = invite(moment);
+  for (const text of ['A memory of Lucy', 'more photos?', 'Show me photos of Lucy', 'remind me about my pills']) {
+    expect(await receive(fromNikos({ text }))).toBe(false);
+  }
+  expect(ask).not.toHaveBeenCalled();
+
+  vi.mocked(ask).mockResolvedValue({ kind: 'request', transcript: '' });
+  expect(await receive(fromNikos({ text: 'When is lunch on Sunday, at grandma’s?' }))).toBe(false);
+  expect(nikos().invitation).toBe(invitation);
+  expect(transport.sent).toEqual([]);
+});
+
+test('a story that starts like a request stays a story', () => {
+  for (const text of ['The photo reminds me of the Acropolis', 'A memory of Lucy: she loved the sea and ran every morning', 'It reminds me of our trip']) {
+    expect(asksAnchor(text)).toBe(false);
+  }
 });
 
 test('an invitation with no sentAt fails safe and never gets gentleHelp', async () => {
