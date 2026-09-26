@@ -1,0 +1,132 @@
+{
+  "auditedAt": "2026-09-26",
+  "commit": "d643ab4043e3f866eb1be9d2df7b384ff4a0a0e4",
+  "standard": "WCAG 2.1 Level AA",
+  "axeCore": "4.13.0",
+  "tags": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+  "preview": "astro build + astro preview http://127.0.0.1:4321",
+  "browser": "Google Chrome via Playwright channel chrome",
+  "verdict": "fail",
+  "gate": {
+    "command": "pnpm a11y:web",
+    "script": "apps/web/scripts/a11y-check.mjs",
+    "wouldPass": true,
+    "reason": "Gate counts axe violations only, at the default viewport, on 10 public routes and two consent states. It ignores incomplete results and does not open the demo or the high-contrast setting."
+  },
+  "failures": [
+    {
+      "id": "prose-primary-button",
+      "criterion": "1.4.3",
+      "level": "AA",
+      "impact": "serious",
+      "axe": "incomplete color-contrast (1:1 is not filed as a violation)",
+      "routes": ["/how-it-works", "/404"],
+      "ratio": 1,
+      "foreground": "#443dff",
+      "background": "#443dff",
+      "elements": ["Get started", "Back to Anchor"],
+      "files": [
+        "apps/web/src/styles/tokens.css",
+        "apps/web/src/pages/how-it-works.astro",
+        "apps/web/src/pages/404.astro"
+      ],
+      "fix": "Stop .prose a from overriding .btn color. .prose a is more specific than .btn-primary."
+    },
+    {
+      "id": "voice-tag",
+      "criterion": "1.4.3",
+      "level": "AA",
+      "impact": "serious",
+      "axe": "violation color-contrast",
+      "routes": ["/app"],
+      "state": "after Use a sample line",
+      "ratio": 3.94,
+      "foreground": "#443dff",
+      "background": "#cbc8ff",
+      "elements": [".voice-tag"],
+      "files": ["apps/web/src/components/MvpDemo.css"],
+      "fix": "Raise .voice-tag contrast above 4.5:1 on the accent bubble. Text is 12.48px bold."
+    },
+    {
+      "id": "demo-chat-log",
+      "criterion": "2.1.1",
+      "level": "A",
+      "impact": "serious",
+      "axe": "violation scrollable-region-focusable",
+      "routes": ["/app"],
+      "state": "private log after Yes, I'll take part",
+      "evidence": "scrollHeight 645 vs clientHeight 416 at 1280; tabIndex -1; overflow auto",
+      "files": ["apps/web/src/components/MvpDemo.tsx", "apps/web/src/components/MvpDemo.css"],
+      "fix": "Give the scrollable log tabIndex 0 and an accessible name."
+    },
+    {
+      "id": "family-chat-log",
+      "criterion": "2.1.1",
+      "level": "A",
+      "impact": "serious",
+      "axe": "not reproduced",
+      "routes": ["/family"],
+      "files": ["apps/web/src/components/FamilyRecord.css", "apps/web/src/components/FamilyChat.tsx"],
+      "fix": "Same overflow:auto log. Confirm once the signed-in thread is taller than max-height, then use the same keyboard fix."
+    },
+    {
+      "id": "high-contrast",
+      "criterion": "1.4.3",
+      "level": "AA",
+      "impact": "serious",
+      "axe": "violation color-contrast (20 nodes on /)",
+      "routes": ["/"],
+      "state": "Accessibility widget, High contrast on",
+      "pairs": [
+        { "elements": "nav, footer, and auth links", "ratio": 3.25, "foreground": "#443dff", "background": "#050316" },
+        { "elements": "primary buttons", "ratio": 3.26, "foreground": "#050316", "background": "#443dff" },
+        { "elements": "focused skip link", "ratio": 1, "foreground": "#443dff", "background": "#443dff" },
+        { "elements": "text-size Larger/Largest and Reset all", "ratio": 1.3, "foreground": "#fbfbfe", "background": "#dddbff" },
+        { "elements": "active Default text-size chip", "ratio": 3.26, "foreground": "#050316", "background": "#443dff" }
+      ],
+      "files": [
+        "apps/web/src/styles/tokens.css",
+        "apps/web/src/components/AccessibilityWidget.css"
+      ],
+      "fix": "Remap high-contrast link, button, and chip colors so each pair clears 4.5:1. Do not let the link color rule override the skip link."
+    }
+  ],
+  "designStudies": [
+    {
+      "route": "/designs/ink",
+      "criterion": "1.4.3",
+      "ratio": 4.41,
+      "foreground": "#787878",
+      "background": "#ffffff",
+      "element": ".ink-action-index",
+      "file": "apps/web/src/components/designs/ink/ink.css"
+    },
+    {
+      "route": "/designs/slate",
+      "criterion": "1.4.10",
+      "detail": "At 320px, document scrollWidth 352 and main.slate-main about 344."
+    },
+    {
+      "route": "/designs/quiet",
+      "criterion": "1.4.3",
+      "detail": "axe incomplete because of a gradient. Not confirmed."
+    },
+    {
+      "route": "/designs/linen",
+      "detail": "0 axe violations at 1280 and 320"
+    },
+    {
+      "route": "/designs/mist",
+      "detail": "0 axe violations at 1280 and 320"
+    }
+  ],
+  "passedNotes": [
+    "0 axe violations on published routes at 1280 and 320, both consent states, before demo interaction",
+    "No horizontal overflow at 320px on published routes",
+    "Skip link is the first Tab stop and shows a 2px solid focus ring",
+    "Hero primary buttons outside .prose are about 6.06:1",
+    "Selected demo tab at 390px is about 6.12:1",
+    "Speaker names on demo bubbles are about 7:1 or higher",
+    "Family step label is Step 1 of 3 with three steps"
+  ]
+}
