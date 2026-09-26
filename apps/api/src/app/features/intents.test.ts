@@ -152,6 +152,28 @@ test('group: callMe rings the member when started', async () => {
   expect(callMember).toHaveBeenCalledTimes(1);
 });
 
+test('group: "Call me" without "Anchor," rings the writer, in code', async () => {
+  const { family, router } = setup();
+  member(family, { started: true, phone: '+306900000000' });
+  vi.mocked(callMember).mockResolvedValue(true);
+
+  await router.route({ ...groupEvent, text: 'Call me please!' });
+
+  expect(callMember).toHaveBeenCalledWith(family, expect.objectContaining({ id: 'u1' }), expect.anything());
+  expect(model.ask).not.toHaveBeenCalled();
+});
+
+test('group: "call me when you land" and a "call me" reply to a person stay family talk', async () => {
+  const { transport, family, router } = setup();
+  member(family, { started: true, phone: '+306900000000' });
+
+  await router.route({ ...groupEvent, text: 'call me when you land' });
+  await router.route({ ...groupEvent, messageId: 'g2', text: 'Call me', replyTo: 'g0' });
+
+  expect(callMember).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([]);
+});
+
 test('group: callMe nudges when the member has not started', async () => {
   const { transport, family, router } = setup();
   const m = member(family, { started: false });
@@ -656,17 +678,15 @@ test('private: callMe asks for the phone number when the member has none', async
   ]);
 });
 
-test('private: callMe says there is nothing new to talk about when the member shared or told every moment', async () => {
-  const { transport, family, router } = setup();
+test('private: callMe rings a member who shared or told every moment, for questions about the family', async () => {
+  const { family, router } = setup();
   const m = member(family, { started: true, phone: '+306900000000', choices: { ...DEFAULT_CHOICES, call: true } });
   family.moments.push(moment({ id: 'own', by: { id: m.id, name: m.name } }), moment({ id: 'told', stories: [story({ by: { id: m.id, name: m.name } })] }));
+  vi.mocked(callMember).mockResolvedValue(true);
 
   await router.route({ ...privateEvent, button: 'nxt:callMe' });
 
-  expect(callMember).not.toHaveBeenCalled();
-  expect(transport.sent).toEqual([
-    expect.objectContaining({ chatId: m.id, message: expect.objectContaining({ text: lines.nothingToCall, buttons: nextSteps(m, 'callMe') }) }),
-  ]);
+  expect(callMember).toHaveBeenCalledTimes(1);
 });
 
 test('private: callMe tells callFailed with nextSteps on a false result', async () => {

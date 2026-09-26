@@ -10,27 +10,23 @@ const KEEP_LINES = 50;
 const KEEP_TURNS = 10;
 const SCHEMA = { type: 'object', properties: { answer: { type: 'string' } }, required: ['answer'] };
 
-const clock = (at: number) => new Date(at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+export const clock = (at: number) => new Date(at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 /** A forgotten moment leaves the chat context too. */
 export function unlog(family: Family, messageIds: string[]) {
   if (family.chat) family.chat = family.chat.filter((line) => !messageIds.includes(line.id));
 }
 
+/** The family record, the birthdays, and the latest group lines, with the rules to answer from them, in private or on a call. */
 // ponytail: every moment and the last 50 group lines go into the prompt; shortlist by the question when a record reaches thousands of moments
-function prompt(family: Family, member: Member, text: string, now: number): string {
+export function familyContext(family: Family): string[] {
   const quiet = new Set(family.moments.filter((moment) => moment.sensitive).flatMap((moment) => moment.messageIds));
   const moments = family.moments.filter((moment) => !moment.sensitive);
   const chat = (family.chat ?? []).filter((line) => !quiet.has(line.id));
   const birthdays = family.birthdays ?? [];
   return [
-    "You are Anchor, the keeper of this family's shared photos and stories in their Telegram group. You are not a person: never claim feelings, a body, or memories of your own.",
-    `${member.name}, a member of the family, talks to you in a private chat. On the family clock it is now ${clock(now)}.`,
-    'Answer the last message in one to three short sentences of plain, warm words, in the language of the message.',
     'Use only what the family record and the group chat below say. When they do not say, say so honestly. Never invent a fact, a date, or a feeling.',
-    'Never add an opinion, a wish, or a guess about how someone feels, such as "it will be nice" or "she seems happy".',
     'When the person hesitates or remembers something differently, help gently and never correct them.',
-    'Never promise to do something later, such as a reminder, a call, or a message to someone else.',
     `The family members: ${family.members.map((person) => person.name).join(', ')}.`,
     'The moments in the family record:',
     ...(moments.length
@@ -42,6 +38,17 @@ function prompt(family: Family, member: Member, text: string, now: number): stri
     ...(birthdays.length ? [`Birthdays the family mentioned: ${birthdays.map((item) => `${item.name}, ${dayLabel(item.date)}`).join('; ')}.`] : []),
     'The latest messages in the family group, oldest first:',
     ...(chat.length ? chat.map((line) => `- ${clock(line.at)} ${line.by}: ${line.text}`) : ['(none yet)']),
+  ];
+}
+
+function prompt(family: Family, member: Member, text: string, now: number): string {
+  return [
+    "You are Anchor, the keeper of this family's shared photos and stories in their Telegram group. You are not a person: never claim feelings, a body, or memories of your own.",
+    `${member.name}, a member of the family, talks to you in a private chat. On the family clock it is now ${clock(now)}.`,
+    'Answer the last message in one to three short sentences of plain, warm words, in the language of the message.',
+    'Never add an opinion, a wish, or a guess about how someone feels, such as "it will be nice" or "she seems happy".',
+    'Never promise to do something later, such as a reminder, a call, or a message to someone else.',
+    ...familyContext(family),
     ...(member.talk?.length ? [`Your private chat with ${member.name} so far:`, ...member.talk.map((turn) => `${turn.from === 'anchor' ? 'Anchor' : member.name}: ${turn.text}`)] : []),
     `${member.name}: ${text}`,
   ].join('\n');
