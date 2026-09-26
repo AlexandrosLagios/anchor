@@ -473,7 +473,7 @@ test('a member who turned family moments off gets no gentleHelp 3 hours later', 
 test('a fixed phrase while an invitation is open goes to intents, and the invitation stays open', async () => {
   const moment = add();
   const invitation = invite(moment);
-  for (const text of ['settings', 'What did I miss?', 'call me', 'Send me a moment', 'Another moment']) {
+  for (const text of ['settings', 'I want to change my settings', "this month's birthdays?", 'What did I miss?', 'call me', 'Send me a moment', 'Another moment']) {
     expect(await receive(fromNikos({ text }))).toBe(false);
   }
   expect(nikos().invitation).toBe(invitation);

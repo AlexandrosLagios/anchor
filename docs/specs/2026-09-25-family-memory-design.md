@@ -134,7 +134,7 @@ v2: the `intents` feature takes the position of `ask` and reads every phrase. No
 - `intents` reads each group message that matches the ask pattern. `intents` also reads each private message that no earlier feature owns. An open invitation still owns the replies to the invitation (section 4.5).
 - In the private chat, no "Anchor" prefix is needed. A private voice note goes to the model as audio.
 - The code decides the fixed phrases before any model call: "send me", "settings", "my settings", "call me", "what did I miss", "another moment", and "stop". In the group, the check reads the text after the ask pattern, and in private, the whole text. The same check lets these phrases pass an open invitation, so the invitation never reads them as a reply. Every other text goes to the model.
-- In private, the code also decides two words anywhere in the text. "Birthdays" is `birthdays`. "Settings", "preferences", or "choices" is `settings`, so "I want to change my settings" shows the choices screen.
+- In private, the code also decides two words anywhere in the text. "Birthdays" is `birthdays`. "Settings", "preferences", or "choices" is `settings`, so "I want to change my settings" shows the choices screen. An open invitation lets these words pass too.
 - One model call returns `{ intent, momentId, momentIds, time, transcript }` (section 6.7). `time` is the suggested time of a `remind`. `transcript` holds the words of a voice note. The code acts on the intent:
 
 | Intent | Group | Private |

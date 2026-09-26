@@ -5,7 +5,7 @@ import type { Context, Family, Feature, Incoming, Member, Moment } from '../core
 import * as model from '../model/model';
 import { answerInGroup, choiceLine } from './ask';
 import { actOnReply } from './capture/capture';
-import { ADDRESS, fixedIntent, pictureOf } from './capture/filter';
+import { ADDRESS, fixedIntent, pictureOf, privateIntent } from './capture/filter';
 import { callMember, newestMoment } from './calls';
 import { sendMe } from './invitations';
 import { postMemoryNow } from './memories';
@@ -18,8 +18,6 @@ import { answerTalk } from './talk';
 
 const logger = new Logger('Intents');
 const SEVEN_DAYS_MS = 7 * 86_400_000;
-const BIRTHDAYS = /\bbirthdays\b/i;
-const SETTINGS = /\b(?:settings|preferences|choices)\b/i;
 const ABOUT = /\b(?:of|about|with)\b/i;
 const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums?)\b/i;
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -332,9 +330,8 @@ async function inPrivate(event: Incoming, family: Family, ctx: Context): Promise
   if (!event.text && !event.voice) return unclearPrivate(family, member, ctx);
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
-  // "birthdays" and "settings" anywhere in a private message decide the intent in code, so a talk never swallows them
   const text = event.text ?? '';
-  const fixed: Intent | undefined = event.voice ? undefined : BIRTHDAYS.test(text) ? 'birthdays' : SETTINGS.test(text) ? 'settings' : fixedIntent(text);
+  const fixed = event.voice ? undefined : privateIntent(text);
   const reading: Awaited<ReturnType<typeof readIntent>> = fixed
     ? { intent: fixed, momentIds: [] }
     : await readIntent(family, event, 'private', text, moments, ctx);
