@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Anchor works</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --text: #1f2328; --muted: #5d6671; --line: #dedad1;
+    --surface: #f3f0e9; --accent: #b0502a; --code: #eee8dd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181b; --text: #e6e4df; --muted: #9ba4ae; --line: #363b41;
+      --surface: #1f2226; --accent: #e8905f; --code: #262a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+  h1 { font-size: 2.3rem; line-height: 1.15; margin: 0 0 .5rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.4rem; line-height: 1.3; margin: 3rem 0 .75rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.08rem; margin: 1.75rem 0 .4rem; }
+  p, li { margin: 0 0 .8rem; }
+  ul, ol { padding-left: 1.3rem; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  .meta { color: var(--muted); font-size: .92rem; }
+  code { font: .85em/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); padding: .1em .35em; border-radius: 4px; }
+  pre { background: var(--code); padding: .9rem 1rem; border-radius: 8px; overflow-x: auto; font-size: .92rem; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: .93rem; margin: 1rem 0 1.5rem; }
+  th, td { text-align: left; vertical-align: top; padding: .5rem .6rem; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+  td:first-child { white-space: nowrap; }
+  td.wrap { white-space: normal; }
+  .callout { background: var(--surface); border-left: 4px solid var(--accent); padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin: 1.75rem 0; }
+  .callout p { margin: 0; }
+  .rule { background: var(--surface); padding: .8rem 1.1rem; border-radius: 8px; margin: 1.25rem 0; }
+  nav.toc { margin: 2rem 0 0; }
+  nav.toc ol { columns: 2; column-gap: 2rem; font-size: .95rem; padding-left: 1.3rem; margin: 0; }
+  nav.toc li { margin: 0 0 .25rem; }
+  figure { margin: 1.5rem 0 1rem; }
+  figcaption { color: var(--muted); font-size: .88rem; text-align: center; margin-top: .4rem; }
+  svg { width: 100%; height: auto; display: block; }
+  svg text { fill: currentColor; font-family: inherit; }
+  .d-box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .d-main { stroke: var(--accent); stroke-width: 2; }
+  .d-dash { stroke-dasharray: 6 4; fill: none; }
+  .d-line { stroke: var(--muted); stroke-width: 1.5; }
+  .d-arrow { fill: var(--muted); }
+  .d-t { font-size: 15px; font-weight: 600; }
+  .d-s { font-size: 12.5px; fill: var(--muted); }
+  .d-l { font-size: 13.5px; }
+  footer { color: var(--muted); font-size: .88rem; margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    nav.toc ol { columns: 1; }
+    td:first-child { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>How Anchor works</h1>
+<p class="meta">A 10-minute technical read. Written from the code on <code>main</code> at commit <code>40fb18a</code>, 26 September 2026. The live bot runs revision <code>anchor-bot-00016-xdv</code> (commit <code>c7e3b96</code>), which holds every change described here.</p>
+
+<div class="callout">
+  <p><strong>In one breath.</strong> Anchor is a Telegram bot that lives in a family's group chat. When someone shares a moment worth keeping, Anchor saves it in that person's own words and reacts with ❤. Later it brings moments back: to the whole group at 18:00, and in private at 11:00 to each member who asked for them. People talk to it in plain language, can hear every answer as a voice note, get reminders offered from the family's own messages, can forward a suspicious message for a second opinion, and can take a phone call in which Anchor reads them a moment, records their story, and connects them to the person who shared it. Underneath, it is one Node process on Cloud Run: a Telegram long poll, a 2-second timer, thirteen feature modules, one JSON file as the database, and OpenAI for every judgement call.</p>
+</div>
+
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><a href="#pieces">The pieces</a></li>
+    <li><a href="#loops">Two loops and a router</a></li>
+    <li><a href="#record">The record: one JSON file</a></li>
+    <li><a href="#time">A clock you can fast-forward</a></li>
+    <li><a href="#capture">From a message to a moment</a></li>
+    <li><a href="#return">Bringing moments back</a></li>
+    <li><a href="#intents">No commands</a></li>
+    <li><a href="#members">Members, choices, offers</a></li>
+    <li><a href="#call">The phone call</a></li>
+    <li><a href="#model">The model layer</a></li>
+    <li><a href="#telegram">Telegram lessons</a></li>
+    <li><a href="#ship">Shipping it</a></li>
+    <li><a href="#web">The website and the old prototype</a></li>
+    <li><a href="#shortcuts">Shortcuts taken on purpose</a></li>
+    <li><a href="#map">Where to start reading</a></li>
+  </ol>
+</nav>
+
+<h2 id="pieces">1. The pieces</h2>
+
+<figure>
+<svg viewBox="0 0 720 370" role="img" aria-label="Telegram group and private chats talk to anchor-bot on Cloud Run. anchor-bot talks to OpenAI and to Twilio, which rings the member's phone. The website and its API are separate.">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="d-arrow"/>
+    </marker>
+  </defs>
+
+  <rect class="d-box" x="10" y="20" width="190" height="66" rx="8"/>
+  <text class="d-t" x="105" y="48" text-anchor="middle">Family group</text>
+  <text class="d-s" x="105" y="68" text-anchor="middle">photos, voice notes, chat</text>
+
+  <rect class="d-box" x="10" y="110" width="190" height="66" rx="8"/>
+  <text class="d-t" x="105" y="138" text-anchor="middle">Private chats</text>
+  <text class="d-s" x="105" y="158" text-anchor="middle">one per member</text>
+
+  <rect class="d-box d-main" x="260" y="20" width="210" height="210" rx="10"/>
+  <text class="d-t" x="365" y="50" text-anchor="middle">anchor-bot</text>
+  <text class="d-s" x="365" y="70" text-anchor="middle">Cloud Run, one instance</text>
+  <text class="d-l" x="365" y="104" text-anchor="middle">Telegram long poll</text>
+  <text class="d-l" x="365" y="129" text-anchor="middle">2-second tick</text>
+  <text class="d-l" x="365" y="154" text-anchor="middle">router → 13 features</text>
+  <text class="d-l" x="365" y="179" text-anchor="middle">record: one JSON file</text>
+  <text class="d-l" x="365" y="204" text-anchor="middle">on a Cloud Storage volume</text>
+
+  <rect class="d-box" x="530" y="60" width="180" height="100" rx="8"/>
+  <text class="d-t" x="620" y="90" text-anchor="middle">OpenAI</text>
+  <text class="d-s" x="620" y="112" text-anchor="middle">gpt-4.1-mini, transcription,</text>
+  <text class="d-s" x="620" y="130" text-anchor="middle">TTS, Realtime voice</text>
+
+  <rect class="d-box" x="10" y="290" width="190" height="66" rx="8"/>
+  <text class="d-t" x="105" y="318" text-anchor="middle">Member's phone</text>
+  <text class="d-s" x="105" y="338" text-anchor="middle">an ordinary call</text>
+
+  <rect class="d-box" x="260" y="290" width="210" height="66" rx="8"/>
+  <text class="d-t" x="365" y="318" text-anchor="middle">Twilio</text>
+  <text class="d-s" x="365" y="338" text-anchor="middle">rings, streams the audio</text>
+
+  <rect class="d-box d-dash" x="530" y="235" width="180" height="121" rx="8"/>
+  <text class="d-t" x="620" y="263" text-anchor="middle">Website and API</text>
+  <text class="d-s" x="620" y="285" text-anchor="middle">Vercel, Neon, Blob</text>
+  <text class="d-s" x="620" y="304" text-anchor="middle">the earlier prototype,</text>
+  <text class="d-s" x="620" y="323" text-anchor="middle">no shared data</text>
+
+  <line class="d-line" x1="202" y1="53" x2="258" y2="53" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <line class="d-line" x1="202" y1="143" x2="258" y2="143" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <line class="d-line" x1="472" y1="110" x2="528" y2="110" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <line class="d-line" x1="365" y1="232" x2="365" y2="288" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text class="d-s" x="376" y="264">WebSocket, μ-law audio</text>
+  <line class="d-line" x1="202" y1="323" x2="258" y2="323" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+</svg>
+<figcaption>Everything in the demo runs through the orange box. The dashed box shares the repository, not the data.</figcaption>
+</figure>
+
+<p><code>anchor-bot</code> pulls updates from Telegram with a long poll, so Telegram never needs to reach it. The service opens to the internet for one purpose: the audio stream that Twilio sends during a phone call.</p>
+<p>The website and its API share the repository with the bot, and the same Nest codebase, but they run elsewhere and store their data elsewhere. Section 13 covers them briefly.</p>
+
+<h2 id="loops">2. Two loops and a router</h2>
+
+<p>Two loops drive the bot. <code>family.service.ts</code> starts both when <code>TELEGRAM_BOT_TOKEN</code> is set.</p>
+<ul>
+  <li><strong>The poll.</strong> A <code>getUpdates</code> long poll that takes one update at a time, so a restart repeats at most the update in flight. Each update becomes one normalized <code>Incoming</code> event (a text, a photo, a voice note, a button tap) and goes to the router.</li>
+  <li><strong>The tick.</strong> Every 2 seconds, each feature of each family gets the demo-clock window since the previous tick. Everything scheduled happens here: closing a bundle of messages, the 18:00 memory, a due reminder, fading an old offer. Each feature runs in its own try/catch, so one failure never stops the rest.</li>
+</ul>
+
+<p>The router offers each event to thirteen features in a fixed order, and the first one that returns <code>true</code> owns the event.</p>
+
+<table>
+  <thead><tr><th>#</th><th>Feature</th><th>What it owns</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><code>intro</code></td><td class="wrap">Anchor joining a group, which creates the family</td></tr>
+    <tr><td>2</td><td><code>fastforward</code></td><td class="wrap">The stage time machine</td></tr>
+    <tr><td>3</td><td><code>forget</code></td><td class="wrap">"Anchor, forget this" and "Anchor, don't bring this back"</td></tr>
+    <tr><td>4</td><td><code>reminders</code></td><td class="wrap">Reminder offers from group messages, and their delivery</td></tr>
+    <tr><td>5</td><td><code>scams</code></td><td class="wrap">Messages that a member forwards to Anchor in private</td></tr>
+    <tr><td>6</td><td><code>members</code></td><td class="wrap">Joining, the choices screen, the phone number, "stop"</td></tr>
+    <tr><td>7</td><td><code>invitations</code></td><td class="wrap">Private replies to a moment Anchor sent</td></tr>
+    <tr><td>8</td><td><code>memories</code></td><td class="wrap">The 18:00 memory, <code>/memory</code>, and stories told as replies</td></tr>
+    <tr><td>9</td><td><code>intents</code></td><td class="wrap">"Anchor, …" in the group, and any unclaimed private message</td></tr>
+    <tr><td>10</td><td><code>capture</code></td><td class="wrap">Every other group message: bundling and saving moments</td></tr>
+    <tr><td>11</td><td><code>shares</code></td><td class="wrap">"Shall I send this to Sofia?" after a save</td></tr>
+    <tr><td>12</td><td><code>echoes</code></td><td class="wrap">"Then and now" pairs</td></tr>
+    <tr><td>13</td><td><code>calls</code></td><td class="wrap">Reminder calls and the daily call</td></tr>
+  </tbody>
+</table>
+
+<p>Two features bend the rule on purpose. <code>reminders</code> and <code>members</code> can act on a group message and still return <code>false</code>, so <code>capture</code> sees the same message. Features reach Telegram only through a small <code>Transport</code> interface. The tests plug in an in-memory <code>FakeTransport</code>, and a WhatsApp version of Anchor would be one more implementation.</p>
+
+<h2 id="record">3. The record: one JSON file</h2>
+
+<p>The bot has no database. Its whole state is one object, <code>{ clockStart, clockOffset, families[] }</code>, in one JSON file. <code>core/types.ts</code> defines all of it in about 170 lines, and it is the best first file to read.</p>
+<ul>
+  <li>Each save writes a temporary file and renames it over the real one, so a crash never leaves half a file. A file that does not parse at boot moves aside as <code>.corrupt-&lt;time&gt;</code>, and the bot starts empty.</li>
+  <li>There are no migrations. When v2 changed the shape, the loader started filling defaults for older records.</li>
+  <li>On Cloud Run, the file sits in a Cloud Storage bucket mounted at <code>/data</code>. The mount has no locking, and a rollout runs two instances side by side for 10 to 16 seconds, so the last write wins. Deploys happen while the family is quiet.</li>
+</ul>
+<p>Anchor keeps only the moments it chooses and drops every other message. There is no chat archive.</p>
+
+<h2 id="time">4. A clock you can fast-forward</h2>
+
+<pre><code>demoNow = clockStart + (realNow − clockStart) × 86400 / ANCHOR_DAY_SECONDS + clockOffset</code></pre>
+<p>The live bot runs at real speed (<code>ANCHOR_DAY_SECONDS=86400</code>). A local run with 120 lives a day every two minutes. Two slots shape the day, on Athens time: <strong>11:00</strong> for private invitations and the daily call, <strong>18:00</strong> for the group memory. <code>slotIn(window, hour)</code> returns the latest <code>hour:00</code> inside <code>(from, to]</code>, so consecutive windows fire each slot once.</p>
+<p>On stage, <code>/fastforward 7</code> jumps seven days, and <code>/fastforward 08:05</code> jumps to the next 08:05. Both add to <code>clockOffset</code>. The clock-time form also empties the next tick window, so the 11:00 and 18:00 slots inside the jump stay quiet while a due reminder still fires. The offset is global and permanent, which is why rehearsals run on the dev bot.</p>
+
+<h2 id="capture">5. From a message to a moment</h2>
+
+<ol>
+  <li><strong>Rules in code.</strong> Stickers, GIFs, documents, polls, forwarded messages, commands, and link-only texts drop out first.</li>
+  <li><strong>Bundling.</strong> People send a photo, then a caption, then "and she loved it!". Messages from one sender within 5 minutes form one bundle, and a new photo from outside the same album starts the next one. A bundle with a picture and words closes on the next tick, and any other bundle closes after 5 quiet minutes. Albums get 3 seconds of grace, because Telegram delivers them one item at a time.</li>
+  <li><strong>A free filter.</strong> No picture, no voice note, and fewer than 3 words means no model call.</li>
+  <li><strong>One model call</strong> gets the texts, the first photo, and any voice note. For a video it gets the thumbnail, because a bot can download at most 20 MB. It returns a verdict (<code>family_moment</code>, <code>sensitive</code>, <code>logistics</code>, <code>small_talk</code>), a salience from 1 to 5, the people, an event date, a title, up to 5 tags, a transcript, and a description of the picture. The prompt lists the family's existing tags, so "Lucy" stays "Lucy" across months.</li>
+  <li><strong>Save and react.</strong> Family moments and sensitive moments are saved, and Anchor reacts with ❤. Everything else only increments a counter.</li>
+</ol>
+
+<div class="rule">
+  <p><strong>The rule behind every line:</strong> the model never speaks for a person. <code>moment.text</code> holds the sharer's own words, verbatim, and the model supplies only metadata. Code builds every quote, for example <em>Eleni shared: «Maria's first day of school!»</em>. A photo with no words becomes <em>Eleni shared a photo: Mapo tofu at home</em>, so a model-written title never passes as anyone's words.</p>
+  <p style="margin-top:.6rem">The description follows the same rule from the other side. It is Anchor's own sentence for a member who cannot see the picture well, such as <em>"The photo shows a girl with a red backpack at a school gate."</em> It never names a person or a pet, never guesses a feeling, and code drops any description that does not open with "The photo shows" or "The video shows". Only the voice says it: the invitation voice note and the phone call.</p>
+</div>
+
+<p>A sensitive moment (a loss, grief, illness) stays in the record, and Anchor never brings it back on its own. A reply of "Anchor, forget this" deletes a moment, and "Anchor, don't bring this back" marks it sensitive.</p>
+
+<h2 id="return">6. Bringing moments back</h2>
+
+<h3>To the group, at 18:00</h3>
+<p>Each family gets at most one memory a day. A moment is due 7, 30, and 365 days after it was saved, and on the anniversary of its event date. Anniversaries win, then higher salience, then older moments.</p>
+<ul>
+  <li><strong>Collections.</strong> When other moments share the picked moment's most common tag, the memory becomes an album of up to 6 photos, oldest first. A fast model call writes the caption (at most 160 characters, no invented facts or feelings), and a fixed caption covers a failed call. "Anchor, I want a memory of Lucy" gathers every moment about Lucy.</li>
+  <li><strong>Then and now.</strong> Each new moment gets one call that asks whether an older moment from someone else shows the same kind of life event, such as two first days at school. A match posts both, the earlier one first.</li>
+  <li><strong>Stories.</strong> A reply to a memory post with a voice note or at least 3 words becomes a story on that moment.</li>
+</ul>
+
+<h3>In private, at 11:00</h3>
+<p>Members who turned on "Family moments" get at most one invitation a day: the photo, then a voice note that says <em>"Eleni shared: «…» The photo shows … What does it remind you of?"</em>. Anchor makes the clip once per moment and reuses it by its Telegram file id.</p>
+<p>Returns are spaced like flashcards, minus the quiz: after 1, 2, 4, 8, 16, then 32 days, with at most 7 deliveries per moment. A delivery counts whether or not the member answers. Anchor never reads silence as forgetting.</p>
+<p>A reply is read as a <code>story</code>, <code>unsure</code> ("a school?"), a <code>question</code> ("who is that?"), or <code>other</code> ("ok"), and code decides short questions without a model call. A story gets <em>"Shall I share it with the family?"</em>, and only a yes posts it in the group, with a mention that notifies the person who shared the moment.</p>
+
+<h2 id="intents">7. No commands</h2>
+
+<p>v2 dropped the command list. The <code>intents</code> feature reads each group message that starts with "Anchor," and each private message that no other feature claimed, in two stages.</p>
+<ol>
+  <li><strong>Fixed phrases, in code.</strong> A regex catches "send me", "another moment", "settings", "call me", "what did I miss", and "stop", so the key demo phrases never depend on the model.</li>
+  <li><strong>One model call</strong> returns <code>{ intent, momentId, momentIds }</code>. The intent is an enum of ten, and the moment ids are an enum of the family's non-sensitive moments, so the model can pick only a moment that exists. Code validates both anyway. An invalid answer or a failed call becomes <code>unclear</code>, which replies with "here is what I can do" and buttons.</li>
+</ol>
+<p>The newest addition lets people ask for a memory without "Anchor,". To stay out of ordinary family chat, such a message reaches the model only when it holds a memory word (memory, photo, album, and a few more), names a person or a tag that the record knows, and is neither a reply to someone nor forwarded. Even then, Anchor answers only when the model reads a memory request. In a replay on the live family record, 10 of 12 requests got their album, and 0 of 14 ordinary messages got a reply.</p>
+<p>Code picks the buttons under each private answer ("Another moment", "What did I miss?", "My settings", "Call me"). The model never does.</p>
+
+<h2 id="members">8. Members, choices, and offers that fade</h2>
+
+<p><strong>Joining.</strong> Telegram lets a bot write to someone in private only after that person taps Start. Anchor's buttons link to <code>t.me/&lt;bot&gt;?start=&lt;family id&gt;</code>. Anyone could forward that link, so a newcomer joins only when <code>getChatMember</code> confirms they are in the group right now. Each member then picks what Anchor sends them:</p>
+
+<table>
+  <thead><tr><th>Choice</th><th>Default</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td>Family moments</td><td>off</td><td class="wrap">The 11:00 invitations. Nothing arrives unasked before this yes.</td></tr>
+    <tr><td>Reminders</td><td>on</td><td class="wrap">Reminder offers, each still one tap away from a no.</td></tr>
+    <tr><td>Share offers</td><td>on</td><td class="wrap">"Shall I send this to…?" after you post.</td></tr>
+    <tr><td>Voice</td><td>off</td><td class="wrap">Every private line arrives as a voice note.</td></tr>
+    <tr><td>Phone calls</td><td>off</td><td class="wrap">Calls, after a one-tap phone number share.</td></tr>
+  </tbody>
+</table>
+
+<ul>
+  <li><strong>Ephemeral messages.</strong> Nudges and offers are group messages that only one member can see, a recent Bot API feature. They need Anchor as an admin of a supergroup, and Telegram does not guarantee delivery to someone offline, so nothing important depends on them.</li>
+  <li><strong>Share offers.</strong> When Eleni's photo is saved, only Eleni sees "Shall I send this to Sofia now?". A yes sends it to Sofia at once.</li>
+  <li><strong>Reminder offers.</strong> A regex gate (remember, remind, tomorrow, in the morning, a clock time) decides which texts reach a fast model call. The call returns <code>{ offer, who, time }</code>, and <code>who</code> is an enum of member ids plus <code>unknown</code>. Unknown means no offer, so a reminder for someone else never lands on the sender. A reply is how "Mum" becomes Sofia: the prompt names the member being replied to. Sofia taps a time, Eleni's message gets a ✍, and the reminder arrives in private when it is due. The family sees only the ✍.</li>
+  <li><strong>Fading.</strong> An unanswered offer disappears after 10 demo-clock minutes, and "Stop offering this" turns that kind of offer off.</li>
+  <li><strong>The scam shield.</strong> A member who gets a suspicious message can forward it to Anchor in private. Anchor checks only what a member forwards to it. One fast call answers two questions: does the message ask for money, a gift card, a code, or bank details, and which member does it claim to come from (an enum of member ids, or none). The prompt tells the model that the message is data and never instructions. Telegram's forward origin tells Anchor which account sent the message, when the sender does not hide it. A money request that did not come from the claimed member's own account gets a warning to call that person on the number you know, and a "Tell Eleni" button that lets Eleni know someone used her name. Anchor never says a message is certainly a scam or certainly safe.</li>
+  <li><strong>Voice both ways.</strong> Every private line goes through <code>tell()</code>. For a member who chose voice, the text goes to TTS, <code>ffmpeg</code> turns the WAV into OGG Opus, and the text rides along as the caption. A failed TTS call sends the text. A 403 from a private chat means the member blocked Anchor, and Anchor stops writing.</li>
+</ul>
+
+<h2 id="call">9. The phone call</h2>
+
+<p>Twilio places the call and OpenAI Realtime is the voice. The bot sits in the middle, because it has to hear the audio to cut out the member's story afterwards.</p>
+<ol>
+  <li><strong>Trigger.</strong> "Call me", a reminder for a member who turned calls on, or the 11:00 daily call (once a day at most, and only when the family shared something new).</li>
+  <li><strong>Dial.</strong> One Twilio Calls API request with inline TwiML, <code>&lt;Connect&gt;&lt;Stream url="wss://…/call/stream"&gt;</code>, and a random single-use token. The Twilio number's configuration never changes.</li>
+  <li><strong>Bridge.</strong> The Nest server upgrades <code>/call/stream</code> to a WebSocket, drops any stream whose token Anchor did not issue, and opens a second socket to OpenAI Realtime (<code>gpt-realtime-2.1</code>). Both sides speak G.711 μ-law at 8 kHz, so audio passes through untouched.</li>
+  <li><strong>Script.</strong> The opener ("Hello Sofia, this is Anchor… I'm not a person", the reminder in Eleni's words, then the moment) goes out as "say exactly these words". The bridge ignores the caller until the opener has played, so a "Hello?" at pickup never cuts it off. Then the model listens, asks at most one follow-up that invites and never tests, asks whether to share, and asks whether to connect the member to the sharer. When the member talks over Anchor, the bridge cuts Anchor's audio.</li>
+  <li><strong>End.</strong> The model calls an <code>end_call</code> tool with the answers (<code>share</code>: voice, words, or no, plus <code>tell_sender</code> and <code>connect</code>), and the bridge hangs up after the goodbye. A call lasts at most 10 minutes.</li>
+  <li><strong>After.</strong> The story is the member's side only, cut before the share question, so "yes, share it" never reaches the clip. Sentences like "I don't remember" drop out, and a story that lost a sentence goes out as words only, because the voice would still say it. The audio becomes a voice note for the member, and the group post reuses its file id.</li>
+</ol>
+<p><strong>The warm handoff.</strong> Every call ends with a way to reach a person. When the sharer has a phone number on file, Anchor asks "Shall I connect you to Eleni now?", says goodbye, and moves the live call to Eleni's phone with a <code>&lt;Dial&gt;</code>, which also takes Anchor out of the call. When Eleni does not pick up within 20 seconds, the group gets "Eleni, Sofia would love a call from you 💛". Without a phone number for the sharer, Anchor asks whether to tell the sharer instead.</p>
+<p><strong>Security.</strong> Twilio's WebSocket needs a public service. <code>ANCHOR_BOT_ONLY=true</code> makes the process answer 404 to every request except <code>GET /</code> and the stream upgrade, so the old prototype routes stay unreachable.</p>
+
+<h2 id="model">10. The model layer</h2>
+
+<p>Features call four functions from <code>model/model.ts</code>: <code>ask</code> (JSON that matches a schema), <code>transcribe</code>, <code>speak</code> (WAV), and <code>valid</code>. OpenAI sits behind them by default, and Gemini is one environment variable away (<code>ANCHOR_MODEL_PROVIDER</code>).</p>
+<ul>
+  <li><strong>OpenAI.</strong> Strict JSON-schema output on <code>gpt-4.1-mini</code>, with <code>gpt-4o-mini</code> as the fallback on a 429 or 503. Chat input does not take Telegram's OGG voice notes, so audio goes through <code>gpt-4o-mini-transcribe</code> first. TTS is <code>gpt-4o-mini-tts</code>, asked to sound "warm, calm and slow, like a kind family friend talking to a grandparent".</li>
+  <li><strong>Cache.</strong> Every answer is cached on disk under a hash of the prompt, the schema, and the media. It began as a way around a free-tier limit of about 10 TTS requests a day.</li>
+  <li><strong>Trust nothing.</strong> Every answer passes a validator in code, and every call has a fixed fallback. A failed classification drops the bundle, so nothing that skipped the sensitivity check enters the record. A failed intent becomes "unclear", a failed reminder call makes no offer, and a failed TTS call sends text.</li>
+</ul>
+<p>Every chat line comes from <code>core/lines.ts</code>. The model's own words reach the family in two places only, the album caption and the phone conversation, and instructions fence in both. Prompts go to OpenAI's global API, so they may leave the EU, and the privacy page says so.</p>
+
+<h2 id="telegram">11. Telegram lessons</h2>
+<ul>
+  <li><strong>The 28-second stall.</strong> While the long poll waited, every other Bot API call through Node's global <code>fetch</code> queued behind it. The poll now has its own HTTPS agent, and the same calls take 0.06 to 0.23 seconds.</li>
+  <li><strong>One poller per token.</strong> A second process gets a 409. The live bot and the dev bot have separate tokens, and a few 409 lines during a rollout are normal.</li>
+  <li><strong>File ids travel.</strong> A file id belongs to the bot, not to a chat, so a voice note uploaded in private goes to the group without a second upload.</li>
+  <li><strong>A known gap.</strong> Promoting a bot that is already in a group sends no "joined" event. To create the family, remove Anchor and add it again.</li>
+</ul>
+
+<h2 id="ship">12. Shipping it</h2>
+<ul>
+  <li><strong>Cloud Run.</strong> <code>anchor-bot</code> in <code>europe-west1</code> runs one instance (min and max 1, because only one process may poll), with the CPU always on, so the poll and the tick keep running. 1 vCPU and 512 MiB cost about 1.64 USD a day at list price. The image is <code>node:20</code> plus <code>ffmpeg</code>, and the secrets come from Secret Manager.</li>
+  <li><strong>Deploy.</strong> <code>pnpm deploy:bot</code> runs only on a clean <code>origin/main</code>. It runs the tests, builds for <code>linux/amd64</code>, tags the image with the commit, and rolls out a new revision that keeps the flags, secrets, and volume. A person runs it: the lab project gives nobody IAM admin and blocks service-account keys, so GitHub Actions cannot deploy.</li>
+  <li><strong>Tests.</strong> <code>pnpm nx test api</code> runs 610 Vitest cases with no network calls, against <code>FakeTransport</code> with the model mocked. <code>demo-flow.test.ts</code> walks the whole demo script. There is no CI.</li>
+</ul>
+
+<h2 id="web">13. The website and the old prototype</h2>
+<p><code>apps/web</code> is an Astro and React site on Vercel with the landing page, sign-up, and an interactive demo. Its API, <code>anchor-api</code>, is the same Nest codebase on Vercel, with JWT auth, Neon Postgres, and Vercel Blob. That API also holds the team's first engine, a WhatsApp flow built around questions and hints. The bot left that framing behind, never touches Postgres, and stays asleep on Vercel, because Vercel never sets the Telegram token.</p>
+
+<h2 id="shortcuts">14. Shortcuts taken on purpose</h2>
+<p>The code marks each deliberate shortcut with a <code>ponytail:</code> comment that names its limit.</p>
+<table>
+  <thead><tr><th>Shortcut</th><th>Breaks when</th><th>The fix</th></tr></thead>
+  <tbody>
+    <tr><td class="wrap">Every save rewrites the whole record</td><td class="wrap">Saves get slow, or a second writer appears</td><td class="wrap">SQLite</td></tr>
+    <tr><td class="wrap">One Telegram update at a time</td><td class="wrap">A slow feature delays every family</td><td class="wrap">A queue per chat</td></tr>
+    <tr><td class="wrap">A slot missed while the bot is down stays missed</td><td class="wrap">A lost 18:00 memory matters</td><td class="wrap">Persist the last tick</td></tr>
+    <tr><td class="wrap">Every moment and tag goes into the prompts</td><td class="wrap">A family reaches thousands of moments</td><td class="wrap">A shortlist</td></tr>
+    <tr><td class="wrap">The "I don't remember" filter is a phrase list</td><td class="wrap">It drops "I don't know how she did it"</td><td class="wrap">A model check</td></tr>
+    <tr><td class="wrap">The model cache lives in the temp folder</td><td class="wrap">UNVERIFIED: on Cloud Run that folder uses the 512 MiB of memory, uncapped</td><td class="wrap">A size cap</td></tr>
+    <tr><td class="wrap">The scam shield reads only the words of a forward</td><td class="wrap">A scam arrives as a voice note</td><td class="wrap">Pass the voice as media</td></tr>
+    <tr><td class="wrap">A person belongs to one family</td><td class="wrap">A grandparent is in two family groups</td><td class="wrap">Membership per chat</td></tr>
+  </tbody>
+</table>
+
+<h2 id="map">15. Where to start reading</h2>
+<p>Every path is under <code>apps/api/src/app/</code>, about 4,000 lines of TypeScript for the bot.</p>
+<table>
+  <thead><tr><th>File</th><th>Why you open it</th></tr></thead>
+  <tbody>
+    <tr><td><code>core/types.ts</code></td><td class="wrap">Every event, message, and record type. Read it first.</td></tr>
+    <tr><td><code>family.service.ts</code></td><td class="wrap">The poll, the tick, and the feature order.</td></tr>
+    <tr><td><code>core/</code></td><td class="wrap">The router, the record, the clock, <code>tell</code>, offers, and every line in <code>lines.ts</code>.</td></tr>
+    <tr><td><code>features/</code></td><td class="wrap">One file (or folder) per row of the table in section 2.</td></tr>
+    <tr><td><code>call/</code></td><td class="wrap">The Twilio to Realtime bridge.</td></tr>
+    <tr><td><code>model/</code>, <code>transports/</code></td><td class="wrap">The model seam, and the Telegram client.</td></tr>
+  </tbody>
+</table>
+<p>The full design is <code>docs/specs/2026-09-25-family-memory-design.md</code>, and its section 11 lists what the team test found on the live bot. <code>DEPLOY.md</code> holds every Cloud Run command, and <code>docs/demo-runbook.md</code> holds the six-minute demo, beat by beat.</p>
+
+<footer>
+  Written from <code>main</code> at <code>40fb18a</code>. Update it when a merge changes how the bot works.
+</footer>
+
+</main>
+</body>
+</html>
