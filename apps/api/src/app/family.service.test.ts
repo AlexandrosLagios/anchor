@@ -122,6 +122,20 @@ test('nextWindow starts an empty window at to when restart is set, and keeps the
   expect(nextWindow(100, 200, true)).toEqual({ from: 200, to: 200 });
 });
 
+test('through FEATURES, a forwarded "stop" in private reaches the scam check before members, so the member keeps every choice', async () => {
+  const transport = new FakeTransport();
+  const store = openStore(stateFile());
+  const router = createRouter(FEATURES, { now: () => Date.now(), store, transport: () => transport });
+  const family = store.addFamily('-100', '-100');
+  const sofia = store.joinMember(family, { id: '1', name: 'Sofia' });
+  sofia.started = true;
+  vi.mocked(ask).mockResolvedValue({ asks: false, claims: 'none' });
+
+  await router.route({ chat: 'private', chatId: '1', messageId: 'p1', sender: { id: '1', name: 'Sofia' }, at: Date.now(), text: 'stop', forwarded: true });
+  expect(sofia.started).toBe(true);
+  expect(transport.sent.map(({ message }) => message.text)).toEqual([lines.scam.neutral]);
+});
+
 test('through FEATURES, a captioned photo gets a heart and "Anchor, forget this" reaches forget before ask and capture', async () => {
   const now = new Date(2026, 8, 25, 12).getTime();
   const transport = new FakeTransport();

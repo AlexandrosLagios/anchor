@@ -65,8 +65,7 @@ async function tellClaimed(id: string, event: Incoming, family: Family, member: 
 }
 
 // a forwarded album arrives one item per update, and the caption rides on the first item, so only the first item gets an answer
-// ponytail: one album at a time across members; key it by member when two members forward albums at the same second
-let lastAlbum: string | undefined;
+const lastAlbum = new Map<string, string | undefined>(); // member id to the album id of the last forward
 
 // Anchor reads only what a member forwards to it in private
 export const scams: Feature = {
@@ -81,8 +80,8 @@ export const scams: Feature = {
       return true;
     }
     if (!event.forwarded) return false;
-    if (event.albumId === undefined || event.albumId !== lastAlbum) await check(event, family, member, ctx);
-    lastAlbum = event.albumId;
+    if (event.albumId === undefined || event.albumId !== lastAlbum.get(member.id)) await check(event, family, member, ctx);
+    lastAlbum.set(member.id, event.albumId);
     return true;
   },
 };
