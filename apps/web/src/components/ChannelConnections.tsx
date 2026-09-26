@@ -187,7 +187,6 @@ export function ChannelConnections({
           <div>
             <strong>WhatsApp</strong>
             <span className="channel-badge">Coming soon</span>
-            <p>Demo placeholder — not connected in this prototype.</p>
           </div>
           <div className="family-actions">
             <button type="button" className="btn btn-secondary" disabled aria-disabled="true">
@@ -199,7 +198,6 @@ export function ChannelConnections({
           <div>
             <strong>Viber</strong>
             <span className="channel-badge">Coming soon</span>
-            <p>Demo placeholder — not connected in this prototype.</p>
           </div>
           <div className="family-actions">
             <button type="button" className="btn btn-secondary" disabled aria-disabled="true">
