@@ -33,7 +33,7 @@ export const withoutLapses = (text: string) =>
     .filter((sentence) => sentence && !LAPSE.test(sentence))
     .join(' ');
 
-const newestMoment = (family: Family, member: Member) =>
+export const newestMoment = (family: Family, member: Member) =>
   family.moments
     .filter((moment) => moment.by.id !== member.id && !moment.sensitive && !moment.stories.some((story) => story.by.id === member.id))
     .sort((a, b) => b.savedAt - a.savedAt)[0];

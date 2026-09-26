@@ -6,7 +6,7 @@ import * as model from '../model/model';
 import { answerInGroup, choiceLine } from './ask';
 import { actOnReply } from './capture/capture';
 import { ADDRESS, fixedIntent, pictureOf } from './capture/filter';
-import { callMember } from './calls';
+import { callMember, newestMoment } from './calls';
 import { sendMe } from './invitations';
 import { postMemoryNow } from './memories';
 import { groupNextSteps, nextSteps, nudge, showChoices, stopMember } from './members';
@@ -139,7 +139,16 @@ async function unclearGroup(event: Incoming, family: Family, ctx: Context): Prom
   return true;
 }
 
+// the call choice can be on without a number, when the member skipped the share button after the toggle
 async function doCallMe(family: Family, member: Member, ctx: Context): Promise<void> {
+  if (!member.phone) {
+    await tell(family, member, { text: lines.askPhone, buttons: [{ label: lines.buttons.sharePhone, contact: true }] }, ctx);
+    return;
+  }
+  if (!newestMoment(family, member)) {
+    await tell(family, member, { text: lines.nothingToCall, buttons: nextSteps(member, 'callMe') }, ctx);
+    return;
+  }
   const ok = await callMember(family, member, ctx);
   if (!ok) await tell(family, member, { text: lines.callFailed, buttons: nextSteps(member, 'callMe') }, ctx);
 }
