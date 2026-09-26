@@ -114,6 +114,34 @@ test('/start r_<id> finds the family that holds that reminder and starts the mem
   expect(messages()).toEqual([['7', { text: lines.welcome('Nikos'), buttons: choiceButtons(nikos()) }]]);
 });
 
+test('/start with a family payload or a reminder payload, from a person outside the group, joins nothing and answers notInGroup', async () => {
+  family.reminders.push({ id: 'abc12345', to: '1', from: { id: '1', name: 'Sofia' }, text: 'buy milk', sourceId: '50', time: '08:00', status: 'offered' });
+  transport.outsiders.add('7');
+  expect(await receive(fromNikos({ text: '/start -100' }))).toBe(true);
+  expect(await receive(fromNikos({ text: '/start r_abc12345' }))).toBe(true);
+  expect(family.members).toEqual([]);
+  expect(messages()).toEqual([
+    ['7', { text: lines.notInGroup }],
+    ['7', { text: lines.notInGroup }],
+  ]);
+});
+
+test('/start from a person already in the record needs no membership check', async () => {
+  ctx.store.joinMember(family, { id: '7', name: 'Nikos' });
+  const check = vi.spyOn(transport, 'isMember');
+  await receive(fromNikos({ text: '/start -100' }));
+  expect(check).not.toHaveBeenCalled();
+  expect(nikos().started).toBe(true);
+});
+
+test('a membership check that fails joins nothing', async () => {
+  vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  vi.spyOn(transport, 'isMember').mockRejectedValue(new Error('Telegram getChatMember 400: user not found'));
+  expect(await receive(fromNikos({ text: '/start -100' }))).toBe(true);
+  expect(family.members).toEqual([]);
+  expect(messages()).toEqual([['7', { text: lines.notInGroup }]]);
+});
+
 test('/start with no payload from a member sends welcome with the choice buttons, and from a stranger goes to the router', async () => {
   const member = ctx.store.joinMember(family, { id: '7', name: 'Nikos' });
   await receive(fromNikos({ text: '/start' }));

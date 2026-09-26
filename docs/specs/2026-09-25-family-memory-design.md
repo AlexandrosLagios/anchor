@@ -219,6 +219,7 @@ v2 changes to this section:
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
 | `adminOnly` | Only a group admin can do that 🙂 |
+| `notInGroup` | Hi! I talk only with the members of the family group. Ask your family to add you to the group, then tap the button again 🙂 |
 | `privateHow` | Reply /private to a message from the person who should get family moments in private. |
 | `nobodyPrivate` | Nobody gets family moments in private yet. Reply /private to a grandparent's message first. |
 | `notJoined` | Thank you 🙂 If you'd like family moments from me, send /start. |
@@ -290,6 +291,7 @@ These additions put journey steps 2 and 5 on stage, and they let the live demo r
 - `store.joinMember(family, person)` returns the member, and adds a member with the default choices when the person is new.
 - Join nudge: the first group message of a member who has not started gets one ephemeral `nudge(name)`, with the URL button "Choose what I send you" to `startLink(family id)`. The code sets `member.nudged` before the send, so a failed send never repeats the nudge. Nobody else sees the nudge.
 - `/start <payload>` in private sets `started` and sends `welcome(name)` with the choices screen. The payload is the family id or `r_<reminder id>` (section 4.13). The payload finds the family also for a person who is not a member yet.
+- The join gate: the start link can travel outside the group, so a person who is new to the record joins only while `isMember` is true for the family group. Any other answer, and a failed check, gets `notInGroup` and joins nothing. A person who is already in the record needs no check.
 - `/start` without a payload, from a member, sends the choices screen. From a person with no family, `/start` gets `pointer`.
 - The choices screen holds one toggle button per choice, each in its own row, and "Done". A toggle label is `choice(on, label)`. A tap flips the choice, saves, and edits the buttons of the same message in place.
 
@@ -498,6 +500,7 @@ export interface Transport {
   react(chatId: string, messageId: string, emoji: string, big?: boolean): Promise<void>;
   download(media: Media): Promise<{ data: Buffer; mimeType: string }>;
   isAdmin(chatId: string, userId: string): Promise<boolean>;
+  isMember(chatId: string, userId: string): Promise<boolean>; // the person is in the group now
   startLink(payload: string): string;
 }
 
@@ -809,6 +812,7 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 - `react` uses `setMessageReaction` with `{ type: 'emoji', emoji }`. The allowed list holds ❤ as U+2764 without U+FE0F, and it holds 👌.
 - `download` uses `getFile` and `https://api.telegram.org/file/bot<token>/<file_path>`. A bot downloads files of at most 20 MB.
 - `isAdmin` uses `getChatMember`. The statuses `creator` and `administrator` mean an admin.
+- `isMember` uses `getChatMember`. The statuses `creator`, `administrator`, and `member` mean a member, and `restricted` means a member only when `is_member` is true.
 - `startLink` returns `https://t.me/<bot username>?start=<payload>`, with the username from `getMe`. The payload holds at most 64 characters from `A-Z`, `a-z`, `0-9`, `_`, and `-`.
 - Button data holds 1 to 64 bytes. A URL button works in a group and in a private chat.
 - Each button sits in its own `inline_keyboard` row, so an older reader gets large tap targets.

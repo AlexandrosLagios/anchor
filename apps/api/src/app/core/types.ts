@@ -48,6 +48,7 @@ export interface Transport {
   react(chatId: string, messageId: string, emoji: string, big?: boolean): Promise<void>;
   download(media: Media): Promise<{ data: Buffer; mimeType: string }>;
   isAdmin(chatId: string, userId: string): Promise<boolean>;
+  isMember(chatId: string, userId: string): Promise<boolean>; // the person is in the group now
   startLink(payload: string): string;
 }
 

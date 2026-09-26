@@ -272,6 +272,12 @@ export class TelegramTransport implements Transport {
     return member.status === 'creator' || member.status === 'administrator';
   }
 
+  // a restricted person can have left the group, and only is_member tells
+  async isMember(chatId: string, userId: string) {
+    const member = await call<{ status: string; is_member?: boolean }>(this.token, 'getChatMember', { chat_id: chatId, user_id: Number(userId) });
+    return ['creator', 'administrator', 'member'].includes(member.status) || (member.status === 'restricted' && member.is_member === true);
+  }
+
   startLink(payload: string) {
     if (!/^[\w-]{1,64}$/.test(payload)) throw new Error(`A start payload holds 1 to 64 of A-Z, a-z, 0-9, _ and -: ${payload}`);
     return `https://t.me/${this.username}?start=${payload}`;

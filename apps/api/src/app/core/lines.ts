@@ -109,6 +109,7 @@ export const lines = {
     `${title} · ${date} 💛${names.length ? `\nStories from ${names.join(', ')}` : ''}`,
   notFound: "I couldn't find that in the family record yet.",
   pointer: "Hi! I keep your family's record. Talk to me in your family group 🙂",
+  notInGroup: 'Hi! I talk only with the members of the family group. Ask your family to add you to the group, then tap the button again 🙂',
   forgetWhich: 'This post shows two moments. Which one should I forget?',
   quietWhich: 'This post shows two moments. Which one should I stop bringing back?',
   whichMoment: (moment: Moment) => clip(`${moment.by.name}: ${moment.title}`, 40),
