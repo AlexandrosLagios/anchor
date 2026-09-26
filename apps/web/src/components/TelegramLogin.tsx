@@ -1,44 +1,80 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { botOpenLink, telegramClientId } from '../lib/config';
 import { setIdToken } from '../lib/telegram';
 
-type TelegramLoginApi = {
-  init: (
-    options: { client_id: number; scope?: string[]; lang?: string },
-    callback: (result: { id_token?: string; error?: string }) => void,
-  ) => void;
-  open: (callback?: (result: { id_token?: string; error?: string }) => void) => void;
-};
+const OIDC_ORIGIN = 'https://oauth.telegram.org';
 
-declare global {
-  interface Window {
-    Telegram?: { Login?: TelegramLoginApi };
-  }
-}
+type AuthResult = { id_token?: string; error?: string };
 
-const SCRIPT = 'https://oauth.telegram.org/js/telegram-login.js';
+/**
+ * Telegram's library sets redirect_uri to origin + pathname (e.g. /family).
+ * BotFather Allowed URLs are usually the site origin only, so that fails with
+ * "redirect_uri required". Open the popup ourselves with the origin as redirect_uri.
+ */
+function openTelegramAuth(clientId: string, callback: (result: AuthResult) => void): void {
+  const redirectUri = `${window.location.origin}/`;
+  const scope = ['openid', 'profile', 'telegram:bot_access'].join(' ');
+  const authUrl =
+    `${OIDC_ORIGIN}/auth` +
+    `?response_type=post_message` +
+    `&client_id=${encodeURIComponent(clientId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&lang=en`;
 
-function loadScript(): Promise<TelegramLoginApi> {
-  if (window.Telegram?.Login) return Promise.resolve(window.Telegram.Login);
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[src^="${SCRIPT}"]`);
-    if (existing) {
-      existing.addEventListener('load', () => {
-        if (window.Telegram?.Login) resolve(window.Telegram.Login);
-        else reject(new Error('Telegram Login did not load'));
-      });
+  const width = 550;
+  const height = 650;
+  const left = Math.max(0, (screen.width - width) / 2);
+  const top = Math.max(0, (screen.height - height) / 2);
+  const features = `width=${width},height=${height},left=${left},top=${top},status=0,location=0,menubar=0,toolbar=0`;
+
+  let finished = false;
+  const finish = (result: AuthResult) => {
+    if (finished) return;
+    finished = true;
+    window.removeEventListener('message', onMessage);
+    callback(result);
+  };
+
+  const onMessage = (event: MessageEvent) => {
+    if (event.origin !== OIDC_ORIGIN) return;
+    if (popup && event.source !== popup) return;
+    let data: { event?: string; result?: string; error?: string } | null = null;
+    try {
+      data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+    } catch {
       return;
     }
-    const script = document.createElement('script');
-    script.src = SCRIPT;
-    script.async = true;
-    script.onload = () => {
-      if (window.Telegram?.Login) resolve(window.Telegram.Login);
-      else reject(new Error('Telegram Login did not load'));
-    };
-    script.onerror = () => reject(new Error('Could not load Telegram Login'));
-    document.head.appendChild(script);
-  });
+    if (!data || data.event !== 'auth_result') return;
+    if (data.error) {
+      finish({ error: data.error });
+      return;
+    }
+    if (typeof data.result !== 'string' || !data.result) {
+      finish({ error: 'missing id_token' });
+      return;
+    }
+    finish({ id_token: data.result });
+  };
+
+  window.addEventListener('message', onMessage);
+  const popup = window.open(authUrl, 'telegram_oidc_login', features);
+  if (!popup) {
+    finish({
+      error: 'Could not open Telegram Login. Allow popups for this site, then try again.',
+    });
+    return;
+  }
+  popup.focus();
+
+  const checkClose = () => {
+    if (!popup || popup.closed) {
+      finish({ error: 'popup_closed' });
+      return;
+    }
+    window.setTimeout(checkClose, 200);
+  };
+  checkClose();
 }
 
 type Props = {
@@ -54,50 +90,36 @@ export function TelegramLogin({ onSignedIn, label = 'Get started with Telegram' 
   const onSignedInRef = useRef(onSignedIn);
   onSignedInRef.current = onSignedIn;
 
-  useEffect(() => {
-    if (!configured) return;
-    let cancelled = false;
-    void loadScript()
-      .then((login) => {
-        if (cancelled) return;
-        login.init(
-          {
-            client_id: Number(telegramClientId),
-            scope: ['profile', 'write'],
-            lang: 'en',
-          },
-          (result) => {
-            if (result.error) {
-              setError(result.error);
-              setBusy(false);
-              return;
-            }
-            if (!result.id_token) {
-              setError('Telegram did not return a sign-in token.');
-              setBusy(false);
-              return;
-            }
-            setIdToken(result.id_token);
-            setBusy(false);
-            setError('');
-            onSignedInRef.current?.();
-          },
+  function handleResult(result: AuthResult) {
+    if (result.error) {
+      if (result.error === 'popup_closed') {
+        setError('Telegram Login was closed before signing in.');
+      } else if (/redirect_uri/i.test(result.error)) {
+        setError(
+          `Telegram rejected this site’s login URL. In BotFather → Login Widget, add ${window.location.origin} to Allowed URLs.`,
         );
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Telegram Login failed to load.');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [configured]);
+      } else {
+        setError(result.error);
+      }
+      setBusy(false);
+      return;
+    }
+    if (!result.id_token) {
+      setError('Telegram did not return a sign-in token.');
+      setBusy(false);
+      return;
+    }
+    setIdToken(result.id_token);
+    setBusy(false);
+    setError('');
+    onSignedInRef.current?.();
+  }
 
-  async function openLogin() {
+  function openLogin() {
     setError('');
     setBusy(true);
     try {
-      const login = await loadScript();
-      login.open();
+      openTelegramAuth(telegramClientId, handleResult);
     } catch (err) {
       setBusy(false);
       setError(err instanceof Error ? err.message : 'Telegram Login failed.');
@@ -125,7 +147,7 @@ export function TelegramLogin({ onSignedIn, label = 'Get started with Telegram' 
       <p className="lede">
         Sign in with your Telegram account. Anchor uses that identity for the family record — no email or password.
       </p>
-      <button className="btn btn-primary" type="button" disabled={busy} onClick={() => void openLogin()}>
+      <button className="btn btn-primary" type="button" disabled={busy} onClick={() => openLogin()}>
         {busy ? 'Opening Telegram…' : label}
       </button>
       <p className="tg-accept">

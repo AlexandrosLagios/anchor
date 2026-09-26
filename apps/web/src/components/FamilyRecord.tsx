@@ -304,7 +304,9 @@ export function FamilyRecord() {
       {!token ? (
         <section className="family-panel" aria-labelledby="group-moments">
           <h2 id="group-moments">Group moments</h2>
-          <p className="lede">Sign in with Telegram when you want moments from the family group on this page.</p>
+          <p className="lede">
+            Optional. Sign in with Telegram only if you want moments from a Telegram family group on this page.
+          </p>
           <TelegramLogin onSignedIn={() => void refresh()} label="Sign in with Telegram" />
         </section>
       ) : null}

@@ -16,10 +16,10 @@ import {
   type AccountFamily,
   type AccountFile,
 } from '../lib/account';
-import { botAddLink, botOpenLink, privacyEmail } from '../lib/config';
+import { botAddLink, botOpenLink, privacyEmail, viberAddLink, whatsappAddLink } from '../lib/config';
 import './RegisterFlow.css';
 
-const STEPS = ['Account', 'Bot', 'Family', 'Memory'] as const;
+const STEPS = ['Account', 'Group', 'Family', 'Memory'] as const;
 
 export function RegisterFlow() {
   const headingId = useId();
@@ -452,20 +452,60 @@ export function RegisterFlow() {
 
         {step === 2 ? (
           <>
-            <h1 id={headingId}>Add the bot</h1>
+            <h1 id={headingId}>Add Anchor to the group</h1>
             <p className="lede">
               {signedInAs ? `Signed in as ${signedInAs}. ` : null}
-              Telegram will ask which family group to use, then add Anchor as an admin.
+              Pick a messenger if you want Anchor in the family chat. None of these is required — you can continue and
+              add a bot later.
             </p>
+            <ul className="reg-channels">
+              <li>
+                <div>
+                  <strong>Telegram</strong>
+                  <p>Opens Telegram so you can add Anchor as an admin in a family group.</p>
+                </div>
+                <div className="family-actions">
+                  <a className="btn btn-secondary" href={botAddLink} target="_blank" rel="noreferrer">
+                    Add to a Telegram group
+                  </a>
+                  <a className="btn btn-secondary" href={botOpenLink} target="_blank" rel="noreferrer">
+                    Open Telegram
+                  </a>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>WhatsApp</strong>
+                  <p>Optional. Opens a WhatsApp chat if you want to try Anchor there.</p>
+                </div>
+                <div className="family-actions">
+                  <a className="btn btn-secondary" href={whatsappAddLink} target="_blank" rel="noreferrer">
+                    Open WhatsApp
+                  </a>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>Viber</strong>
+                  <p>Optional. Opens Viber if a public Anchor chat is configured.</p>
+                </div>
+                <div className="family-actions">
+                  {viberAddLink ? (
+                    <a className="btn btn-secondary" href={viberAddLink} target="_blank" rel="noreferrer">
+                      Open Viber
+                    </a>
+                  ) : (
+                    <p className="reg-hint">Viber is not set up for this demo yet.</p>
+                  )}
+                </div>
+              </li>
+            </ul>
             <div className="family-actions">
-              <a className="btn btn-primary" href={botAddLink} target="_blank" rel="noreferrer">
-                Add Anchor to a family group
-              </a>
-              <a className="btn btn-secondary" href={botOpenLink} target="_blank" rel="noreferrer">
-                Open Anchor in Telegram
-              </a>
+              <button className="btn btn-primary" type="button" onClick={confirmBot}>
+                Continue
+              </button>
               <button className="btn btn-secondary" type="button" onClick={confirmBot}>
-                I added Anchor — continue
+                Skip for now
               </button>
             </div>
             <p className="reg-switch">
@@ -476,6 +516,7 @@ export function RegisterFlow() {
                   setAccountToken(null);
                   writeProgress({ botAdded: false, complete: false });
                   setStep(1);
+                  setMode('choose');
                 }}
               >
                 Use a different email
