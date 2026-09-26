@@ -363,21 +363,20 @@ Twilio places the call, and OpenAI Realtime is the voice. The call runs through 
 - Ingress: `anchor-bot` runs with `ANCHOR_BOT_ONLY=true` before the service becomes public, so the public service exposes no prototype route. The Nest HTTP server upgrades `/call/stream` to a WebSocket. Cloud Run closes a WebSocket at the request timeout, so the service runs with `--timeout=900`. The inline TwiML passes a random token per call as a stream `<Parameter>`. The bridge drops a stream whose token Anchor did not issue. A webhook for calls to Anchor's number checks the Twilio signature.
 - The demo gate: the call joins the demo script only when the call rings a demo phone by Saturday night, through the deployed bot.
 
-### 4.16 Subject collections (v2, step 5b)
+### 4.16 Collections (v2, step 5b)
 
-A group memory brings back several moments of one subject together, as a photo album. An example is three photos of the family dog that different members shared over the months.
+A group memory brings back several moments about one thing together, as a photo album. An example is three photos of Lucy, the family dog, that different members shared over the months.
 
-- The capture call (section 6.3) returns `subject`: the one recurring thing that the moment is about, such as a pet, a person, a place, or an activity, for example "Rex the dog". The value is empty when the moment has no clear subject.
-- The prompt lists the subjects that the family's moments already hold. The model reuses a listed subject when the moment is about the same thing, so that every photo of one dog gets one subject. The code stores the value in `moment.subject`.
-- A moment without a `subject`, such as a moment that was saved before this section, never joins a collection.
-- A later moment can name a listed subject more precisely. An example is a caption that says the family dog is called Lucy. Then the capture call returns the new subject, "Lucy the dog", and the listed subject as `replaces`. The code renames that subject on every earlier moment, so the earlier photos join the same collection.
-- A collection is the moment that the group memory picks (section 4.3), plus the other moments with the same `subject`. The match ignores letter case. Only moments with a photo or a video join, and the code skips every sensitive moment.
-- A collection needs at least 2 moments. Otherwise, the memory posts the one moment as before. A picked moment without a picture never starts a collection.
-- The album holds at most 6 moments. The picked moment always stays in the album. The other places go to the moments with the highest salience. The album orders the moments oldest first, by `eventDate`, or by `savedAt` when a moment has no `eventDate`.
-- The post is an album with the caption `collectionCaption(label, subject, moments)`: the label, the subject, and one `sharedBy` line of at most 100 characters of words for each moment. The code cuts the caption at 1024 characters.
-- The code marks the due keys on the picked moment only. The code adds the message id of each album item to `memoryPostIds` of its own moment, so a reply to one photo adds a story to that photo's moment (section 4.4).
+- The capture call (section 6.3) returns `tags`: up to 5 short tags for what the moment is about. Tags are the names of people and pets, places, events, and activities, for example `["Lucy", "dog", "park"]`. Tags are never generic words, such as family, photo, or happy.
+- The prompt lists every tag that the family's moments already hold. The model reuses a listed tag when it means the same thing. The code keeps each tag once, whatever the case, and stores the list in `moment.tags`.
+- A moment without tags, such as a moment that was saved before this section, joins a collection only through a named request.
+- The collection of a group memory is the picked moment (section 4.3), plus the other moments that share the picked moment's most shared tag. The match ignores letter case. Only moments with a photo or a video join, and the code skips every sensitive moment.
+- A named request, such as "Anchor, I want a memory of Lucy", is a `memory` intent. The intent call returns `momentIds`: every moment about the person, the pet, the place, or the activity that the message names, from the titles and the tags. The moment list of the intent prompt shows the tags of each moment. The model can so add a moment that holds only "dog" to Lucy's collection. The collection holds the picked moments, with the label `fromRecord`.
+- A collection needs at least 2 moments. Otherwise, the memory posts the one moment as before. A picked moment without a picture never leads a collection.
+- The album holds at most 6 moments. The lead moment always stays in the album. The other places go to the moments with the highest salience. The album orders the moments oldest first, by `eventDate`, or by `savedAt` when a moment has no `eventDate`.
+- The post is an album with the caption `collectionCaption(label, tag, moments)`: the label, the shared tag, and one `sharedBy` line of at most 100 characters of words for each moment. The code cuts the caption at 1024 characters.
+- The code marks the due keys on the lead moment only. The code adds the message id of each album item to `memoryPostIds` of its own moment, so a reply to one photo adds a story to that photo's moment (section 4.4).
 - The 18:00 slot, `/memory`, and the `memory` intent ("Anchor, show us a memory") all post a collection when one exists.
-- A `memory` intent that names a person, a pet, or a subject, such as "Anchor, I want a memory of Lucy", posts the collection of the moment that the intent call picks, with the label `fromRecord`. The moment list of the intent prompt shows the `subject` of each moment.
 - The place of collections in the demo waits for the build. After the deploy, the team adds a beat, replaces a beat, or mentions collections in the close only.
 
 ## 5. Architecture

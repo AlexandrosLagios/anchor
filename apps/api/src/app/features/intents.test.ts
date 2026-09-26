@@ -279,18 +279,18 @@ test('group: memory posts a memory now, like /memory', async () => {
   expect(transport.sent.some((s) => s.message.text?.includes(lines.labels.fromRecord))).toBe(true);
 });
 
-test('group: a memory of a named subject posts the album of that subject, and the prompt lists each subject', async () => {
+test('group: a memory of a name posts the album of every moment the model picks, and the prompt lists the tags of each moment', async () => {
   const { transport, family, router } = setup();
   member(family);
-  const lucy = (id: string, savedAt: number) => moment({ id, subject: 'Lucy the dog', title: `Lucy ${id}`, photo: { id: `photo-${id}` }, savedAt });
-  family.moments.push(moment({ id: 'due', photo: { id: 'photo-due' }, savedAt: NOW - 7 * 86_400_000 }), lucy('l1', NOW - 2 * 86_400_000), lucy('l2', NOW));
-  vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'l2' });
+  const dog = (id: string, days: number, tags: string[]) => moment({ id, tags, title: `Dog ${id}`, photo: { id: `photo-${id}` }, savedAt: NOW - days * 86_400_000 });
+  family.moments.push(moment({ id: 'due', photo: { id: 'photo-due' }, savedAt: NOW - 7 * 86_400_000 }), dog('d1', 3, ['dog', 'park']), dog('l1', 2, ['Lucy', 'dog']), dog('l2', 1, ['Lucy']));
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'l2', momentIds: ['d1', 'l1', 'l2', 'nope'] });
 
   await router.route({ ...groupEvent, text: 'Anchor, I want a memory of Lucy' });
 
-  expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('subject: Lucy the dog');
-  expect(transport.sent[0].message.album).toEqual([{ photo: { id: 'photo-l1' } }, { photo: { id: 'photo-l2' } }]);
-  expect(transport.sent[0].message.text).toContain('Lucy the dog');
+  expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('tags: Lucy, dog');
+  expect(transport.sent[0].message.album).toEqual(['d1', 'l1', 'l2'].map((id) => ({ photo: { id: `photo-${id}` } })));
+  expect(transport.sent[0].message.text).toContain('Lucy');
 });
 
 test('group: a nxt:memory tap posts a memory with no model call', async () => {

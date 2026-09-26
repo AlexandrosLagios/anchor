@@ -77,7 +77,7 @@ export type Moment = {
   people: string[];
   eventDate?: string; // YYYY-MM-DD
   title: string;
-  subject?: string; // section 4.16: the recurring thing the moment is about, such as "Rex the dog"
+  tags?: string[]; // section 4.16: up to 5 names, pets, places, events, or activities, such as ["Lucy", "dog"]
   invitationVoice?: Media; // the TTS clip of invitation(sender, text)
   stories: Story[];
   lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'

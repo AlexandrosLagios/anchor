@@ -19,7 +19,7 @@ type Intent = (typeof INTENTS)[number];
 
 // section 6.7: one line per intent, with one example each; the demo phrases carry the wording
 const INTENT_EXAMPLES: Partial<Record<Intent, string>> = {
-  memory: '"Anchor, show us a memory" or "I want a memory of Lucy" asks Anchor to post a family memory now. When it names a person, a pet, or a subject, pick a moment about it.',
+  memory: '"Anchor, show us a memory" or "I want a memory of Lucy" asks Anchor to post a family memory now.',
   find: '"Anchor, when did Maria start school?" asks Anchor to find a moment and answer with it.',
   sendMe: '"Anchor, can you send me the family photos?" or "Send me a moment" asks Anchor to send a moment in private. Never memory.',
   missed: '"What did I miss?" asks for the moments the family shared since the person last talked to Anchor.',
@@ -36,8 +36,9 @@ function schemaFor(momentIds: string[]) {
     properties: {
       intent: { type: 'string', enum: [...INTENTS] },
       momentId: { type: 'string', enum: [...momentIds, 'none'] },
+      momentIds: { type: 'array', items: { type: 'string', enum: [...momentIds, 'none'] } },
     },
-    required: ['intent', 'momentId'],
+    required: ['intent', 'momentId', 'momentIds'],
   };
 }
 
@@ -49,6 +50,7 @@ function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean,
     'Pick the intent that best matches the message:',
     ...Object.entries(INTENT_EXAMPLES).map(([intent, example]) => `- ${intent}: ${example}`),
     'Pick the id of the moment the message names or asks about, or "none" when it names none.',
+    'For memory, when the message names a person, a pet, a place, or an activity, list in momentIds every moment about it, from the titles and the tags. Otherwise, momentIds is empty.',
     ...moments.map(choiceLine),
   ].join('\n');
 }
@@ -60,19 +62,20 @@ async function readIntent(
   text: string,
   moments: Moment[],
   ctx: Context,
-): Promise<{ intent: Intent; momentId?: string }> {
+): Promise<{ intent: Intent; momentId?: string; momentIds: string[] }> {
   const momentIds = moments.map((moment) => moment.id);
   const schema = schemaFor(momentIds);
   try {
     const clip = event.voice ? await ctx.transport(family.id).download(event.voice) : undefined;
     const prompt = buildPrompt(chat, text, !!event.voice, moments);
-    const answer = await model.ask<{ intent?: unknown; momentId?: unknown }>(prompt, schema, clip ? { media: [clip] } : {});
+    const answer = await model.ask<{ intent?: unknown; momentId?: unknown; momentIds?: unknown }>(prompt, schema, clip ? { media: [clip] } : {});
     const intent = model.valid.oneOf(answer.intent, INTENTS) ?? 'unclear';
     const momentId = model.valid.oneOf(answer.momentId, [...momentIds, 'none']);
-    return { intent, momentId };
+    const picked = Array.isArray(answer.momentIds) ? answer.momentIds.filter((id) => momentIds.includes(id)) : [];
+    return { intent, momentId, momentIds: picked };
   } catch (error) {
     logger.warn(`intent call failed: ${error}`);
-    return { intent: 'unclear' };
+    return { intent: 'unclear', momentIds: [] };
   }
 }
 
@@ -96,10 +99,11 @@ async function groupAction(
   family: Family,
   member: Member,
   ctx: Context,
+  momentIds: string[],
 ): Promise<boolean> {
   switch (intent) {
     case 'memory':
-      await postMemoryNow(family, ctx, findAsked(family, momentId));
+      await postMemoryNow(family, ctx, [...new Set([momentId, ...momentIds])].flatMap((id) => findAsked(family, id) ?? []));
       return true;
     case 'find': {
       const moment = findAsked(family, momentId);
@@ -149,8 +153,10 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
   const fixed = event.voice ? undefined : fixedIntent(question);
-  const { intent, momentId } = fixed ? { intent: fixed, momentId: undefined } : await readIntent(family, event, 'group', question, moments, ctx);
-  return groupAction(intent, momentId, event, family, member, ctx);
+  const { intent, momentId, momentIds } = fixed
+    ? { intent: fixed, momentId: undefined, momentIds: [] }
+    : await readIntent(family, event, 'group', question, moments, ctx);
+  return groupAction(intent, momentId, event, family, member, ctx, momentIds);
 }
 
 async function unclearPrivate(family: Family, member: Member, ctx: Context): Promise<boolean> {
