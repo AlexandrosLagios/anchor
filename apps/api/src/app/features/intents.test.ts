@@ -372,6 +372,30 @@ test('group: an unaddressed message without a memory word, without a subject the
   expect(model.ask).not.toHaveBeenCalled();
 });
 
+test('group: "Give me a memory" names no subject and no "Anchor,", and still posts a memory with no model call', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  family.moments.push(moment());
+  const phrasings = [
+    'Give me a memory',
+    'show us a moment!',
+    'Anchor, give me another memory',
+    'Can you show me some memories?',
+    'Can we have a memory?',
+    'I’d like a family memory please',
+    'any memories?',
+    'Tell us a memory',
+  ];
+  const familyTalk = ['Show us some photos', 'Memories!', 'A moment please', 'Send me a moment', 'Such lovely memories'];
+
+  for (const text of phrasings) await router.route({ ...groupEvent, text });
+  await router.route({ ...groupEvent, text: 'Give me a memory', replyTo: 'm-person' });
+  for (const text of familyTalk) await router.route({ ...groupEvent, text });
+
+  expect(model.ask).not.toHaveBeenCalled();
+  expect(transport.sent.filter((s) => s.message.text?.includes(lines.labels.fromRecord))).toHaveLength(phrasings.length);
+});
+
 test('group: a nxt:memory tap posts a memory with no model call', async () => {
   const { transport, family, router } = setup();
   family.moments.push(moment());

@@ -20,6 +20,10 @@ const logger = new Logger('Intents');
 const SEVEN_DAYS_MS = 7 * 86_400_000;
 const ABOUT = /\b(?:of|about|with)\b/i;
 const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums?|show (?:me|us))\b/i;
+// "Give me a memory", "can we have a moment?", or "any memories?" asks for any memory and only makes sense to Anchor, so it posts one without
+// "Anchor," or a subject; a bare "Memories!" or "a moment please" stays family talk
+const ANY_MEMORY =
+  /^(?:(?:can|could|would|will) you |please )?(?:(?:(?:show|give|share|post|tell)(?: me| us)?|send us|(?:i|we)(?: want| would like|['’]d like)|(?:can|could|may) (?:i|we) (?:have|see|get)) (?:(?:a|another|some|any|one more) )?(?:family )?(?:memor(?:y|ies)|moments?)|(?:a|another|some|any|one more) (?:family )?memor(?:y|ies))(?: please)?[?.!]*$/i;
 // "more memories of Lucy" leaves out the moments of the latest group memory
 const MORE = /\b(?:more|other|others|another|else|different)\b/i;
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -218,12 +222,13 @@ async function groupAction(
 }
 
 async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<boolean> {
-  if (event.button === 'nxt:memory') {
+  const text = event.text ?? '';
+  const anyMemory = !event.forwarded && event.replyTo === undefined && ANY_MEMORY.test(text.replace(ADDRESS, '').trim());
+  if (event.button === 'nxt:memory' || anyMemory) {
     await postMemoryNow(family, ctx);
     return true;
   }
 
-  const text = event.text ?? '';
   const addressed = ADDRESS.test(text);
   // section 4.16: a message without "Anchor," reaches the intent call only when it asks about memories or photos of a subject that the record
   // knows, and never as a reply to a person

@@ -403,6 +403,9 @@ A group memory brings back several moments about one thing together, as a photo 
   - A message with "of", "about", or "with" can also name the subject with a word of a title or a picture description, so "memories of the dog" finds a Lucy moment whose picture shows a dog. The code skips filler words, such as "the" and "with".
   - An unaddressed `memory` gets an answer only when the intent call picks at least one moment.
   - "Show me" and "show us" count as memory words, so "Show me Lucy" reaches the intent call.
+  - A general request, such as "Give me a memory", "Can we have a memory?", or "any memories?", names no subject but only makes sense to Anchor. The code posts a memory for it, with or without "Anchor,", and without a model call.
+  - A general request is the whole message. It asks with a verb, such as "show us", "tell me", "I want", or "can we have", for a memory or a moment. Without a verb, "a memory", "another memory", or "any memories" also counts.
+  - "Show us some photos", a bare "Memories!", "A moment please", and a reply to a person stay family talk.
 - `family.lastShown` holds the moment ids of the latest group memory. A request with "more", "other", "another", "else", or "different" leaves out those moments. When the intent call picks only moments from `lastShown`, Anchor replies `noMoreMoments`.
   - The prompt tells the model that the message does not name Anchor and that the family may be talking to each other. The model picks `memory` only for a request for family memories, photos, or moments.
   - Anchor answers such a message only when the intent is `memory`. Any other intent gets no answer at all, and the message goes on to `capture`. A fixed phrase never decides for a message without "Anchor,".
