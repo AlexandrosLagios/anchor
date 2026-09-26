@@ -151,7 +151,7 @@ v2: the `intents` feature takes the position of `ask` and reads every phrase. No
 - The `forget` feature still runs first with its exact patterns. `intents` handles the looser wordings through a function that `capture.ts` exports.
 - `missed` with no `seenAt` counts the moments of the last 7 demo-clock days.
 - Next-step buttons: every private answer ends with 2 or 3 buttons for the likely next step. The code picks the buttons, never the model. The button data starts with `nxt:`, and a tap acts like the intent of the button.
-  - Private next steps: "Another moment" (`sendMe`), "What did I miss?" (`missed`), "My settings" (`settings`), and "Call me" (`callMe`) when the member has `choices.call`.
+  - Private next steps: "Send me a moment" (`sendMe`), "What did I miss?" (`missed`), "My settings" (`settings`), and "Call me" (`callMe`) when the member has `choices.call`.
   - Group next steps: "Show us a memory" (`memory`), and the URL button "Choose what I send you".
 - A failed call, or an invalid intent, counts as `unclear`. No message gets an error.
 
