@@ -198,6 +198,22 @@ test('a captured moment keeps the tags from the model', async () => {
   expect(family.moments[0].tags).toEqual(['Lucy', 'dog']);
 });
 
+test('a captured photo keeps the description from the model, and a moment without a picture has none', async () => {
+  const description = 'The photo shows a girl with a red backpack at a school gate.';
+  (ask as Mock).mockResolvedValue({ ...classification, description });
+  transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });
+  await capture.handle(event({ photo: { id: 'photo-1' }, text: 'Maria on her first day' }), family, ctx);
+  advance(BUNDLE_GAP_MS);
+  await tick();
+  await capture.handle(event({ sender: { id: 'eleni', name: 'Eleni' }, text: 'Maria loved her first day' }), family, ctx);
+  advance(BUNDLE_GAP_MS);
+  await tick();
+
+  expect(family.moments).toHaveLength(2);
+  expect(family.moments[0].description).toBe(description);
+  expect(family.moments[1]).not.toHaveProperty('description');
+});
+
 test('a bare photo becomes a wordless moment 5 minutes later: ask gets the photo, the text is the title, and it gets a heart', async () => {
   (ask as Mock).mockResolvedValue(classification);
   transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });

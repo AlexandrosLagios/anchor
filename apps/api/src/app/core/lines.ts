@@ -28,6 +28,9 @@ function sharedBy(moment: Moment, max = 600): string {
   return `${moment.by.name} shared ${kind}: ${moment.title}`;
 }
 
+// the voice says the description after the sharer's words, so a member who cannot see the picture well hears what it shows
+const invite = (moment: Moment, description?: string) => [sharedBy(moment), description, 'What does it remind you of?'].filter(Boolean).join('\n');
+
 // "Nikos", "Nikos and Eleni", or "Nikos, Eleni, and Maria"
 const list = new Intl.ListFormat('en');
 const and = (names: string[]) => list.format(names);
@@ -64,7 +67,8 @@ export const lines = {
   nothingNew: "You're up to date 💛 Nothing new since we last talked.",
   callFailed: "I couldn't ring you just now. Shall I send you a moment here instead?",
   sharedBy,
-  invitation: (moment: Moment) => `${sharedBy(moment)}\nWhat does it remind you of?`,
+  invitation: (moment: Moment) => invite(moment),
+  spokenInvitation: (moment: Moment) => invite(moment, moment.description),
   collectionReply: 'Reply to a photo to add your story.',
   // section 4.16: the fallback when the model writes no caption
   collectionCaption: (label: string, tag: string, moments: Moment[]) =>

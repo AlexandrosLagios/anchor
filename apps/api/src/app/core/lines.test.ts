@@ -44,6 +44,15 @@ test('a moment with words keeps the quoting lines byte for byte', () => {
   );
 });
 
+test("spokenInvitation says the description after the sharer's words, and the text invitation holds none", () => {
+  const described = moment({ photo: { id: 'p1' }, description: 'The photo shows a girl with a red backpack at a school gate.' });
+  expect(lines.spokenInvitation(described)).toBe(
+    'Sofia shared: «Maria on her first day»\nThe photo shows a girl with a red backpack at a school gate.\nWhat does it remind you of?',
+  );
+  expect(lines.invitation(described)).toBe('Sofia shared: «Maria on her first day»\nWhat does it remind you of?');
+  expect(lines.spokenInvitation(moment())).toBe(lines.invitation(moment()));
+});
+
 test('a wordless photo goes through memoryCaption, invitation, and echoCaption with the photo phrase and no quote mark', () => {
   const photo = wordless({ photo: { id: 'p1' } });
   const outputs = [

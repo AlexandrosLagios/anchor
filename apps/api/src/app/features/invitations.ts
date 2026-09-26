@@ -118,7 +118,7 @@ async function deliver(family: Family, member: Member, moment: Moment, at: numbe
     if (picture) await post(picture).catch((error) => warnUnlessBlocked(error, `The picture of moment ${moment.id}`));
     if (!open()) return;
     try {
-      const voice = moment.invitationVoice ?? { wav: await speak(text, VOICE_STYLE) };
+      const voice = moment.invitationVoice ?? { wav: await speak(lines.spokenInvitation(moment), VOICE_STYLE) };
       if (!open()) return;
       const sent = await post({ voice, text, buttons });
       moment.invitationVoice ??= sent.voice;

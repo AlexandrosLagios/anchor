@@ -216,6 +216,14 @@ test('a reminder call reads the reminder, then the newest moment, and shares the
   expect(texts()).toContainEqual(['-100', lines.storyAdded('Nikos', 'Eleni', 'Kostas held his dad’s hand.')]);
 });
 
+test('the call opener says the description of the photo after the invitation', async () => {
+  family.moments[1].description = 'The photo shows a girl with a red backpack at a school gate.';
+  await callMember(family, nikos, ctx);
+  expect(script().opener).toBe(
+    "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person. Eleni shared: «Maria's first day of school!» The photo shows a girl with a red backpack at a school gate. What does it remind you of?",
+  );
+});
+
 test('a call skips a moment that already holds a story by the member', async () => {
   family.moments[1].stories.push({ id: 's1', by: { id: '7', name: 'Nikos' }, at: NOW, text: 'We cried.', messageIds: ['60'] });
   await callMember(family, nikos, ctx);

@@ -34,6 +34,7 @@ const valid = {
   title: "Maria's first day at school",
   tags: ['Maria', 'school'],
   transcript: '',
+  description: 'The photo shows a girl with a red backpack at a school gate.',
 };
 
 beforeEach(() => {
@@ -81,6 +82,36 @@ test('validate rejects a family_moment or a sensitive verdict with an empty titl
 test('validate keeps a trimmed transcript', () => {
   expect(validate({ ...valid, transcript: '  hello  ' })?.transcript).toBe('hello');
   expect(validate({ ...valid, transcript: 3 })?.transcript).toBe('');
+});
+
+test('validate keeps a trimmed description, and turns an empty or missing one into undefined', () => {
+  expect(validate({ ...valid, description: '  The photo shows a dog.  ' })?.description).toBe('The photo shows a dog.');
+  expect(validate({ ...valid, description: '' })?.description).toBeUndefined();
+  expect(validate({ ...valid, description: undefined })?.description).toBeUndefined();
+});
+
+test('classify asks for a description that starts with "The photo shows", or with "The video shows" for a video frame', async () => {
+  const transport = new FakeTransport();
+  transport.files.set('photo-1', { data: Buffer.from('photo'), mimeType: 'image/jpeg' });
+  transport.files.set('thumb-1', { data: Buffer.from('thumb'), mimeType: 'image/jpeg' });
+  (ask as Mock).mockResolvedValue(valid);
+
+  await classify(bundle([event({ photo: { id: 'photo-1' } })]), transport);
+  await classify(bundle([event({ video: { id: 'video-1' }, thumbnail: { id: 'thumb-1' } })]), transport);
+
+  const [[photoPrompt, schema], [videoPrompt]] = (ask as Mock).mock.calls;
+  expect(photoPrompt).toContain('starts with "The photo shows"');
+  expect(videoPrompt).toContain('starts with "The video shows"');
+  expect(schema.required).toContain('description');
+});
+
+test('classify drops the description when the model saw no picture, or when the sentence does not start with the picture words', async () => {
+  const transport = new FakeTransport();
+  transport.files.set('photo-1', { data: Buffer.from('photo'), mimeType: 'image/jpeg' });
+  (ask as Mock).mockResolvedValueOnce(valid).mockResolvedValueOnce({ ...valid, description: 'A girl with a red backpack.' });
+
+  expect((await classify(bundle([event({ text: 'Maria on her first day' })]), transport))?.description).toBeUndefined();
+  expect((await classify(bundle([event({ photo: { id: 'photo-1' } })]), transport))?.description).toBeUndefined();
 });
 
 test('classify downloads the photo and the voice note, and calls ask once with the typed text and the sender name', async () => {
