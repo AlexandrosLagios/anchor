@@ -86,9 +86,9 @@ The call in beat 6 reads the due reminder and then the newest moment that Sofia 
 
 "Isn't a bot in the family chat annoying?"
 
-- Anchor answers a message that names Anchor. A message without "Anchor," gets an answer only when it asks for memories or photos, and the model agrees that it is a request. When Anchor is unsure, it says nothing. It never answers "I didn't understand" to family talk.
+- Anchor answers a message that names Anchor. A message without "Anchor," gets an answer only when it asks for memories or photos of someone or something already in the family record, and the model agrees that it is a request. When Anchor is unsure, it says nothing. It never answers "I didn't understand" to family talk.
 - A reply between two people never reaches Anchor.
-- In a test on 2026-09-26, 12 of 14 memory requests got the album, and 0 of 10 ordinary messages, such as "Photos of the trip are on Drive", got an answer.
+- In a replay on the live family record on 2026-09-26, 10 of 12 memory requests got the album, and 0 of 14 ordinary messages got an answer, among them photo questions to a person, such as "Can you send me the photos from yesterday?".
 - Every offer has an easy no, an unanswered offer fades, and "stop" turns Anchor off for one person.
 
 ## If a beat fails

@@ -308,9 +308,9 @@ test('group: "send me photos of Lucy" names a subject, so it goes to the model a
 test('group: a memory request needs no "Anchor," in many phrasings, and the intent call learns that the message does not name Anchor', async () => {
   const { transport, family, router } = setup();
   member(family);
-  family.moments.push(moment({ id: 'l1', tags: ['Lucy'], photo: { id: 'photo-l1' } }), moment({ id: 'l2', tags: ['Lucy'], photo: { id: 'photo-l2' } }));
+  family.moments.push(moment({ id: 'l1', tags: ['Lucy', 'Λύση'], photo: { id: 'photo-l1' } }), moment({ id: 'l2', tags: ['Lucy'], photo: { id: 'photo-l2' } }));
   vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'none', momentIds: ['l1', 'l2'] });
-  const phrasings = ['a memory of Lucy?', 'Give me memories of Lucy', 'do you have pictures of Lucy?', 'show us Lucy', 'send me a moment with Lucy'];
+  const phrasings = ['a memory of Lucy?', 'Give me memories of Lucy', 'do you have pictures of Lucy?', 'Λύση photos?', 'send me a moment with Lucy'];
 
   for (const text of phrasings) await router.route({ ...groupEvent, text });
 
@@ -330,11 +330,15 @@ test('group: an unaddressed message that the intent call does not read as a memo
   expect(transport.sent).toEqual([]);
 });
 
-test('group: an unaddressed message without a memory word, or a reply to a person, never reaches the model', async () => {
+test('group: an unaddressed message without a memory word, without a subject the record knows, or as a reply, never reaches the model', async () => {
   const { family, router } = setup();
   member(family);
+  family.moments.push(moment({ tags: ['Lucy'], people: ['Maria'] }));
 
   await router.route({ ...groupEvent, text: 'See you at lunch tomorrow' });
+  await router.route({ ...groupEvent, text: 'Do you remember Lucy as a puppy?' });
+  await router.route({ ...groupEvent, text: 'Can you send me the photos from yesterday?' });
+  await router.route({ ...groupEvent, text: 'Lucyana sent photos' });
   await router.route({ ...groupEvent, text: 'Send me the photos of Lucy later', replyTo: 'm-person' });
 
   expect(model.ask).not.toHaveBeenCalled();

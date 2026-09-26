@@ -156,6 +156,7 @@ test('classify lists the tags the family already uses, once each, so the model r
 
   const [prompt, schema] = (ask as Mock).mock.calls[0];
   expect(prompt).toContain('Tags the family already uses: Bella; cat; The beach house');
+  expect(prompt).toContain('- small_talk: chatter, jokes, reactions, arguments, and questions or requests to Anchor, such as "a memory of Lucy?".');
   expect(schema.properties.tags).toEqual({ type: 'array', items: { type: 'string' } });
 });
 
