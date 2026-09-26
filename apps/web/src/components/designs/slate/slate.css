@@ -1,13 +1,13 @@
-/* Slate — site-wide dark shell (homepage hero + shared layout) */
+/* Slate — site-wide shell (homepage hero + shared layout), maps to design tokens */
 
 .slate {
-  --slate-bg: #1a1a1a;
-  --slate-text: #f2f0eb;
-  --slate-muted: #c4bfb5;
-  --slate-sand: #c9a77a;
-  --slate-sand-text: #1a1a1a;
-  --slate-focus: #e0c49a;
-  --slate-border: #6e6e6e;
+  --slate-bg: var(--bg);
+  --slate-text: var(--ink);
+  --slate-muted: var(--ink-muted);
+  --slate-sand: var(--brand);
+  --slate-sand-text: #ffffff;
+  --slate-focus: var(--brand-mid);
+  --slate-border: var(--line);
 }
 
 .slate-main {
@@ -38,11 +38,11 @@
 
 .slate-heading {
   margin: 0 0 1.25rem;
-  font-family: Newsreader, ui-serif, Georgia, serif;
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-family: var(--display);
+  font-size: var(--text-h1);
   font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
   color: var(--slate-text);
 }
 
@@ -141,20 +141,21 @@
 
 .slate-brand {
   margin: 0 0 1.25rem;
-  font-family: Newsreader, ui-serif, Georgia, serif;
-  font-size: clamp(3.5rem, 12vw, 6.5rem);
+  font-family: var(--display);
+  font-size: var(--text-display);
   font-weight: 600;
   line-height: 0.95;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-display);
   color: var(--slate-text);
 }
 
 .slate-line {
   margin: 0 0 1rem;
-  font-family: Figtree, ui-sans-serif, sans-serif;
-  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+  font-family: var(--font);
+  font-size: var(--text-title);
   font-weight: 500;
   line-height: 1.3;
+  letter-spacing: var(--tracking-tight);
   color: var(--slate-text);
 }
 
@@ -173,43 +174,7 @@
   gap: 0.85rem 1.25rem;
 }
 
-.slate-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.75rem;
-  padding: 0.65rem 1.25rem;
-  font-family: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.2;
-  text-decoration: none;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-
-.slate-btn-primary {
-  background: var(--slate-sand);
-  color: var(--slate-sand-text);
-  border-color: var(--slate-sand);
-}
-
-.slate-btn-primary:hover {
-  background: var(--slate-focus);
-  border-color: var(--slate-focus);
-  color: var(--slate-sand-text);
-}
-
-.slate-btn-ghost {
-  background: transparent;
-  color: var(--slate-text);
-  border-color: var(--slate-border);
-}
-
-.slate-btn-ghost:hover {
-  border-color: var(--slate-muted);
-  color: var(--slate-text);
-}
+/* .slate-btn / primary / ghost styles live in tokens.css */
 
 .slate-link {
   color: var(--slate-sand);
