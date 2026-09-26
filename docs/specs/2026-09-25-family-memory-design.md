@@ -376,7 +376,7 @@ A group memory brings back several moments of one subject together, as a photo a
 - The post is an album with the caption `collectionCaption(label, subject, moments)`: the label, the subject, and one `sharedBy` line for each moment. The code cuts the caption at 1024 characters.
 - The code marks the due keys on the picked moment only. The code adds the message id of each album item to `memoryPostIds` of its own moment, so a reply to one photo adds a story to that photo's moment (section 4.4).
 - The 18:00 slot, `/memory`, and the `memory` intent ("Anchor, show us a memory") all post a collection when one exists.
-- The demo shows no collection on stage. The Closer mentions collections in one sentence after the deploy, and the team answers questions about them in the Q&A.
+- The place of collections in the demo waits for the build. After the deploy, the team adds a beat, replaces a beat, or mentions collections in the close only.
 
 ## 5. Architecture
 
