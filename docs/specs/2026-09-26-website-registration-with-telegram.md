@@ -72,7 +72,7 @@ Owner: `apps/web` owner. Bot side: Alexandros. Date: 2026-09-26.
 
 Dev bot = separate Client ID (audience = bot id).
 
-**Bot API (built by Alexandros; mock until live)**
+**Bot API (built by Alexandros in `apps/api/src/app/web.ts`)**
 
 Base URL: `https://anchor-bot-tl7qfnc7aq-ew.a.run.app`. Every request: `Authorization: Bearer <id_token>`.
 

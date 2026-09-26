@@ -278,7 +278,7 @@
   <li><strong>After.</strong> The story is the member's side only, cut before the share question, so "yes, share it" never reaches the clip. Sentences like "I don't remember" drop out, and a story that lost a sentence goes out as words only, because the voice would still say it. The audio becomes a voice note for the member, and the group post reuses its file id.</li>
 </ol>
 <p><strong>The warm handoff.</strong> Every call ends with a way to reach a person. When the sharer has a phone number on file, Anchor asks "Shall I connect you to Eleni now?", says goodbye, and moves the live call to Eleni's phone with a <code>&lt;Dial&gt;</code>, which also takes Anchor out of the call. When Eleni does not pick up within 20 seconds, the group gets "Eleni, Sofia would love a call from you 💛". Without a phone number for the sharer, Anchor asks whether to tell the sharer instead.</p>
-<p><strong>Security.</strong> Twilio's WebSocket needs a public service. <code>ANCHOR_BOT_ONLY=true</code> makes the process answer 404 to every request except <code>GET /</code> and the stream upgrade, so the old prototype routes stay unreachable. The registration design adds <code>/web/*</code> to the requests that pass.</p>
+<p><strong>Security.</strong> Twilio's WebSocket needs a public service. <code>ANCHOR_BOT_ONLY=true</code> makes the process answer 404 to every request except <code>GET /</code>, the stream upgrade, and the <code>/web/*</code> API of the website, so the old prototype routes stay unreachable.</p>
 
 <h2 id="model">10. The model layer</h2>
 
@@ -308,7 +308,7 @@
 <h2 id="web">13. Registration on the website</h2>
 
 <div class="callout">
-  <p><strong>Status.</strong> This section follows the design in <code>docs/specs/2026-09-26-website-registration-with-telegram.md</code>. The website side merged in <code>63b19da</code>. The bot side, the <code>/web</code> API, is not built yet, and the live bot answers 404 to it.</p>
+  <p><strong>Status.</strong> This section follows the design in <code>docs/specs/2026-09-26-website-registration-with-telegram.md</code>. The website side merged in <code>63b19da</code>. The bot side, the <code>/web</code> API, lives in <code>apps/api/src/app/web.ts</code>. The live bot answers 404 to it until a deploy includes it.</p>
 </div>
 
 <p><code>apps/web</code> is an Astro and React site on Vercel. A family member registers there with Telegram, not with an email and a password. The Telegram user id is the only identity. Two registrations meant two identities and two families with different members, so the email accounts left the website. The "Choose what I send you" button in the group stays a way to join.</p>

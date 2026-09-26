@@ -36,8 +36,9 @@ async function bootstrap() {
     allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
   });
   if (process.env.ANCHOR_BOT_ONLY === 'true') {
-    // the public bot answers only its health check over HTTP, so the website API and the WhatsApp webhook stay closed
-    app.use((request: Request, response: Response, next: NextFunction) => (request.method === 'GET' && request.path === '/' ? next() : response.status(404).end()));
+    // the public bot answers only its health check and the Telegram-signed /web API over HTTP, so the email API and the WhatsApp webhook stay closed
+    const open = (request: Request) => (request.method === 'GET' && request.path === '/') || request.path.startsWith('/web/');
+    app.use((request: Request, response: Response, next: NextFunction) => (open(request) ? next() : response.status(404).end()));
   }
   attachCallStream(app.getHttpServer());
   const port = process.env.PORT || 3000;

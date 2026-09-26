@@ -11,9 +11,10 @@ import { FamilyService } from './family.service';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
 import { UserStoreService } from './user-store.service';
+import { WebController } from './web.controller';
 
 @Module({
-  controllers: [RootController, AnchorController, AuthController, FilesController, FamiliesController],
+  controllers: [RootController, AnchorController, AuthController, FilesController, FamiliesController, WebController],
   providers: [AnchorService, UserStoreService, AuthService, AuthGuard, FilesService, FamilyService, FamiliesService, ChatService],
 })
 export class AppModule {}
