@@ -202,6 +202,12 @@ test('a reminder call without a moment to talk about reads the reminder in the s
   expect(texts()).toEqual([['7', lines.calling]]);
 });
 
+test('a birthday reminder call says the birthday line, not the words of the message', async () => {
+  family.moments = family.moments.filter((m) => m.by.id === '7');
+  expect(await callMember(family, nikos, ctx, reminder({ birthday: 'Maria', text: "Maria's birthday is on the 30th" }))).toBe(true);
+  expect(script().opener).toBe("Hello Nikos, this is Anchor, the family's record keeper. I'm not a person. Today is Maria's birthday.");
+});
+
 test('a reminder call reads the reminder, then the newest moment, and shares the story', async () => {
   expect(await callMember(family, nikos, ctx, reminder({}))).toBe(true);
   expect(script().opener).toBe(

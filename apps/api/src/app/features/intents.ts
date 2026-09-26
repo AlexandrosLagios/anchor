@@ -10,21 +10,39 @@ import { callMember } from './calls';
 import { sendMe } from './invitations';
 import { postMemoryNow } from './memories';
 import { groupNextSteps, nextSteps, nudge, showChoices, stopMember } from './members';
+import { birthdaysThisMonth } from './reminders/birthdays';
+import { TIME_RULE } from './reminders/offer';
+import { makeOffer, offerInPrivate } from './reminders/reminders';
+import { TIME } from './reminders/rules';
+import { answerTalk } from './talk';
 
 const logger = new Logger('Intents');
 const SEVEN_DAYS_MS = 7 * 86_400_000;
+const BIRTHDAYS = /\bbirthdays\b/i;
+const SETTINGS = /\b(?:settings|preferences|choices)\b/i;
+const ABOUT = /\b(?:of|about|with)\b/i;
 const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums?)\b/i;
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// ponytail: one regex per tag and person on each gated message; build one alternation when a record reaches thousands of tags
-const namesKnownSubject = (family: Family, text: string) =>
-  family.moments.some(
+// the words of a title or a description that name no subject, so "photos of the trip" never matches "The photo shows the sea"
+const FILLER = new Set(['the', 'and', 'with', 'from', 'for', 'her', 'his', 'its', 'our', 'their', 'this', 'that', 'near', 'next', 'into', 'onto', 'over', 'under', 'one', 'two', 'some', 'other', 'shows', 'photo', 'video']);
+const subjectWords = (moment: Moment) =>
+  `${moment.title} ${moment.description ?? ''}`.split(/[^\p{L}\p{N}'’-]+/u).filter((word) => !FILLER.has(word.toLowerCase()));
+
+// ponytail: one regex per tag, person, and title word on each gated message; build one alternation when a record reaches thousands of moments
+// title and picture words count only in a request about a subject, so "the photos when I get home" never reaches the intent call
+function namesKnownSubject(family: Family, text: string): boolean {
+  const about = ABOUT.test(text);
+  return family.moments.some(
     (moment) =>
       !moment.sensitive &&
-      [...(moment.tags ?? []), ...moment.people].some((name) => name.length > 2 && new RegExp(`(?<![\\p{L}\\p{N}])${escaped(name)}(?![\\p{L}\\p{N}])`, 'iu').test(text)),
+      [...(moment.tags ?? []), ...moment.people, ...(about ? subjectWords(moment) : [])].some(
+        (name) => name.length > 2 && new RegExp(`(?<![\\p{L}\\p{N}])${escaped(name)}(?![\\p{L}\\p{N}])`, 'iu').test(text),
+      ),
   );
+}
 
-const INTENTS = ['memory', 'find', 'sendMe', 'missed', 'settings', 'stop', 'callMe', 'forget', 'quiet', 'unclear'] as const;
+const INTENTS = ['memory', 'find', 'sendMe', 'missed', 'settings', 'stop', 'callMe', 'forget', 'quiet', 'remind', 'birthdays', 'talk', 'unclear'] as const;
 type Intent = (typeof INTENTS)[number];
 
 // section 6.7: one line per intent, with one example each; the demo phrases carry the wording
@@ -38,17 +56,23 @@ const INTENT_EXAMPLES: Partial<Record<Intent, string>> = {
   callMe: '"Call me" asks Anchor to ring the person on the phone.',
   forget: '"Anchor, delete that" or "Anchor, forget that one" asks Anchor to delete a moment.',
   quiet: "\"Anchor, don't show me that one again\" asks Anchor to keep a moment without bringing it back.",
+  remind: '"Remind me about my pills" or "remind me to call Eleni tonight" asks Anchor to remind the person of something.',
+  birthdays: '"Remind me about this month\'s birthdays" or "whose birthday is coming up?" asks about the family birthdays. Never remind.',
+  talk: '"Tell me about Lucy", "When is lunch on Sunday?", or "How are you?" is a question or a chat that Anchor answers in words. Only in a private chat.',
 };
 
-function schemaFor(momentIds: string[]) {
+// a text message needs no transcript, so only a voice note asks the model to write one
+function schemaFor(momentIds: string[], hasVoice: boolean) {
   return {
     type: 'object',
     properties: {
       intent: { type: 'string', enum: [...INTENTS] },
       momentId: { type: 'string', enum: [...momentIds, 'none'] },
       momentIds: { type: 'array', items: { type: 'string', enum: [...momentIds, 'none'] } },
+      time: { type: 'string' },
+      ...(hasVoice ? { transcript: { type: 'string' } } : {}),
     },
-    required: ['intent', 'momentId', 'momentIds'],
+    required: ['intent', 'momentId', 'momentIds', 'time', ...(hasVoice ? ['transcript'] : [])],
   };
 }
 
@@ -59,12 +83,20 @@ function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean,
     `You are Anchor, the keeper of this family's record. This message came from ${where}${hasVoice ? ', as a voice note' : ''}: "${text}"`,
     ...(addressed
       ? []
-      : ['The message does not name Anchor, and the family may be talking to each other. Pick memory only when the message asks for family memories, photos, or moments. Otherwise, pick unclear.']),
+      : [
+          'The message does not name Anchor, and the family may be talking to each other. Pick memory when the message asks for family memories, photos, or moments, ' +
+            'also in a short phrase such as "memories of the dog" or "photos of Lucy?". Otherwise, pick unclear.',
+        ]),
     'Pick the intent that best matches the message:',
-    ...Object.entries(INTENT_EXAMPLES).map(([intent, example]) => `- ${intent}: ${example}`),
+    ...Object.entries(INTENT_EXAMPLES)
+      .filter(([intent]) => chat === 'private' || intent !== 'talk')
+      .map(([intent, example]) => `- ${intent}: ${example}`),
     'Pick the id of the moment the message names or asks about, or "none" when it names none.',
     'For memory, when the message names a person, a pet, a place, or an activity, list in momentIds every moment about it, from the titles and the tags. ' +
-      'Include a moment that names the same person or pet only by a general word, such as a "dog" moment when another moment shows that the family dog is Lucy. Otherwise, momentIds is empty.',
+      'Include a moment that names the same person or pet only by a general word, such as a "dog" moment when another moment shows that the family dog is Lucy, ' +
+      'and for a general word such as "the dog", include every moment about the family dog by its name. Otherwise, momentIds is empty.',
+    `For remind: ${TIME_RULE} For any other intent, time is empty.`,
+    ...(hasVoice ? ['Set transcript to the words of the voice note.'] : []),
     ...moments.map(choiceLine),
   ].join('\n');
 }
@@ -77,17 +109,22 @@ async function readIntent(
   moments: Moment[],
   ctx: Context,
   addressed = true,
-): Promise<{ intent: Intent; momentId?: string; momentIds: string[] }> {
+): Promise<{ intent: Intent; momentId?: string; momentIds: string[]; time?: string; transcript?: string }> {
   const momentIds = moments.map((moment) => moment.id);
-  const schema = schemaFor(momentIds);
+  const schema = schemaFor(momentIds, !!event.voice);
   try {
     const clip = event.voice ? await ctx.transport(family.id).download(event.voice) : undefined;
     const prompt = buildPrompt(chat, text, !!event.voice, moments, addressed);
-    const answer = await model.ask<{ intent?: unknown; momentId?: unknown; momentIds?: unknown }>(prompt, schema, clip ? { media: [clip] } : {});
+    const answer = await model.ask<{ intent?: unknown; momentId?: unknown; momentIds?: unknown; time?: unknown; transcript?: unknown }>(
+      prompt,
+      schema,
+      clip ? { media: [clip] } : {},
+    );
     const intent = model.valid.oneOf(answer.intent, INTENTS) ?? 'unclear';
     const momentId = model.valid.oneOf(answer.momentId, [...momentIds, 'none']);
     const picked = Array.isArray(answer.momentIds) ? answer.momentIds.filter((id) => momentIds.includes(id)) : [];
-    return { intent, momentId, momentIds: picked };
+    const time = typeof answer.time === 'string' && TIME.test(answer.time) ? answer.time : '';
+    return { intent, momentId, momentIds: picked, time, transcript: model.valid.text(answer.transcript, 2000) || undefined };
   } catch (error) {
     logger.warn(`intent call failed: ${error}`);
     return { intent: 'unclear', momentIds: [] };
@@ -115,11 +152,16 @@ async function groupAction(
   member: Member,
   ctx: Context,
   momentIds: string[],
+  addressed: boolean,
 ): Promise<boolean> {
   switch (intent) {
-    case 'memory':
-      await postMemoryNow(family, ctx, [...new Set([momentId, ...momentIds])].flatMap((id) => findAsked(family, id) ?? []));
+    case 'memory': {
+      const asked = [...new Set([momentId, ...momentIds])].flatMap((id) => findAsked(family, id) ?? []);
+      // an unaddressed request names a subject, so it gets an answer only when the record holds a moment about it
+      if (!addressed && !asked.length) return false;
+      await postMemoryNow(family, ctx, asked);
       return true;
+    }
     case 'find': {
       const moment = findAsked(family, momentId);
       if (!moment) {
@@ -140,6 +182,13 @@ async function groupAction(
       return true;
     case 'callMe':
       if (member.started) await doCallMe(family, member, ctx);
+      else await nudge(family, member, ctx);
+      return true;
+    case 'remind':
+      if (await makeOffer(family, { ...event, text: (event.text ?? '').replace(ADDRESS, '') }, ctx)) return true;
+      return unclearGroup(event, family, ctx);
+    case 'birthdays':
+      if (member.started) await birthdaysThisMonth(family, member, event.messageId, ctx);
       else await nudge(family, member, ctx);
       return true;
     case 'forget':
@@ -178,7 +227,7 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
     : await readIntent(family, event, 'group', question, moments, ctx, addressed);
   // an unaddressed message gets an answer only when the intent call reads a memory request, so family talk stays untouched
   if (!addressed && intent !== 'memory') return false;
-  return groupAction(intent, momentId, event, family, member, ctx, momentIds);
+  return groupAction(intent, momentId, event, family, member, ctx, momentIds, addressed);
 }
 
 async function unclearPrivate(family: Family, member: Member, ctx: Context): Promise<boolean> {
@@ -230,6 +279,7 @@ async function privateAction(
   family: Family,
   member: Member,
   ctx: Context,
+  sourceId = '',
 ): Promise<boolean> {
   switch (intent) {
     case 'memory':
@@ -251,6 +301,9 @@ async function privateAction(
     case 'callMe':
       await doCallMe(family, member, ctx);
       return true;
+    case 'birthdays':
+      await birthdaysThisMonth(family, member, sourceId, ctx);
+      return true;
     default:
       return unclearPrivate(family, member, ctx);
   }
@@ -270,9 +323,21 @@ async function inPrivate(event: Incoming, family: Family, ctx: Context): Promise
   if (!event.text && !event.voice) return unclearPrivate(family, member, ctx);
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
-  const fixed = event.voice ? undefined : fixedIntent(event.text);
-  const { intent, momentId } = fixed ? { intent: fixed, momentId: undefined } : await readIntent(family, event, 'private', event.text ?? '', moments, ctx);
-  return privateAction(intent, momentId, family, member, ctx);
+  // "birthdays" and "settings" anywhere in a private message decide the intent in code, so a talk never swallows them
+  const text = event.text ?? '';
+  const fixed: Intent | undefined = event.voice ? undefined : BIRTHDAYS.test(text) ? 'birthdays' : SETTINGS.test(text) ? 'settings' : fixedIntent(text);
+  const reading: Awaited<ReturnType<typeof readIntent>> = fixed
+    ? { intent: fixed, momentIds: [] }
+    : await readIntent(family, event, 'private', text, moments, ctx);
+  const said = event.text ?? reading.transcript;
+  if (reading.intent === 'remind' && said) {
+    await offerInPrivate(family, member, said, reading.time ?? '', event.messageId, ctx);
+    return true;
+  }
+  // a question with no moment to show, or a message that asks for nothing Anchor can do, gets an answer in words, with the group chat as the context
+  const talks = reading.intent === 'talk' || reading.intent === 'unclear' || (reading.intent === 'find' && !findAsked(family, reading.momentId));
+  if (talks && said && (await answerTalk(family, member, said, ctx))) return true;
+  return privateAction(reading.intent, reading.momentId, family, member, ctx, event.messageId);
 }
 
 export const intents: Feature = {

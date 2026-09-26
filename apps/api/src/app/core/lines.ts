@@ -101,6 +101,16 @@ export const lines = {
   reminderConfirmed: (time: string) => `Done ✍ I'll remind you here at ${time}.`,
   offersOff: `Of course. I won't offer that again. Say "settings" to change this.`,
   reminder: (who: string, text: string) => `⏰ Your reminder. ${who} wrote: «${clip(text)}»`,
+  privateReminderOffer: (text: string) => `⏰ «${clip(text)}»\nWhen shall I remind you?`,
+  // birthdays: a group message mentions one, and each member gets an offer in private
+  birthdayOffer: (who: string, name: string, day: string) => `🎂 ${who} mentioned ${name}'s birthday on ${day}. Shall I remind you that morning?`,
+  birthdaySet: (name: string, day: string) => `Done ✍ I'll remind you of ${name}'s birthday on ${day} at 09:00.`,
+  birthdayToday: (name: string) => `🎂 Today is ${name}'s birthday.`,
+  birthdaysThisMonth: (items: string[], reminded: boolean) =>
+    `🎂 Birthdays this month:\n${items.map((item) => `• ${item}`).join('\n')}\n` +
+    (reminded ? "I'll remind you at 09:00 on the day of each one still to come ✍" : 'They have all passed this month.'),
+  noBirthdays: (next?: string) =>
+    `I don't know of a birthday this month 🙂${next ? ` The next one I know: ${next}.` : ''} When someone mentions a birthday in the family group, I'll offer to remind you.`,
   fastforwardUsage: 'Send /fastforward and a number of days or a time, for example /fastforward 7 or /fastforward 08:05.',
   calling: "I'm ringing you now 📞",
   // v2, section 4.15: the phone call
@@ -162,6 +172,7 @@ export const lines = {
     anotherTime: 'Another time',
     noThanks: 'No thanks',
     stopReminders: 'Stop offering reminders',
+    remindMe: 'Yes, remind me',
     // v2, sections 4.6, 4.11, and 4.12
     chooseForMe: 'Choose what I send you',
     choices: {

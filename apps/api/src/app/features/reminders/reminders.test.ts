@@ -12,7 +12,7 @@ import { openStore } from '../../core/store';
 import { Blocked, type Context, type Family, type Feature, type Incoming, type Store } from '../../core/types';
 import { ask } from '../../model/model';
 import { fastforward } from '../fastforward';
-import { reminders } from './reminders';
+import { offerInPrivate, reminders } from './reminders';
 
 vi.mock('../../model/model', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../model/model')>()),
@@ -347,4 +347,118 @@ test('a failed offer send keeps no reminder', async () => {
   await offer();
   expect(family.reminders).toEqual([]);
   expect(family.offers).toEqual([]);
+});
+
+const privateTap = (data: string, sender = NIKOS, messageId = 'sent-1'): Incoming => ({ chat: 'private', chatId: sender.id, messageId, sender, at: now, button: data });
+
+test('a private request gets the offer in private, with no stop button, and a tap sets it and answers with a new line', async () => {
+  await offerInPrivate(family, nikos(), 'remind me about my pills', '', '70', ctx);
+  const id = family.reminders[0].id;
+  expect(transport.sent).toEqual([
+    {
+      chatId: '42',
+      messageId: 'sent-1',
+      message: {
+        text: '⏰ «remind me about my pills»\nWhen shall I remind you?',
+        buttons: [...['08:00', '12:00', '18:00', '21:00'].map((time) => ({ label: `Yes, at ${time}`, data: `rem:${id}:${time}` })), { label: 'No thanks', data: `rem:${id}:no` }],
+      },
+    },
+  ]);
+  expect(family.offers).toEqual([]);
+
+  nikos().choices.reminders = false;
+  await router.route(privateTap(`rem:${id}:18:00`));
+  expect(transport.edits).toEqual([{ chatId: '42', messageId: 'sent-1', change: { buttons: [] } }]);
+  expect(transport.sent.at(-1)).toMatchObject({ chatId: '42', message: { text: "Done ✍ I'll remind you here at 18:00." } });
+  expect(family.reminders[0]).toMatchObject({ status: 'set', due: at(25, 18) });
+  expect(nikos().choices.reminders).toBe(true);
+  expect(seen).toEqual([]);
+
+  now = at(25, 18, 1);
+  await tick();
+  expect(transport.sent.at(-1)).toMatchObject({ chatId: '42', message: { text: '⏰ Your reminder. You wrote: «remind me about my pills»' } });
+});
+
+test('a private offer with a time swaps to the times around it, and "No thanks" drops the reminder', async () => {
+  await offerInPrivate(family, nikos(), 'remind me to call Eleni at 18:00', '18:00', '70', ctx);
+  const id = family.reminders[0].id;
+  await router.route(privateTap(`rem:${id}:more`));
+  expect(transport.edits.at(-1)?.change.buttons?.map((button) => button.data)).toEqual([
+    ...['17:00', '17:30', '18:30', '19:00'].map((time) => `rem:${id}:${time}`),
+    `rem:${id}:no`,
+  ]);
+  await router.route(privateTap(`rem:${id}:no`));
+  expect(family.reminders).toEqual([]);
+  expect(transport.sent.at(-1)?.message.text).toBe(lines.notNow);
+  await router.route(privateTap(`rem:${id}:18:00`));
+  expect(transport.edits.at(-1)).toEqual({ chatId: '42', messageId: 'sent-1', change: { buttons: [] } });
+});
+
+test('a group message that tells a birthday saves it, and each member who started gets an offer in private, except the person', async () => {
+  store.joinMember(family, { id: '9', name: 'Maria' }).started = true;
+  store.joinMember(family, { id: '11', name: 'Dimitris' });
+  vi.mocked(ask).mockResolvedValue({ birthdays: [{ name: 'Maria', date: '10-03' }, { name: 'Nobody', date: '13-40' }] });
+  const text = "Don't forget, Maria's birthday is on 3 October!";
+
+  await router.route(group(text));
+
+  expect(family.birthdays).toEqual([{ name: 'Maria', date: '10-03', from: ELENI }]);
+  expect(family.offers).toEqual([]);
+  expect(transport.sent.map((sent) => [sent.chatId, sent.message.text])).toEqual([
+    ['42', "🎂 Eleni mentioned Maria's birthday on 3 October. Shall I remind you that morning?"],
+    ['7', "🎂 You mentioned Maria's birthday on 3 October. Shall I remind you that morning?"],
+  ]);
+  const id = family.reminders[0].id;
+  expect(transport.sent[0].message.buttons).toEqual([
+    { label: 'Yes, remind me', data: `rem:${id}:yes` },
+    { label: 'No thanks', data: `rem:${id}:no` },
+  ]);
+  expect(seen).toEqual([group(text)]);
+
+  await router.route(group(text));
+  expect(transport.sent).toHaveLength(2);
+});
+
+test('"Yes, remind me" sets the birthday reminder, and 09:00 on the day delivers it', async () => {
+  vi.mocked(ask).mockResolvedValue({ birthdays: [{ name: 'Maria', date: '10-03' }] });
+  await router.route(group("Maria's birthday is on 3 October"));
+  const id = family.reminders[0].id;
+
+  await router.route(privateTap(`rem:${id}:yes`));
+  expect(transport.sent.at(-1)).toMatchObject({ chatId: '42', message: { text: "Done ✍ I'll remind you of Maria's birthday on 3 October at 09:00." } });
+  expect(family.reminders[0]).toMatchObject({ status: 'set', due: new Date(2026, 9, 3, 9).getTime() });
+
+  now = new Date(2026, 9, 3, 9, 0, 1).getTime();
+  await tick();
+  expect(transport.sent.at(-1)).toMatchObject({ chatId: '42', message: { text: "🎂 Today is Maria's birthday." } });
+});
+
+test('a birthday today, a message with no birthday word, and a failed call send no birthday offer', async () => {
+  vi.mocked(ask).mockResolvedValue({ birthdays: [{ name: 'Maria', date: '09-25' }] });
+  await router.route(group('Happy birthday, Maria!'));
+  expect(family.birthdays).toEqual([{ name: 'Maria', date: '09-25', from: ELENI }]);
+
+  vi.mocked(ask).mockReset();
+  await router.route(group('See you at lunch'));
+  vi.mocked(ask).mockRejectedValue(new Error('down'));
+  await router.route(group("Nikos's birthday is on 1 October"));
+  expect(transport.sent).toEqual([]);
+});
+
+test('"No thanks" on a birthday offer drops the reminder that "this month\'s birthdays" already set', async () => {
+  vi.mocked(ask).mockResolvedValue({ birthdays: [{ name: 'Maria', date: '09-30' }] });
+  await router.route(group("Maria's birthday is on the 30th"));
+  const id = family.reminders[0].id;
+  family.reminders[0].status = 'set';
+
+  await router.route(privateTap(`rem:${id}:no`));
+
+  expect(family.reminders.filter((item) => item.to === '42')).toEqual([]);
+});
+
+test('a birthday that just passed is saved, and gets no offer a year away', async () => {
+  vi.mocked(ask).mockResolvedValue({ birthdays: [{ name: 'Maria', date: '09-24' }] });
+  await router.route(group("Maria's birthday was yesterday, what a party!"));
+  expect(family.birthdays).toEqual([{ name: 'Maria', date: '09-24', from: ELENI }]);
+  expect(transport.sent).toEqual([]);
 });

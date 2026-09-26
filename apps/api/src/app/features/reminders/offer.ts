@@ -5,6 +5,8 @@ import { TIME } from './rules';
 
 const logger = new Logger('Reminders');
 
+export const TIME_RULE = 'Set time to HH:MM in 24-hour local time, or an empty string. "In the morning" means 08:00 and "tonight" means 20:00. A stated clock time wins.';
+
 // the prompt holds names only, so only the reply hint lets the model map "Dad" or "you" to a member id
 function buildPrompt(event: Incoming, family: Family, now: number) {
   const clock = new Date(now).toLocaleString('en-GB', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
@@ -12,7 +14,8 @@ function buildPrompt(event: Incoming, family: Family, now: number) {
   return (
     "You are Anchor, the keeper of this family's record. Read one message from the family group chat.\n" +
     'Decide whether one family member must remember a future action that has a time or a trigger, for example "take my pills when we leave in the morning". ' +
-    'Say no by default. Plans for the whole family, past events, questions, and jokes get offer false.\n' +
+    'A request to be reminded, such as "remind me about my pills", gets offer true, also with no time. ' +
+    'Otherwise, say no by default. Plans for the whole family, past events, questions, and jokes get offer false.\n' +
     'A message that names a day after tomorrow, such as a weekday, a date, or "next week", gets offer false. "Tomorrow", "tonight", and "in the morning" are fine.\n' +
     `The sender is ${event.sender.name} (id ${event.sender.id}). On the family clock it is now ${clock}.\n` +
     (replied ? `The message replies to a message from ${replied.name} (id ${replied.id}), so "you" or a family title such as "Dad" can mean ${replied.name}.\n` : '') +
@@ -21,7 +24,7 @@ function buildPrompt(event: Incoming, family: Family, now: number) {
     `\nThe message: "${event.text}"\n` +
     'Set who to the id of the member who must remember. When the sender must remember, who is the id of the sender. ' +
     'When the person who must remember is not in the list, who is "unknown". ' +
-    'Set time to HH:MM in 24-hour local time, or an empty string. "In the morning" means 08:00 and "tonight" means 20:00. A stated clock time wins.'
+    TIME_RULE
   );
 }
 
