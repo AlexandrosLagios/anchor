@@ -16,13 +16,9 @@
   align-items: stretch;
   gap: 0;
   padding: 0 clamp(1.25rem, 4vw, 2.5rem) clamp(3rem, 8vw, 5rem);
-  max-width: 40rem;
+  max-width: 64rem;
   margin-inline: auto;
   width: 100%;
-}
-
-.slate-main-wide {
-  max-width: 72rem;
 }
 
 .slate-footer-flows {
@@ -186,7 +182,7 @@
 
 .slate-support {
   margin: 0 0 1.5rem;
-  max-width: 28rem;
+  max-width: 40rem;
   font-size: var(--text-body);
   line-height: 1.65;
   color: var(--slate-muted);

@@ -71,8 +71,8 @@
 
   --space: clamp(1.25rem, 4vw, 2.5rem);
   --tap: 2.75rem;
-  --max: 40rem;
-  --max-wide: 64rem;
+  --max: 64rem;
+  --max-wide: 72rem;
 
   color-scheme: light;
 }
