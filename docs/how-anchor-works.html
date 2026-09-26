@@ -67,10 +67,10 @@
 <main>
 
 <h1>How Anchor works</h1>
-<p class="meta">A 10-minute technical read. Written from the code on <code>main</code> at commit <code>40fb18a</code>, 26 September 2026. The live bot runs revision <code>anchor-bot-00016-xdv</code> (commit <code>c7e3b96</code>), which holds every change described here.</p>
+<p class="meta">A 10-minute technical read. Written from the code on <code>main</code> at commit <code>40fb18a</code>, 26 September 2026. The live bot runs revision <code>anchor-bot-00016-xdv</code> (commit <code>c7e3b96</code>), which holds every change described here. Section 13 follows the registration design and the website code at <code>c526d7a</code>.</p>
 
 <div class="callout">
-  <p><strong>In one breath.</strong> Anchor is a Telegram bot that lives in a family's group chat. When someone shares a moment worth keeping, Anchor saves it in that person's own words and reacts with ❤. Later it brings moments back: to the whole group at 18:00, and in private at 11:00 to each member who asked for them. People talk to it in plain language, can hear every answer as a voice note, get reminders offered from the family's own messages, can forward a suspicious message for a second opinion, and can take a phone call in which Anchor reads them a moment, records their story, and connects them to the person who shared it. Underneath, it is one Node process on Cloud Run: a Telegram long poll, a 2-second timer, thirteen feature modules, one JSON file as the database, and OpenAI for every judgement call.</p>
+  <p><strong>In one breath.</strong> Anchor is a Telegram bot that lives in a family's group chat. When someone shares a moment worth keeping, Anchor saves it in that person's own words and reacts with ❤. Later it brings moments back: to the whole group at 18:00, and in private at 11:00 to each member who asked for them. People talk to it in plain language, can hear every answer as a voice note, get reminders offered from the family's own messages, can forward a suspicious message for a second opinion, and can take a phone call in which Anchor reads them a moment, records their story, and connects them to the person who shared it. A family member registers on the website with Telegram, with no email and no password, and sees the family record there. Underneath, it is one Node process on Cloud Run: a Telegram long poll, a 2-second timer, thirteen feature modules, one JSON file as the database, and OpenAI for every judgement call.</p>
 </div>
 
 <nav class="toc" aria-label="Contents">
@@ -87,7 +87,7 @@
     <li><a href="#model">The model layer</a></li>
     <li><a href="#telegram">Telegram lessons</a></li>
     <li><a href="#ship">Shipping it</a></li>
-    <li><a href="#web">The website and the old prototype</a></li>
+    <li><a href="#web">Registration on the website</a></li>
     <li><a href="#shortcuts">Shortcuts taken on purpose</a></li>
     <li><a href="#map">Where to start reading</a></li>
   </ol>
@@ -96,7 +96,7 @@
 <h2 id="pieces">1. The pieces</h2>
 
 <figure>
-<svg viewBox="0 0 720 370" role="img" aria-label="Telegram group and private chats talk to anchor-bot on Cloud Run. anchor-bot talks to OpenAI and to Twilio, which rings the member's phone. The website and its API are separate.">
+<svg viewBox="0 0 720 370" role="img" aria-label="Telegram group and private chats talk to anchor-bot on Cloud Run. anchor-bot talks to OpenAI and to Twilio, which rings the member's phone. The website signs people in with Telegram and reads the family record from anchor-bot.">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" class="d-arrow"/>
@@ -134,10 +134,10 @@
   <text class="d-s" x="365" y="338" text-anchor="middle">rings, streams the audio</text>
 
   <rect class="d-box d-dash" x="530" y="235" width="180" height="121" rx="8"/>
-  <text class="d-t" x="620" y="263" text-anchor="middle">Website and API</text>
-  <text class="d-s" x="620" y="285" text-anchor="middle">Vercel, Neon, Blob</text>
-  <text class="d-s" x="620" y="304" text-anchor="middle">the earlier prototype,</text>
-  <text class="d-s" x="620" y="323" text-anchor="middle">no shared data</text>
+  <text class="d-t" x="620" y="263" text-anchor="middle">Website</text>
+  <text class="d-s" x="620" y="285" text-anchor="middle">Vercel, Telegram Login</text>
+  <text class="d-s" x="620" y="304" text-anchor="middle">reads the record through</text>
+  <text class="d-s" x="620" y="323" text-anchor="middle">/web on anchor-bot</text>
 
   <line class="d-line" x1="202" y1="53" x2="258" y2="53" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
   <line class="d-line" x1="202" y1="143" x2="258" y2="143" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
@@ -145,12 +145,13 @@
   <line class="d-line" x1="365" y1="232" x2="365" y2="288" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
   <text class="d-s" x="376" y="264">WebSocket, μ-law audio</text>
   <line class="d-line" x1="202" y1="323" x2="258" y2="323" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <line class="d-line d-dash" x1="528" y1="245" x2="472" y2="215" marker-end="url(#arrow)"/>
 </svg>
-<figcaption>Everything in the demo runs through the orange box. The dashed box shares the repository, not the data.</figcaption>
+<figcaption>Everything in the demo runs through the orange box. The dashed box and arrow follow the registration design: the website side is built, the bot side is not.</figcaption>
 </figure>
 
-<p><code>anchor-bot</code> pulls updates from Telegram with a long poll, so Telegram never needs to reach it. The service opens to the internet for one purpose: the audio stream that Twilio sends during a phone call.</p>
-<p>The website and its API share the repository with the bot, and the same Nest codebase, but they run elsewhere and store their data elsewhere. Section 13 covers them briefly.</p>
+<p><code>anchor-bot</code> pulls updates from Telegram with a long poll, so Telegram never needs to reach it. The service opens to the internet for the audio stream that Twilio sends during a phone call. The registration design adds a second purpose: the <code>/web</code> API that the website calls.</p>
+<p>The website shares the repository with the bot and runs on Vercel. Section 13 covers registration and the older prototype API.</p>
 
 <h2 id="loops">2. Two loops and a router</h2>
 
@@ -243,7 +244,7 @@
 
 <h2 id="members">8. Members, choices, and offers that fade</h2>
 
-<p><strong>Joining.</strong> Telegram lets a bot write to someone in private only after that person taps Start. Anchor's buttons link to <code>t.me/&lt;bot&gt;?start=&lt;family id&gt;</code>. Anyone could forward that link, so a newcomer joins only when <code>getChatMember</code> confirms they are in the group right now. Each member then picks what Anchor sends them:</p>
+<p><strong>Joining.</strong> Telegram lets a bot write to someone in private only after that person taps Start. Anchor's buttons link to <code>t.me/&lt;bot&gt;?start=&lt;family id&gt;</code>. Anyone could forward that link, so a newcomer joins only when <code>getChatMember</code> confirms they are in the group right now. The website is a second way in (section 13). Each member then picks what Anchor sends them:</p>
 
 <table>
   <thead><tr><th>Choice</th><th>Default</th><th>Effect</th></tr></thead>
@@ -304,8 +305,57 @@
   <li><strong>Tests.</strong> <code>pnpm nx test api</code> runs 610 Vitest cases with no network calls, against <code>FakeTransport</code> with the model mocked. <code>demo-flow.test.ts</code> walks the whole demo script. There is no CI.</li>
 </ul>
 
-<h2 id="web">13. The website and the old prototype</h2>
-<p><code>apps/web</code> is an Astro and React site on Vercel with the landing page, sign-up, and an interactive demo. Its API, <code>anchor-api</code>, is the same Nest codebase on Vercel, with JWT auth, Neon Postgres, and Vercel Blob. That API also holds the team's first engine, a WhatsApp flow built around questions and hints. The bot left that framing behind, never touches Postgres, and stays asleep on Vercel, because Vercel never sets the Telegram token.</p>
+<h2 id="web">13. Registration on the website</h2>
+
+<div class="callout">
+  <p><strong>Status.</strong> This section follows the design in <code>docs/specs/2026-09-26-website-registration-with-telegram.md</code>. The website side merged in <code>63b19da</code>. The bot side, the <code>/web</code> API, lives in <code>apps/api/src/app/web.ts</code>. The live bot answers 404 to it until a deploy includes it.</p>
+</div>
+
+<p><code>apps/web</code> is an Astro and React site on Vercel. A family member registers there with Telegram, not with an email and a password. The Telegram user id is the only identity. Two registrations meant two identities and two families with different members, so the email accounts left the website. The "Choose what I send you" button in the group stays a way to join.</p>
+
+<h3>Sign-in</h3>
+<p>Telegram Login is OpenID Connect. Telegram's JavaScript library returns an <code>id_token</code> to a page callback, and the page needs only the Client ID from BotFather. The token is an RS256 JWT from <code>https://oauth.telegram.org</code>, with the bot id as its audience, and it expires after about an hour. The bot checks the signature against Telegram's published keys on each request.</p>
+
+<div class="rule">
+  <p><strong>Where the token goes.</strong> The page keeps the <code>id_token</code> in <code>sessionStorage</code> and sends it only to the bot URL, as a Bearer header. The token never goes in a URL, a log, or <code>localStorage</code>. The Client Secret never goes in the website. Telegram Login opens a popup, and <code>Cross-Origin-Opener-Policy: same-origin</code> breaks that popup, so the site never sends that header.</p>
+</div>
+
+<h3>The flow</h3>
+<ol>
+  <li>The person taps "Get started with Telegram", and Telegram Login returns an <code>id_token</code>.</li>
+  <li>The website calls <code>POST /web/join</code>.</li>
+  <li><strong><code>joined</code>.</strong> The person is in a family group with Anchor. Anchor sends the choices screen from section 8 in private, and the website shows the family page.</li>
+  <li><strong><code>no-family</code>.</strong> The website shows "Add Anchor to your family group". The link <code>t.me/anchor_family_bot?startgroup&amp;admin=delete_messages</code> opens Telegram's group picker and adds Anchor as an admin. Anchor records the person who added Anchor as the first member.</li>
+  <li>The person comes back and taps "I added Anchor — continue". The website calls <code>POST /web/join</code> again, and the flow ends at step 3.</li>
+</ol>
+<p>Step 3 depends on the login scope that lets the bot write to the person. UNVERIFIED: that scope works before the person taps Start in Anchor's private chat. An "Open Anchor in Telegram" button covers a private message that does not arrive.</p>
+
+<h3>The bot API</h3>
+<p>The website calls <code>anchor-bot</code> directly. The bot is the only holder of the family record, so there is no copy to keep in sync. Vercel also cannot read the bot's bucket, because the lab project blocks service-account keys. CORS on the bot already allows the website's origins.</p>
+<table>
+  <thead><tr><th>Request</th><th>Answer</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /web/join</code></td><td class="wrap"><code>joined</code> with the family members, or <code>no-family</code> with the link that adds Anchor to a group</td></tr>
+    <tr><td><code>GET /web/me</code></td><td class="wrap">The person and the family members</td></tr>
+    <tr><td><code>GET /web/moments</code></td><td class="wrap">Family moments, newest first, with their stories. Sensitive moments stay out.</td></tr>
+    <tr><td><code>GET /web/moments/:id/photo</code></td><td class="wrap">The image bytes</td></tr>
+    <tr><td><code>GET /web/moments/:id/voice</code></td><td class="wrap">The audio bytes</td></tr>
+    <tr><td><code>GET /web/my-data</code></td><td class="wrap">A JSON export: the member record, and every moment and story by the person, sensitive ones included</td></tr>
+    <tr><td><code>DELETE /web/my-data</code></td><td class="wrap">Deletes the person's moments and stories, and removes the person from the record. Group messages stay in Telegram.</td></tr>
+  </tbody>
+</table>
+<p>A 401 means a missing, expired, or invalid token, and the website shows the Telegram button again. A 403 means the person is not in the record or left the group, and the person registers again.</p>
+<p>Photos and voice notes pass through the bot, because a Telegram file URL contains the bot token. An <code>&lt;img&gt;</code> cannot send an Authorization header, so the page fetches each file and shows it through <code>URL.createObjectURL</code>.</p>
+
+<h3>What the website shows</h3>
+<ul>
+  <li><strong>The family page</strong> (<code>/family</code>): each moment with its sharer, the sharer's own words, the photo, and the stories.</li>
+  <li><strong>My data</strong> (<code>/my-data</code>): "Download my data" saves the export as a JSON file. "Delete my data" names what goes away and asks first.</li>
+  <li>Choices and admin tools stay in Telegram.</li>
+</ul>
+
+<h3>The older prototype</h3>
+<p>Registration replaced the email sign-up, <code>/account</code>, <code>/chat</code>, and file upload. The landing page, the legal pages, and the scripted demo at <code>/app</code> stay. The website API, <code>anchor-api</code>, still runs on Vercel as the same Nest codebase, with JWT auth, Neon Postgres, and Vercel Blob. That API also holds the team's first engine, a WhatsApp flow built around questions and hints. The design removes its auth, families, files, and chat routes, and keeps the Neon tables and Blob files until the team agrees. The bot code never touches Postgres and does not start on Vercel, because Vercel never sets the Telegram token.</p>
 
 <h2 id="shortcuts">14. Shortcuts taken on purpose</h2>
 <p>The code marks each deliberate shortcut with a <code>ponytail:</code> comment that names its limit.</p>
@@ -336,7 +386,7 @@
     <tr><td><code>model/</code>, <code>transports/</code></td><td class="wrap">The model seam, and the Telegram client.</td></tr>
   </tbody>
 </table>
-<p>The full design is <code>docs/specs/2026-09-25-family-memory-design.md</code>, and its section 11 lists what the team test found on the live bot. <code>DEPLOY.md</code> holds every Cloud Run command, and <code>docs/demo-runbook.md</code> holds the six-minute demo, beat by beat.</p>
+<p>The full design is <code>docs/specs/2026-09-25-family-memory-design.md</code>, and its section 11 lists what the team test found on the live bot. <code>DEPLOY.md</code> holds every Cloud Run command, and <code>docs/demo-runbook.md</code> holds the six-minute demo, beat by beat. The registration design is <code>docs/specs/2026-09-26-website-registration-with-telegram.md</code>, and the website side starts in <code>apps/web/src/lib/telegram.ts</code>.</p>
 
 <footer>
   Written from <code>main</code> at <code>40fb18a</code>. Update it when a merge changes how the bot works.
