@@ -16,7 +16,7 @@
   align-items: stretch;
   gap: 0;
   padding: 0 clamp(1.25rem, 4vw, 2.5rem) clamp(3rem, 8vw, 5rem);
-  max-width: 64rem;
+  max-width: var(--max);
   margin-inline: auto;
   width: 100%;
 }

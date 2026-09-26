@@ -197,6 +197,9 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem 1.5rem;
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
   padding: 1.25rem var(--space) 0;
 }
 
@@ -260,29 +263,34 @@ img {
 .slate-footer {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem var(--space) 1.5rem;
+  gap: 1rem;
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding: 2rem var(--space) 2.5rem;
   color: hsl(var(--text) / 0.72);
   font-size: var(--text-sm);
+  border-top: 1px solid hsl(var(--primary) / 0.22);
 }
 
 .site-footer p,
 .slate-footer p {
   margin: 0;
-  max-width: 36rem;
+  max-width: 40rem;
 }
 
 .site-footer .a11y-note,
 .slate-footer .a11y-note {
   margin-top: 0;
   font-size: var(--text-sm);
+  color: hsl(var(--text) / 0.6);
 }
 
 .site-footer nav,
 .slate-footer nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1rem;
+  gap: 0.75rem 1.25rem;
   margin-top: 0;
 }
 
