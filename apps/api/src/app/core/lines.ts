@@ -104,6 +104,8 @@ export const lines = {
     opening: (name: string) => `Hello ${name}, this is Anchor, the family's record keeper. I'm not a person.`,
     askShare: 'Shall I share what you told me with the family?',
     reachPerson: (sender: string) => `Shall I tell ${sender} you'd love a call?`,
+    connect: (sender: string) => `Shall I connect you to ${sender} now?`,
+    connecting: (name: string, sender: string) => `Thank you, ${name}. I'm connecting you to ${sender} now. Goodbye 💛`,
     goodbye: (name: string) => `Thank you, ${name}. Goodbye 💛`,
   },
   wouldLoveCall: (name: string, sender: string) => `${sender}, ${name} would love a call from you 💛`,

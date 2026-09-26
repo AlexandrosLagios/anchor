@@ -163,6 +163,13 @@ test('end_call with unclear answers keeps nothing and tells nobody', () => {
   call.realtime({ type: 'response.done', response: { output: [{ type: 'function_call', name: 'end_call', arguments: '{"share":"maybe"' }] } });
   expect(call.record.share).toBe('no');
   expect(call.record.tellSender).toBe(false);
+  expect(call.record.connect).toBe(false);
+});
+
+test('end_call keeps a yes to connecting the person to the sender', () => {
+  const { call } = connected();
+  call.realtime({ type: 'response.done', response: { output: [{ type: 'function_call', name: 'end_call', arguments: '{"share":"no","tell_sender":false,"connect":true}' }] } });
+  expect(call.record.connect).toBe(true);
 });
 
 test('a Realtime error before the opener has played hangs up', () => {

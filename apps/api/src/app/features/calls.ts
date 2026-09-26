@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { type CallRecord, storyOf } from '../call/bridge';
-import { answered, ring } from '../call/dial';
+import { answered, connected, ring } from '../call/dial';
 import { mulawWav } from '../call/ogg';
 import { expectCall, STREAM_PATH } from '../call/stream';
 import { dayIndex, slotIn } from '../core/clock';
@@ -49,7 +49,8 @@ function reminderInstructions(member: Member, reminder: Reminder) {
   ].join('\n');
 }
 
-function instructions(member: Member, moment: Moment, reminder?: Reminder) {
+function instructions(member: Member, moment: Moment, connect: boolean, reminder?: Reminder) {
+  const goodbye = `"${spoken(lines.call.goodbye(member.name))}"`;
   return [
     `You are Anchor, the family's record keeper, on a phone call with ${member.name}, a member of the family.`,
     'You are not a person. Never claim feelings or a shared past of your own.',
@@ -57,8 +58,10 @@ function instructions(member: Member, moment: Moment, reminder?: Reminder) {
     "Take one step per turn, and wait for the person's answer before the next step:",
     `1. Listen, and let ${member.name} talk as long as they like. Answer warmly in one short sentence. Ask at most one short follow-up question about what they told you, or skip it when they have said enough. The follow-up invites and never tests: ask how it felt or who was there, and never ask for a name, a date, or a fact. When ${member.name} does not remember something, say that it does not matter, and move on.`,
     `2. Ask: "${lines.call.askShare}"`,
-    `3. Ask: "${lines.call.reachPerson(moment.by.name)}"`,
-    `4. Say out loud: "${spoken(lines.call.goodbye(member.name))}" Then call end_call with their answers.`,
+    `3. Ask: "${connect ? lines.call.connect(moment.by.name) : lines.call.reachPerson(moment.by.name)}"`,
+    connect
+      ? `4. If ${member.name} said yes, say out loud: "${spoken(lines.call.connecting(member.name, moment.by.name))}" Otherwise say out loud: ${goodbye} Then call end_call with their answers.`
+      : `4. Say out loud: ${goodbye} Then call end_call with their answers.`,
     `When ${member.name} says goodbye or that they are done, say a short goodbye out loud, then call end_call.`,
     'Speak slowly and clearly, in simple English. There is no right answer.',
     'Never mention memory loss, recall, tests, hints, or scores.',
@@ -75,7 +78,9 @@ async function afterCall(family: Family, member: Member, moment: Moment, record:
     const sent = withVoice ? await tell(family, member, { voice: { wav: mulawWav(story.audio) }, text: lines.shared }, ctx) : undefined;
     await shareStory(family, member, moment, { text, voice: sent?.voice }, ctx);
   }
-  if (record.tellSender) {
+  // the connected call rings the sharer for 20 seconds; a sharer who never picks up gets the ask in the group
+  const reached = record.dialed === true && record.callSid !== undefined && (await connected(record.callSid).catch(() => false));
+  if (record.tellSender || (record.connect && !reached)) {
     await ctx
       .transport(family.id)
       .send(family.chatId, { text: lines.wouldLoveCall(member.name, moment.by.name), mention: moment.by })
@@ -105,6 +110,7 @@ export async function callMember(family: Family, member: Member, ctx: Context, r
   const base = process.env.ANCHOR_PUBLIC_URL;
   const moment = newestMoment(family, member);
   if (!member.phone || !process.env.TWILIO_FROM || !base || (!reminder && !moment)) return false;
+  const connectTo = moment && family.members.find((other) => other.id === moment.by.id)?.phone;
   const goodbye = spoken(lines.call.goodbye(member.name));
   const opener = [lines.call.opening(member.name), reminder && lines.reminder(reminder.from.name, reminder.text), moment && lines.invitation(moment)]
     .filter(Boolean)
@@ -112,7 +118,7 @@ export async function callMember(family: Family, member: Member, ctx: Context, r
     .join(' ');
   const call = expectCall(
     moment
-      ? { instructions: instructions(member, moment, reminder), opener, askShare: lines.call.askShare, goodbye }
+      ? { instructions: instructions(member, moment, connectTo !== undefined, reminder), opener, askShare: lines.call.askShare, goodbye, connectTo }
       : { instructions: reminderInstructions(member, reminder), opener, goodbye },
   );
   let sid: string;

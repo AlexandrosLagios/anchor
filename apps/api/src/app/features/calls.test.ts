@@ -4,16 +4,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, expect, type Mock, test, vi } from 'vitest';
 import type { CallRecord } from '../call/bridge';
-import { answered, ring } from '../call/dial';
+import { answered, connected, ring } from '../call/dial';
 import { expectCall, type Script } from '../call/stream';
 import { FakeTransport } from '../core/fake-transport';
 import { lines } from '../core/lines';
 import { openStore } from '../core/store';
 import { dayIndex } from '../core/clock';
 import type { Context, Family, Member, Moment, Reminder } from '../core/types';
-import { callMember, calls, withoutLapses } from './calls';
+import { callMember, calls, spoken, withoutLapses } from './calls';
 
-vi.mock('../call/dial', () => ({ ring: vi.fn(), answered: vi.fn() }));
+vi.mock('../call/dial', () => ({ ring: vi.fn(), answered: vi.fn(), connected: vi.fn() }));
 vi.mock('../call/stream', async (importOriginal) => ({ ...(await importOriginal<typeof import('../call/stream')>()), expectCall: vi.fn() }));
 
 const NOW = new Date(2026, 8, 26, 11).getTime();
@@ -82,7 +82,45 @@ test('callMember rings the member about the newest moment that someone else shar
   expect(script().askShare).toBe(lines.call.askShare);
   expect(script().goodbye).toBe('Thank you, Nikos. Goodbye');
   expect(script().instructions).toContain(lines.call.reachPerson('Eleni'));
+  expect(script().connectTo).toBeUndefined();
   expect(texts()).toEqual([['7', lines.calling]]);
+});
+
+const eleniWithPhone = () => {
+  ctx.store.joinMember(family, { id: '1', name: 'Eleni' }).phone = '+306911111111';
+};
+
+test('a call about the moment of a sharer with a phone asks to connect them now', async () => {
+  eleniWithPhone();
+  await callMember(family, nikos, ctx);
+  expect(script().instructions).toContain(lines.call.connect('Eleni'));
+  expect(script().instructions).toContain(spoken(lines.call.connecting('Nikos', 'Eleni')));
+  expect(script().instructions).not.toContain(lines.call.reachPerson('Eleni'));
+  expect(script().connectTo).toBe('+306911111111');
+});
+
+test('a connection that the sharer answers posts nothing in the group', async () => {
+  eleniWithPhone();
+  vi.mocked(connected).mockResolvedValue(true);
+  await callMember(family, nikos, ctx);
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(record({ callSid: 'CA1', share: 'no', tellSender: false, connect: true, dialed: true }));
+  await expect.poll(() => vi.mocked(connected).mock.calls).toEqual([['CA1']]);
+  await new Promise((done) => setTimeout(done, 10));
+  expect(texts()).toEqual([['7', lines.calling]]);
+});
+
+test.each([
+  ['the sharer does not answer', true],
+  ['Twilio refused the transfer', false],
+])('a connection falls back to asking the sharer in the group for a call when %s', async (_, dialed) => {
+  eleniWithPhone();
+  vi.mocked(connected).mockResolvedValue(false);
+  await callMember(family, nikos, ctx);
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(record({ callSid: 'CA1', share: 'no', tellSender: false, connect: true, dialed }));
+  await expect.poll(() => transport.sent.length).toBe(2);
+  expect(transport.sent[1]).toMatchObject({ chatId: '-100', message: { text: lines.wouldLoveCall('Nikos', 'Eleni'), mention: { id: '1', name: 'Eleni' } } });
 });
 
 test.each([

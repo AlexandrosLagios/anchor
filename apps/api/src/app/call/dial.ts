@@ -3,6 +3,7 @@ import { httpFetch } from '../http';
 
 const WAITING = new Set(['queued', 'initiated', 'ringing']);
 const MAX_POLLS = 120;
+const CONNECT_RING_S = 20;
 
 const calls = () => `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Calls`;
 const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -26,14 +27,34 @@ export async function ring(to: string, stream: string, token: string): Promise<s
   return ((await response.json()) as { sid: string }).sid;
 }
 
-/** True once the member picks up, false when the call ends unanswered. */
-export async function answered(sid: string, pause = (ms: number) => new Promise<void>((done) => setTimeout(done, ms))): Promise<boolean> {
+/** Moves the live call `sid` to `to` with new TwiML. The new TwiML ends the call stream, so Anchor leaves the call. */
+export async function transfer(sid: string, to: string): Promise<void> {
+  const twiml = `<Response><Dial timeout="${CONNECT_RING_S}" callerId="${escape(process.env.TWILIO_FROM ?? '')}">${escape(to)}</Dial></Response>`;
+  const response = await httpFetch(`${calls()}/${sid}.json`, { method: 'POST', headers: { authorization: authorization() }, body: new URLSearchParams({ Twiml: twiml }) });
+  if (!response.ok) throw new Error(`Twilio ${response.status}: ${await response.text()}`);
+}
+
+type Pause = (ms: number) => Promise<void>;
+const wait: Pause = (ms) => new Promise<void>((done) => setTimeout(done, ms));
+
+async function get<T>(url: string): Promise<T> {
+  const response = await httpFetch(url, { headers: { authorization: authorization() } });
+  if (!response.ok) throw new Error(`Twilio ${response.status}: ${await response.text()}`);
+  return (await response.json()) as T;
+}
+
+async function pickedUp(status: () => Promise<string | undefined>, pause: Pause): Promise<boolean> {
   for (let poll = 0; poll < MAX_POLLS; poll++) {
-    const response = await httpFetch(`${calls()}/${sid}.json`, { headers: { authorization: authorization() } });
-    if (!response.ok) throw new Error(`Twilio ${response.status}: ${await response.text()}`);
-    const { status } = (await response.json()) as { status: string };
-    if (!WAITING.has(status)) return status === 'in-progress' || status === 'completed';
+    const now = await status();
+    if (now && !WAITING.has(now)) return now === 'in-progress' || now === 'completed';
     await pause(1000);
   }
   return false;
 }
+
+/** True once the member picks up, false when the call ends unanswered. */
+export const answered = (sid: string, pause = wait) => pickedUp(async () => (await get<{ status: string }>(`${calls()}/${sid}.json`)).status, pause);
+
+/** True once the phone that the transferred call `sid` dials picks up, false when it rings out. */
+export const connected = (sid: string, pause = wait) =>
+  pickedUp(async () => (await get<{ calls: { status: string }[] }>(`${calls()}.json?ParentCallSid=${sid}`)).calls[0]?.status, pause);

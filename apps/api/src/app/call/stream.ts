@@ -5,12 +5,14 @@ import type { IncomingMessage, Server } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { type RawData, WebSocket, WebSocketServer } from 'ws';
 import { bridge, type BridgeOptions, type CallRecord, type RealtimeEvent, type TwilioEvent } from './bridge';
+import { transfer } from './dial';
 
 export const STREAM_PATH = '/call/stream';
 const MAX_CALL_MS = 10 * 60_000;
 const START_TIMEOUT_MS = 10_000;
+const TRANSFER_CLOSE_MS = 5_000;
 
-export type Script = Pick<BridgeOptions, 'instructions' | 'opener' | 'askShare' | 'goodbye'>;
+export type Script = Pick<BridgeOptions, 'instructions' | 'opener' | 'askShare' | 'goodbye'> & { connectTo?: string };
 interface Expected {
   script: Script;
   end: (record: CallRecord) => void;
@@ -68,12 +70,26 @@ function accept(twilio: WebSocket, connect: () => WebSocket) {
   twilio.on('message', onMessage);
 }
 
-function run(twilio: WebSocket, start: TwilioEvent, { script, end }: Expected, realtime: WebSocket) {
+function run(twilio: WebSocket, start: TwilioEvent, { script: { connectTo, ...script }, end }: Expected, realtime: WebSocket) {
   const call = bridge({
     ...script,
     toTwilio: (event) => twilio.readyState === WebSocket.OPEN && twilio.send(JSON.stringify(event)),
     toRealtime: (event) => realtime.readyState === WebSocket.OPEN && realtime.send(JSON.stringify(event)),
-    hangUp: () => twilio.close(),
+    hangUp: () => {
+      const { callSid, connect } = call.record;
+      if (!connect || !connectTo || !callSid) return twilio.close();
+      // set before the request, because Twilio closes the stream as soon as the new TwiML runs
+      call.record.dialed = true;
+      transfer(callSid, connectTo).then(
+        // the new TwiML already ended the stream, so a socket that Twilio leaves open closes without effect on the call
+        () => setTimeout(() => twilio.close(), TRANSFER_CLOSE_MS),
+        (error) => {
+          call.record.dialed = false;
+          log.warn(`Moving call ${callSid} to the sharer failed: ${error}`);
+          twilio.close();
+        },
+      );
+    },
   });
   const limit = setTimeout(() => twilio.close(), MAX_CALL_MS);
   const startedAt = Date.now();
@@ -96,8 +112,10 @@ function run(twilio: WebSocket, start: TwilioEvent, { script, end }: Expected, r
   twilio.on('close', () => {
     clearTimeout(limit);
     realtime.close();
-    const { callSid, latencies, share, tellSender } = call.record;
-    log.log(`Call ${callSid} ended after ${Math.round((Date.now() - startedAt) / 1000)} s; latencies ${latencies.join(', ') || 'none'} ms; share ${share ?? 'not asked'}; tell the sender ${tellSender ?? false}`);
+    const { callSid, latencies, share, tellSender, dialed } = call.record;
+    log.log(
+      `Call ${callSid} ended after ${Math.round((Date.now() - startedAt) / 1000)} s; latencies ${latencies.join(', ') || 'none'} ms; share ${share ?? 'not asked'}; tell the sender ${tellSender ?? false}; moved to the sharer ${dialed ?? false}`,
+    );
     end(call.record);
   });
 }

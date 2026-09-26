@@ -265,6 +265,8 @@ v2 lines. Step 4 writes the lines of steps 6 and 7. Step 5 writes the lines of s
 | `call.opening(name)` | 4 | Hello {name}, this is Anchor, the family's record keeper. I'm not a person. |
 | `call.askShare` | 4 | Shall I share what you told me with the family? |
 | `call.reachPerson(sender)` | 4 | Shall I tell {sender} you'd love a call? |
+| `call.connect(sender)` | 4 | Shall I connect you to {sender} now? |
+| `call.connecting(name, sender)` | 4 | Thank you, {name}. I'm connecting you to {sender} now. Goodbye 💛 |
 | `call.goodbye(name)` | 4 | Thank you, {name}. Goodbye 💛 |
 | `wouldLoveCall(name, sender)` | 4 | {sender}, {name} would love a call from you 💛 |
 
@@ -361,6 +363,7 @@ Twilio places the call, and OpenAI Realtime is the voice. The call runs through 
 - A yes to the voice sends the member's side to the member in private first, as `{ wav }` through `tell`, with the caption `shared`. `shareStory` then posts the returned voice media id in the group. A `file_id` belongs to the bot, so the group post needs no second upload.
 - The call code strips emoji from a line before the voice speaks the line.
 - The call ends with a way to reach a person: `call.reachPerson(sender)`. A yes posts `wouldLoveCall(name, sender)` in the group, with a mention of the sender. Then `call.goodbye(name)`, and Anchor hangs up.
+- The warm handoff: when the sharer of the moment has a `phone`, the call asks `call.connect(sender)` instead of `call.reachPerson(sender)`. On a yes, Anchor says `call.connecting(name, sender)`. The code then updates the live call with a `<Dial>` to the sharer's phone, and the new TwiML ends the call stream. The sharer's phone rings for 20 seconds from `TWILIO_FROM`. When the sharer does not answer, or Twilio refuses the update, the group gets `wouldLoveCall(name, sender)`.
 - A goodbye from the member also ends the call. A call lasts at most 10 minutes.
 - Ingress: `anchor-bot` runs with `ANCHOR_BOT_ONLY=true` before the service becomes public, so the public service exposes no prototype route. The Nest HTTP server upgrades `/call/stream` to a WebSocket. Cloud Run closes a WebSocket at the request timeout, so the service runs with `--timeout=900`. The inline TwiML passes a random token per call as a stream `<Parameter>`. The bridge drops a stream whose token Anchor did not issue. A webhook for calls to Anchor's number checks the Twilio signature.
 - The demo gate: the call joins the demo script only when the call rings a demo phone by Saturday night, through the deployed bot.
