@@ -187,6 +187,17 @@ test('"ok great" and a bare video without a thumbnail are dropped at the close, 
   expect(family.moments).toEqual([]);
 });
 
+test('a captured moment keeps the subject from the model', async () => {
+  (ask as Mock).mockResolvedValue({ ...classification, subject: 'Rex the dog' });
+  transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });
+  await capture.handle(event({ photo: { id: 'photo-1' }, text: 'Rex found the ball again' }), family, ctx);
+
+  advance(BUNDLE_GAP_MS);
+  await tick();
+
+  expect(family.moments[0].subject).toBe('Rex the dog');
+});
+
 test('a bare photo becomes a wordless moment 5 minutes later: ask gets the photo, the text is the title, and it gets a heart', async () => {
   (ask as Mock).mockResolvedValue(classification);
   transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });

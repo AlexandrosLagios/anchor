@@ -13,6 +13,7 @@ export type Classification = {
   people: string[];
   eventDate?: string;
   title: string;
+  subject?: string;
   transcript: string;
 };
 
@@ -24,9 +25,10 @@ const SCHEMA = {
     people: { type: 'array', items: { type: 'string' } },
     eventDate: { type: 'string' },
     title: { type: 'string' },
+    subject: { type: 'string' },
     transcript: { type: 'string' },
   },
-  required: ['verdict', 'salience', 'people', 'eventDate', 'title', 'transcript'],
+  required: ['verdict', 'salience', 'people', 'eventDate', 'title', 'subject', 'transcript'],
 };
 
 export function validate(raw: unknown): Classification | undefined {
@@ -42,11 +44,13 @@ export function validate(raw: unknown): Classification | undefined {
     people: valid.strings(record.people),
     eventDate: valid.date(record.eventDate),
     title,
+    subject: valid.text(record.subject) || undefined,
     transcript: valid.text(record.transcript),
   };
 }
 
 function prompt(bundle: Bundle): string {
+  const subjects = [...new Set(bundle.family.moments.map((moment) => moment.subject).filter(Boolean))];
   return [
     "Anchor keeps the family's shared photos and stories, and quotes each moment in the words of the person who shared it. Anchor is never a person.",
     `${bundle.sender.name} shared this in the family chat:`,
@@ -61,7 +65,10 @@ function prompt(bundle: Bundle): string {
     '- small_talk: chatter, jokes, reactions, and arguments.',
     '',
     'Return: verdict; salience from 1 to 5; people, the names in the moment; eventDate as YYYY-MM-DD, or empty when unknown; ' +
-      'title, a short phrase for the family record, at most 100 characters; and transcript, the words spoken in the voice note, or empty.',
+      'title, a short phrase for the family record, at most 100 characters; subject, the one recurring thing the moment is about, ' +
+      'such as a pet, a person, a place, or an activity, for example "Rex the dog", or empty when there is no clear subject; ' +
+      'and transcript, the words spoken in the voice note, or empty.',
+    ...(subjects.length ? [`Subjects the family already has: ${subjects.join('; ')}. Reuse one of them, word for word, when the moment is about the same thing.`] : []),
   ].join('\n');
 }
 

@@ -370,10 +370,10 @@ A group memory brings back several moments of one subject together, as a photo a
 - The capture call (section 6.3) returns `subject`: the one recurring thing that the moment is about, such as a pet, a person, a place, or an activity, for example "Rex the dog". The value is empty when the moment has no clear subject.
 - The prompt lists the subjects that the family's moments already hold. The model reuses a listed subject when the moment is about the same thing, so that every photo of one dog gets one subject. The code stores the value in `moment.subject`.
 - A moment without a `subject`, such as a moment that was saved before this section, never joins a collection.
-- A collection is the moment that the group memory picks (section 4.3), plus the other moments with the same `subject`. The match ignores letter case. The code skips every sensitive moment.
-- A collection needs at least 2 moments with a photo or a video. Otherwise, the memory posts the one moment as before.
-- The album holds at most 6 moments. The picked moment always stays in the album. The other places go to the moments with the highest salience, and the album orders the moments by `eventDate`, then by `savedAt`, oldest first.
-- The post is an album with the caption `collectionCaption(label, subject, moments)`: the label, the subject, and one `sharedBy` line for each moment. The code cuts the caption at 1024 characters.
+- A collection is the moment that the group memory picks (section 4.3), plus the other moments with the same `subject`. The match ignores letter case. Only moments with a photo or a video join, and the code skips every sensitive moment.
+- A collection needs at least 2 moments. Otherwise, the memory posts the one moment as before. A picked moment without a picture never starts a collection.
+- The album holds at most 6 moments. The picked moment always stays in the album. The other places go to the moments with the highest salience. The album orders the moments oldest first, by `eventDate`, or by `savedAt` when a moment has no `eventDate`.
+- The post is an album with the caption `collectionCaption(label, subject, moments)`: the label, the subject, and one `sharedBy` line of at most 100 characters of words for each moment. The code cuts the caption at 1024 characters.
 - The code marks the due keys on the picked moment only. The code adds the message id of each album item to `memoryPostIds` of its own moment, so a reply to one photo adds a story to that photo's moment (section 4.4).
 - The 18:00 slot, `/memory`, and the `memory` intent ("Anchor, show us a memory") all post a collection when one exists.
 - The place of collections in the demo waits for the build. After the deploy, the team adds a beat, replaces a beat, or mentions collections in the close only.

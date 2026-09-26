@@ -37,13 +37,31 @@ function firstDue(moments: Moment[], now: number) {
     .sort((a, b) => priority(a.moment, b.moment))[0];
 }
 
+const eventTime = (moment: Moment) => (moment.eventDate ? new Date(`${moment.eventDate}T12:00`).getTime() : moment.savedAt);
+
+// section 4.16: the picked moment and up to 5 same-subject moments with a picture, oldest first
+function collectionOf(family: Family, picked: Moment): Moment[] {
+  const subject = picked.subject?.toLowerCase();
+  if (!subject || !pictureOf(picked)) return [picked];
+  const others = family.moments
+    .filter((moment) => moment !== picked && !moment.sensitive && moment.subject?.toLowerCase() === subject && pictureOf(moment))
+    .sort((a, b) => b.salience - a.salience)
+    .slice(0, 5);
+  return [picked, ...others].sort((a, b) => eventTime(a) - eventTime(b));
+}
+
 async function post(family: Family, moment: Moment, label: string, keys: string[], ctx: Context) {
   moment.lookbacks.push(...keys);
-  const text = lines.memoryCaption(label, moment);
-  const message = { ...pictureOf(moment), text };
+  const collection = collectionOf(family, moment);
+  const message =
+    collection.length > 1
+      ? { album: collection.flatMap((item) => pictureOf(item) ?? []), text: lines.collectionCaption(label, moment.subject ?? '', collection) }
+      : { ...pictureOf(moment), text: lines.memoryCaption(label, moment) };
   try {
-    const { messageId } = await ctx.transport(family.id).send(family.chatId, message);
-    moment.memoryPostIds.push(messageId);
+    const sent = await ctx.transport(family.id).send(family.chatId, message);
+    // a reply to one album item adds its story to that item's moment
+    const ids = sent.messageIds ?? [sent.messageId];
+    collection.forEach((item, index) => item.memoryPostIds.push(ids[index] ?? sent.messageId));
   } catch (error) {
     logger.warn(`failed to post a memory for family ${family.id}: ${error}`);
   }

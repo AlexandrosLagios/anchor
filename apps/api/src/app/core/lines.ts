@@ -65,6 +65,8 @@ export const lines = {
   callFailed: "I couldn't ring you just now. Shall I send you a moment here instead?",
   sharedBy,
   invitation: (moment: Moment) => `${sharedBy(moment)}\nWhat does it remind you of?`,
+  collectionCaption: (label: string, subject: string, moments: Moment[]) =>
+    cut(`${label} 💛\n${subject}\n${moments.map((moment) => sharedBy(moment, 100)).join('\n')}\nReply with a story or a voice note to add it to the family record.`, 1024),
   memoryCaption: (label: string, moment: Moment) =>
     `${label} 💛\n${sharedBy(moment)}\nReply with a story or a voice note to add it to the family record.`,
   labels: {
