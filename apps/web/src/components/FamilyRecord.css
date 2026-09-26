@@ -1,0 +1,127 @@
+.family-shell {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: var(--space);
+}
+
+.family-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.family-header h1,
+.family-panel h1,
+.tg-login h2,
+.my-data h1 {
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+}
+
+.family-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.family-actions .btn,
+.tg-login .btn,
+.my-data .btn,
+.family-panel .btn {
+  min-height: var(--tap);
+  min-width: 8rem;
+}
+
+.family-members {
+  color: var(--ink-muted);
+  margin: 0 0 1.25rem;
+}
+
+.family-moments {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.family-moment {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.15rem;
+}
+
+.family-moment header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.family-moment header p {
+  margin: 0.25rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+
+.family-moment-text {
+  margin: 0.85rem 0 0;
+  white-space: pre-wrap;
+}
+
+.family-moment img {
+  display: block;
+  width: 100%;
+  max-height: 22rem;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.family-moment audio {
+  width: 100%;
+  margin-top: 0.85rem;
+}
+
+.family-stories {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.family-stories li {
+  background: var(--soft-bg);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.family-stories p {
+  margin: 0.35rem 0 0;
+}
+
+.tg-login,
+.family-panel,
+.my-data {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.35rem 1.25rem;
+}
+
+.tg-accept {
+  margin: 0.85rem 0 0;
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+
+.my-data-list {
+  margin: 1rem 0;
+  padding-left: 1.2rem;
+}
+
+.my-data-list li {
+  margin: 0.35rem 0;
+}

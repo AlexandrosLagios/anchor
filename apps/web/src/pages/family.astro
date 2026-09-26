@@ -1,12 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { FamilyPanel } from '../components/FamilyPanel';
+import { FamilyRecord } from '../components/FamilyRecord';
 ---
 
 <BaseLayout
   title="Family"
-  description="Create a family and add people who already have an Anchor account, or people who are new."
+  description="Your family’s moments from Telegram — photos, stories, and what people added."
   currentPath="/family"
 >
-  <FamilyPanel client:load />
+  <FamilyRecord client:load />
 </BaseLayout>

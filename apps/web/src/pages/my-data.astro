@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { MyDataPanel } from '../components/MyDataPanel';
+---
+
+<BaseLayout
+  title="My data"
+  description="Download or delete the personal data Anchor keeps for you."
+  currentPath="/my-data"
+>
+  <MyDataPanel client:load />
+</BaseLayout>

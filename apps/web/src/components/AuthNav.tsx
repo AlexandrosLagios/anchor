@@ -1,27 +1,23 @@
 import { useEffect, useState } from 'react';
-import { watchAuth, type AuthUser } from '../lib/auth';
+import { getIdToken, tokenDisplayName, watchTelegramAuth } from '../lib/telegram';
 
 export function AuthNav() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
-  useEffect(() => watchAuth(setUser), []);
+  useEffect(() => watchTelegramAuth(setToken), []);
 
-  if (user) {
+  if (token || getIdToken()) {
+    const name = tokenDisplayName(token || getIdToken());
     return (
-      <a href="/account" className="auth-nav-link" title={user.email ?? 'Account'}>
-        {user.displayName || user.email || 'Account'}
+      <a href="/family" className="auth-nav-link" title={name ?? 'Family'}>
+        {name || 'Family'}
       </a>
     );
   }
 
   return (
-    <>
-      <a href="/login" className="auth-nav-link">
-        Sign in
-      </a>
-      <a href="/signup" className="auth-nav-link">
-        Create account
-      </a>
-    </>
+    <a href="/family" className="auth-nav-link">
+      Get started
+    </a>
   );
 }

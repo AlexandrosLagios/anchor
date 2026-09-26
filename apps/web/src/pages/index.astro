@@ -33,7 +33,7 @@ const description =
       <nav class="slate-nav" aria-label="Primary">
         <a href="/how-it-works">How it works</a>
         <a href="/app">Try the demo</a>
-        <a href="/chat">Chat</a>
+        <a href="/family">Family</a>
         <a href="/privacy">Privacy</a>
         <AuthNav client:load />
       </nav>
@@ -47,10 +47,9 @@ const description =
           Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.
         </p>
         <div class="slate-actions">
-          <a class="slate-btn slate-btn-primary" href="/app">Try the demo</a>
-          <a class="slate-btn slate-btn-ghost" href="/chat">Chat with Anchor</a>
+          <a class="slate-btn slate-btn-primary" href="/family">Get started with Telegram</a>
+          <a class="slate-btn slate-btn-ghost" href="/app">Try the demo</a>
           <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
-          <a class="slate-link" href="/signup">Create account</a>
         </div>
       </section>
 
@@ -90,9 +89,9 @@ const description =
       <section class="slate-section" aria-labelledby="where-data-lives">
         <h2 id="where-data-lives" class="slate-heading">Where data lives</h2>
         <p class="slate-prose">
-          Accounts and file metadata sit in Neon Postgres in the EU (<code>eu-central-1</code>).
-          Media files go to Vercel Blob in Frankfurt (<code>fra1</code>). Prompts sent to OpenAI may
-          leave the EU when the model runs. More detail is on the{' '}
+          The family record sits with the Telegram bot on Cloud Run in the EU (<code>europe-west1</code>),
+          in Cloud Storage. The website signs you in with Telegram Login and reads that record through the
+          bot. Prompts sent to OpenAI may leave the EU when the model runs. More detail is on the{' '}
           <a class="slate-link" href="/privacy">privacy page</a>.
         </p>
       </section>
@@ -102,12 +101,12 @@ const description =
           Keep Athina in the conversation.
         </h2>
         <p class="slate-section-lead">
-          Start with the demo, read how it works, or create an account when you are ready.
+          Start with Telegram, try the scripted demo, or read how it works.
         </p>
         <div class="slate-actions">
-          <a class="slate-btn slate-btn-primary" href="/app">Try the demo</a>
+          <a class="slate-btn slate-btn-primary" href="/family">Get started with Telegram</a>
+          <a class="slate-btn slate-btn-ghost" href="/app">Try the demo</a>
           <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
-          <a class="slate-link" href="/signup">Create account</a>
         </div>
       </section>
     </main>

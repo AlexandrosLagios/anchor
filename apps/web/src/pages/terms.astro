@@ -6,13 +6,14 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
 <BaseLayout
   title="Terms of use"
-  description="Terms of use for the Anchor hackathon prototype and user accounts."
+  description="Terms of use for the Anchor hackathon prototype and Telegram sign-in."
   currentPath="/terms"
 >
   <article class="prose">
     <h1>Terms of use</h1>
     <p class="lede">
-      These terms govern use of the Anchor website and demo. Questions: <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
+      These terms govern use of the Anchor website and Telegram bot. Questions:{' '}
+      <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
     </p>
 
     <h2>Prototype status</h2>
@@ -21,10 +22,10 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
       care or irreversible decisions.
     </p>
 
-    <h2>Accounts</h2>
+    <h2>Sign-in</h2>
     <p>
-      You must provide accurate information, keep credentials secure, and accept the Privacy policy when you register.
-      You are responsible for activity under your account.
+      You sign in with Telegram Login. By signing in you accept these Terms and the Privacy policy. You are responsible
+      for activity under your Telegram identity in the family group.
     </p>
 
     <h2>Acceptable use</h2>

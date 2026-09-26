@@ -6,7 +6,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
 <BaseLayout
   title="Privacy"
-  description="How Anchor processes personal data under GDPR, where EU data is stored, and how OpenAI is used."
+  description="How Anchor processes personal data under GDPR, Telegram Login, and where the family record is stored."
   currentPath="/privacy"
 >
   <article class="prose">
@@ -18,62 +18,73 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Who we are</h2>
     <p>
-      Anchor is a family memory product that helps practise spaced retrieval in a group chat. For privacy requests email{' '}
-      {privacyEmail}.
+      Anchor is a family memory product that helps practise spaced retrieval in a Telegram family group. For privacy
+      requests email {privacyEmail}, or use <a href="/my-data">My data</a> when signed in with Telegram.
     </p>
 
     <h2>What we collect</h2>
     <ul>
-      <li>Account data: email, display name, account UUID.</li>
-      <li>Family membership: the family name, who belongs to it, and email addresses invited to join.</li>
-      <li>Consent records: acceptance of Terms and Privacy, optional marketing preference, timestamps (Neon).</li>
-      <li>Family moments: text, photos, or voice notes you submit in the demo or via WhatsApp.</li>
-      <li>Uploaded files: Blob objects plus Neon metadata keyed by account id.</li>
+      <li>Telegram identity: Telegram user id and display name from Telegram Login.</li>
+      <li>Family membership: Telegram group and the people who belong to it with Anchor.</li>
+      <li>Family moments: text, photos, voice notes, and stories shared in the group or private chat with Anchor.</li>
       <li>Technical logs needed to run the service (security, errors).</li>
     </ul>
 
     <h2>Purposes and legal bases (GDPR)</h2>
     <ul>
-      <li><strong>Contract / steps prior to contract</strong> — create and run your account and the demo.</li>
-      <li><strong>Consent</strong> — optional marketing emails; acceptance of Terms/Privacy at signup.</li>
-      <li><strong>Legitimate interests</strong> — secure the service, prevent abuse, improve the prototype (balanced against your rights).</li>
+      <li><strong>Contract / steps prior to contract</strong> — run the family memory service you asked for.</li>
+      <li><strong>Consent</strong> — acceptance of Terms and Privacy when you sign in with Telegram on the website.</li>
+      <li>
+        <strong>Legitimate interests</strong> — secure the service, prevent abuse, improve the prototype (balanced against
+        your rights).
+      </li>
     </ul>
 
-    <h2>Where data is stored (EU sovereignty)</h2>
+    <h2>Where data is stored</h2>
     <p>
-      Account profiles, consent records, and file metadata are stored in <strong>Neon Postgres on AWS Frankfurt
-      (<code>eu-central-1</code>)</strong>. Optional media assets use <strong>Vercel Blob in Frankfurt (<code>fra1</code>)</strong>.
+      The family record lives with the Telegram bot on <strong>Google Cloud Run in <code>europe-west1</code></strong>,
+      stored as a file in <strong>Cloud Storage</strong> in the same region. The website is hosted on Vercel. It reads
+      your record only through the bot API after Telegram Login; it does not keep a second copy of the family record.
+    </p>
+
+    <h2>Telegram Login</h2>
+    <p>
+      Website sign-in uses <strong>Telegram Login</strong> (OpenID Connect). Telegram issues a short-lived{' '}
+      <code>id_token</code>. The website keeps that token in <code>sessionStorage</code> and sends it only to the bot API.
+      It is not put in the URL, in logs, or in <code>localStorage</code>.
     </p>
 
     <h2>Artificial intelligence (OpenAI)</h2>
     <p>
-      To extract recallable moments, answer website chat questions about those moments and file names, transcribe voice
-      notes, and synthesise speech we send relevant text and audio to
-      <strong>OpenAI’s API</strong> (<code>api.openai.com</code>). Prompts and media may be processed
+      To extract recallable moments, transcribe voice notes, describe photos, and synthesise speech we send relevant text
+      and audio to <strong>OpenAI’s API</strong> (<code>api.openai.com</code>). Prompts and media may be processed
       <strong>outside the European Union</strong> under OpenAI’s API terms. Do not submit special-category health data you
       are not prepared to share with that processor.
     </p>
 
     <h2>Processors</h2>
     <ul>
-      <li>Neon (Vercel Marketplace) — Postgres in EU <code>eu-central-1</code> (accounts, consents, file metadata, snapshots).</li>
-      <li>Vercel — website, Nest API (Frankfurt), and Blob storage (<code>fra1</code>).</li>
-      <li>OpenAI API — moment extraction, website chat answers, transcription, and speech (may process outside the EU). Website chat text is sent with the request and is not stored as a transcript.</li>
-      <li>Twilio — WhatsApp delivery when connected.</li>
+      <li>Telegram — group chat, private messages, and Telegram Login.</li>
+      <li>Google Cloud Run (<code>europe-west1</code>) — the Anchor bot.</li>
+      <li>Google Cloud Storage — the family record file.</li>
+      <li>Vercel — the website.</li>
+      <li>OpenAI API — moment extraction, transcription, photo description, and speech (may process outside the EU).</li>
+      <li>Twilio — voice calls when the demo features use a phone call.</li>
     </ul>
 
     <h2>Retention</h2>
     <p>
-      Account and Neon data are kept while your account exists, or until you request deletion. Blob objects follow the same
-      account lifetime. Anonymous in-memory demo state on the API may reset when the server restarts. Cached OpenAI answers
-      on the API filesystem are ephemeral operational caches.
+      The family record is kept while the family uses Anchor, or until you delete your data from{' '}
+      <a href="/my-data">My data</a>. Messages in Telegram remain in Telegram under Telegram’s own rules. Cached OpenAI
+      answers on the bot filesystem are ephemeral operational caches.
     </p>
 
     <h2>Your rights</h2>
     <p>
       Under GDPR you may request access, rectification, erasure, restriction, portability, and objection, and you may
-      withdraw consent where processing is consent-based. Contact {privacyEmail}. You may also lodge a complaint with your
-      local supervisory authority.
+      withdraw consent where processing is consent-based. Use <a href="/my-data">Download my data</a> and{' '}
+      <a href="/my-data">Delete my data</a>, or contact {privacyEmail}. You may also lodge a complaint with your local
+      supervisory authority.
     </p>
 
     <h2>Children</h2>

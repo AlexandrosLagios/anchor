@@ -18,9 +18,9 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Essential</h2>
     <p>
-      Required for security and signed-in sessions (JWT stored in <code>localStorage</code> as
-      <code>anchor_auth_token</code>). These run when you use accounts. The consent banner preference is stored under{' '}
-      <code>anchor-consent-v1</code>.
+      Telegram Login keeps a short-lived <code>id_token</code> in <code>sessionStorage</code> as{' '}
+      <code>anchor_telegram_id_token</code> while this browser tab is open. The consent banner preference is stored under{' '}
+      <code>anchor-consent-v1</code> in <code>localStorage</code>.
     </p>
 
     <h2>Analytics / marketing</h2>
@@ -29,7 +29,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <h2>Change your choice</h2>
     <p>
       Clear site data for this domain in your browser, or remove <code>anchor-consent-v1</code> from local storage, then
-      reload to see the banner again.
+      reload to see the banner again. Closing the tab clears the Telegram sign-in token.
     </p>
   </article>
 </BaseLayout>
