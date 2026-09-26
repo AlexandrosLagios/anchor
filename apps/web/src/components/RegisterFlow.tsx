@@ -16,7 +16,7 @@ import {
   type AccountFamily,
   type AccountFile,
 } from '../lib/account';
-import { botAddLink, botOpenLink } from '../lib/config';
+import { botAddLink, botOpenLink, privacyEmail } from '../lib/config';
 import './RegisterFlow.css';
 
 const STEPS = ['Account', 'Bot', 'Family', 'Memory'] as const;
@@ -234,34 +234,121 @@ export function RegisterFlow() {
               <div className="reg-policy" role="region" aria-label="Privacy policy">
                 <h2>Privacy policy</h2>
                 <p>
-                  Anchor processes your account and family memories for this hackathon prototype. Read this summary to the
-                  end. The full policy is on the <a href="/privacy">privacy page</a>.
+                  This policy explains how Anchor (“we”) processes personal data for the OpenConf hackathon prototype.
+                  Controller contact: <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
                 </p>
+
+                <h3>Who we are</h3>
+                <p>
+                  Anchor is a family memory product that helps practise spaced retrieval in a Telegram family group. For
+                  privacy requests email {privacyEmail}, or use <a href="/my-data">My data</a> when signed in with
+                  Telegram.
+                </p>
+
                 <h3>What we collect</h3>
                 <ul>
-                  <li>Email address, a password stored only as a hash, and an optional display name.</li>
-                  <li>That you accepted the Terms and this policy.</li>
-                  <li>The family you create, and photos or voice notes you upload.</li>
-                  <li>If you later use Telegram: your Telegram name, the group, and moments shared there.</li>
+                  <li>Account: email address, a password stored only as a hash, and an optional display name.</li>
+                  <li>Consent: that you read this policy and accepted the Terms before continuing.</li>
+                  <li>Files you upload on the website, such as photos and voice notes.</li>
+                  <li>Telegram identity: Telegram user id and display name from Telegram Login.</li>
+                  <li>Family membership: Telegram group and the people who belong to it with Anchor.</li>
+                  <li>
+                    Family moments: text, photos, voice notes, and stories shared in the group or private chat with
+                    Anchor.
+                  </li>
+                  <li>Technical logs needed to run the service (security, errors).</li>
                 </ul>
-                <h3>Why</h3>
+
+                <h3>Purposes and legal bases (GDPR)</h3>
+                <ul>
+                  <li>
+                    <strong>Contract / steps prior to contract</strong> — run the family memory service you asked for.
+                  </li>
+                  <li>
+                    <strong>Consent</strong> — you read this policy and accept it, with the Terms, when you register with
+                    email.
+                  </li>
+                  <li>
+                    <strong>Legitimate interests</strong> — secure the service, prevent abuse, improve the prototype
+                    (balanced against your rights).
+                  </li>
+                </ul>
+
+                <h3>Where data is stored</h3>
                 <p>
-                  To run the family memory service you asked for, and to record that you read this policy before Anchor
-                  joins a group. Security logs may be kept to protect the service.
+                  Account, consent, and the family you create on the website are stored in <strong>Neon Postgres</strong>{' '}
+                  in <code>eu-central-1</code>. Files you upload are stored in <strong>Vercel Blob</strong> (
+                  <code>fra1</code>). The Telegram family record lives with the bot on{' '}
+                  <strong>
+                    Google Cloud Run in <code>europe-west1</code>
+                  </strong>
+                  , stored as a file in <strong>Cloud Storage</strong> in the same region. The website is hosted on
+                  Vercel.
                 </p>
-                <h3>Where</h3>
+
+                <h3>Telegram Login</h3>
                 <p>
-                  Account and family records are stored in Neon Postgres in the EU (eu-central-1). Uploaded files go to
-                  Vercel Blob (fra1). The Telegram family record, when you add the bot, stays with the bot on Cloud Run in
-                  europe-west1. Text and audio sent for transcription may be processed by OpenAI outside the EU.
+                  After email registration, group moments use <strong>Telegram Login</strong> (OpenID Connect). Telegram
+                  issues a short-lived <code>id_token</code>. The website keeps that token in <code>sessionStorage</code>{' '}
+                  and sends it only to the bot API. It is not put in the URL, in logs, or in <code>localStorage</code>.
                 </p>
+
+                <h3>Artificial intelligence (OpenAI)</h3>
+                <p>
+                  To extract recallable moments, transcribe voice notes, describe photos, and synthesise speech we send
+                  relevant text and audio to <strong>OpenAI’s API</strong> (<code>api.openai.com</code>). Prompts and
+                  media may be processed <strong>outside the European Union</strong> under OpenAI’s API terms. Do not
+                  submit special-category health data you are not prepared to share with that processor.
+                </p>
+
+                <h3>Processors</h3>
+                <ul>
+                  <li>Neon — account, consent, and website family records (<code>eu-central-1</code>).</li>
+                  <li>Vercel Blob — files you upload (<code>fra1</code>).</li>
+                  <li>Telegram — group chat, private messages, and Telegram Login.</li>
+                  <li>
+                    Google Cloud Run (<code>europe-west1</code>) — the Anchor bot.
+                  </li>
+                  <li>Google Cloud Storage — the family record file.</li>
+                  <li>Vercel — the website.</li>
+                  <li>
+                    OpenAI API — moment extraction, transcription, photo description, and speech (may process outside the
+                    EU).
+                  </li>
+                  <li>Twilio — voice calls when the demo features use a phone call.</li>
+                </ul>
+
+                <h3>Retention</h3>
+                <p>
+                  The family record is kept while the family uses Anchor, or until you delete your data from{' '}
+                  <a href="/my-data">My data</a>. Messages in Telegram remain in Telegram under Telegram’s own rules.
+                  Cached OpenAI answers on the bot filesystem are ephemeral operational caches.
+                </p>
+
                 <h3>Your rights</h3>
                 <p>
-                  You can ask for access, correction, or deletion, and you can export or delete data from My data once you
-                  are signed in. Contact privacy@anchor.com. You may also complain to your local supervisory authority.
+                  Under GDPR you may request access, rectification, erasure, restriction, portability, and objection, and
+                  you may withdraw consent where processing is consent-based. Use{' '}
+                  <a href="/my-data">Download my data</a> and <a href="/my-data">Delete my data</a>, or contact{' '}
+                  {privacyEmail}. You may also lodge a complaint with your local supervisory authority.
                 </p>
+
+                <h3>Children</h3>
+                <p>Anchor is not directed at children under 16. Do not create accounts for minors without lawful basis.</p>
+
+                <h3>Changes</h3>
+                <p>
+                  We may update this policy for the hackathon prototype; the date in the page footer or git history
+                  reflects changes.
+                </p>
+
+                <h3>Contact</h3>
+                <p>
+                  Privacy / GDPR: <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>
+                </p>
+
                 <p ref={policyEndRef}>
-                  That is the end of this summary. The acceptance box below unlocks after you reach this line.
+                  That is the end of the privacy policy. The acceptance box below unlocks after you reach this line.
                 </p>
               </div>
             ) : null}
