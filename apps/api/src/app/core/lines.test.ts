@@ -131,6 +131,8 @@ test('the v2 reminder and call lines read as the design writes them', () => {
   expect(lines.call.opening('Nikos')).toBe("Hello Nikos, this is Anchor, the family's record keeper. I'm not a person.");
   expect(lines.call.askShare).toBe('Shall I share what you told me with the family?');
   expect(lines.call.reachPerson('Sofia')).toBe("Shall I tell Sofia you'd love a call?");
+  expect(lines.call.connect('Sofia')).toBe('Shall I connect you to Sofia now?');
+  expect(lines.call.connecting('Nikos', 'Sofia')).toBe("Thank you, Nikos. I'm connecting you to Sofia now. Goodbye 💛");
   expect(lines.call.goodbye('Nikos')).toBe('Thank you, Nikos. Goodbye 💛');
   expect(lines.wouldLoveCall('Nikos', 'Sofia')).toBe('Sofia, Nikos would love a call from you 💛');
   expect(lines.buttons.remindAt('08:00')).toBe('Yes, at 08:00');

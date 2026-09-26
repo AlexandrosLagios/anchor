@@ -25,6 +25,8 @@ export interface CallRecord {
   callSid?: string;
   share?: Share;
   tellSender?: boolean;
+  connect?: boolean;
+  dialed?: boolean; // the live call moved to the sharer's phone
   shareAsked?: { ms: number; line: number };
   audio: Buffer[];
   speech: [number, number][];
@@ -94,6 +96,7 @@ export function bridge({ toTwilio, toRealtime, hangUp, instructions, opener, ask
                   description: 'What the person agreed to share with the family: voice for their words in their own voice, words for their words only, no for nothing or no clear answer.',
                 },
                 tell_sender: { type: 'boolean', description: 'True when the person said yes to telling the sender that they would love a call.' },
+                connect: { type: 'boolean', description: 'True when the person said yes to being connected to the sender now.' },
               },
               required: ['share', 'tell_sender'],
             },
@@ -242,11 +245,11 @@ function asksToShare(line: string, askShare: string) {
   return key.filter((word) => said.has(word)).length >= 0.6 * key.length;
 }
 
-function answersOf(args = '{}'): { share: Share; tellSender: boolean } {
+function answersOf(args = '{}'): { share: Share; tellSender: boolean; connect: boolean } {
   try {
-    const { share, tell_sender } = JSON.parse(args);
-    return { share: SHARE.includes(share) ? share : 'no', tellSender: tell_sender === true };
+    const { share, tell_sender, connect } = JSON.parse(args);
+    return { share: SHARE.includes(share) ? share : 'no', tellSender: tell_sender === true, connect: connect === true };
   } catch {
-    return { share: 'no', tellSender: false };
+    return { share: 'no', tellSender: false, connect: false };
   }
 }

@@ -1,11 +1,16 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { afterEach, beforeEach, expect, test } from 'vitest';
+import { Logger } from '@nestjs/common';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
+import { transfer } from './dial';
 import { attachCallStream, expectCall } from './stream';
+
+vi.mock('./dial', () => ({ transfer: vi.fn() }));
 
 let server: Server;
 let realtime: WebSocketServer;
+let realtimeSocket: WebSocket;
 let realtimeMessages: { type: string; session?: { instructions?: string } }[];
 
 const port = (address: unknown) => (address as AddressInfo).port;
@@ -22,9 +27,13 @@ function start(socket: WebSocket, token: string) {
 }
 
 beforeEach(async () => {
+  vi.resetAllMocks();
   realtimeMessages = [];
   realtime = new WebSocketServer({ port: 0 });
-  realtime.on('connection', (socket) => socket.on('message', (data) => realtimeMessages.push(JSON.parse(data.toString()))));
+  realtime.on('connection', (socket) => {
+    realtimeSocket = socket;
+    socket.on('message', (data) => realtimeMessages.push(JSON.parse(data.toString())));
+  });
   await new Promise<void>((done) => realtime.once('listening', () => done()));
   server = createServer();
   attachCallStream(server, () => new WebSocket(`ws://127.0.0.1:${port(realtime.address())}`));
@@ -100,4 +109,43 @@ test('a start frame without its start object is refused, and the server keeps ru
   const next = twilio();
   await opened(next);
   next.close();
+});
+
+async function answerConnect(token: string) {
+  const socket = twilio();
+  await opened(socket);
+  start(socket, token);
+  await expect.poll(() => realtimeMessages.length).toBe(2);
+  const endCall = { type: 'function_call', name: 'end_call', arguments: '{"share":"no","tell_sender":false,"connect":true}' };
+  realtimeSocket.send(JSON.stringify({ type: 'response.done', response: { output: [endCall] } }));
+  await new Promise((done) => setTimeout(done, 20));
+  socket.send(JSON.stringify({ event: 'mark', mark: { name: 'hangup' } }));
+  return socket;
+}
+
+test('a yes to connect moves the live call to the sharer, and Twilio ends the stream', async () => {
+  vi.mocked(transfer).mockResolvedValue(undefined);
+  const call = expectCall({ instructions: 'Be Anchor.', opener: 'Hello.', connectTo: '+306911111111' });
+  const socket = await answerConnect(call.token);
+  await expect.poll(() => vi.mocked(transfer).mock.calls).toEqual([['CA1', '+306911111111']]);
+  expect(socket.readyState).toBe(WebSocket.OPEN);
+  socket.close();
+  expect(await call.ended).toMatchObject({ connect: true, dialed: true });
+});
+
+test('a refused transfer ends the call and marks it as not dialled', async () => {
+  vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+  vi.mocked(transfer).mockRejectedValue(new Error('Twilio 400'));
+  const call = expectCall({ instructions: 'Be Anchor.', opener: 'Hello.', connectTo: '+306911111111' });
+  const socket = await answerConnect(call.token);
+  await closed(socket);
+  expect(await call.ended).toMatchObject({ connect: true, dialed: false });
+});
+
+test('a yes to connect without a number to dial hangs up', async () => {
+  const call = expectCall({ instructions: 'Be Anchor.', opener: 'Hello.' });
+  const socket = await answerConnect(call.token);
+  await closed(socket);
+  expect(transfer).not.toHaveBeenCalled();
+  expect((await call.ended).dialed).toBeUndefined();
 });
