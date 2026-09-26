@@ -156,8 +156,9 @@ export async function sendMe(family: Family, member: Member, ctx: Context) {
 async function inPrivate(event: Incoming, family: Family, member: Member, ctx: Context): Promise<boolean> {
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
   if ((event.button && !action) || event.text?.startsWith('/')) return false;
-  // a fixed phrase such as "settings" or "what did I miss?" goes to intents, and the open invitation stays open
-  if (!action && (privateIntent(event.text) || asksAnchor(event.text))) return false;
+  // a fixed phrase such as "settings" or "what did I miss?" goes to intents, and the open invitation stays open; a longer story that names
+  // birthdays or choices in passing goes to the reply call, which still reads a request
+  if (!action && ((wordCount(event.text) <= 6 && privateIntent(event.text)) || asksAnchor(event.text))) return false;
   if (action === 'never') {
     const moment = family.moments.find((item) => item.id === momentId);
     let changed = false;
