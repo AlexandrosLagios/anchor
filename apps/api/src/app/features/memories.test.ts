@@ -19,7 +19,7 @@ vi.mock('../model/model', async (importOriginal) => ({
   speak: vi.fn(),
 }));
 
-import { transcribe } from '../model/model';
+import { ask, transcribe } from '../model/model';
 import { dueKeys, labelFor, memories } from './memories';
 
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 8, day, hour, minute).getTime();
@@ -231,14 +231,39 @@ test('/memory posts a collection too', async () => {
   expect(transport.sent[0].message.album).toHaveLength(2);
 });
 
-test('collectionCaption names the label, the tag, and each sharer, and stays within 1024 characters', () => {
-  const caption = lines.collectionCaption('A week ago', 'Rex the dog', [
-    moment({ text: 'Rex as a puppy', by: { id: '2', name: 'Eleni' } }),
-    ...[1, 2, 3, 4, 5].map(() => moment({ text: 'x'.repeat(500) })),
+test('collectionCaption, the fallback caption, names the label, the tag, the count, and the sharers once each', () => {
+  const caption = lines.collectionCaption('A week ago', 'Rex', [
+    moment({ by: { id: '2', name: 'Eleni' } }),
+    moment({ by: { id: '1', name: 'Sofia' } }),
+    moment({ by: { id: '2', name: 'Eleni' } }),
   ]);
-  expect(caption.startsWith('A week ago 💛\nRex the dog\n')).toBe(true);
-  expect(caption).toContain('Eleni shared: «Rex as a puppy»');
-  expect(caption.length).toBeLessThanOrEqual(1024);
+  expect(caption).toBe('A week ago 💛\nRex, in 3 moments that Eleni and Sofia shared.\nReply to a photo to add your story.');
+});
+
+test('the model writes the caption of a collection from the words of each sharer, and the reply line follows it', async () => {
+  vi.mocked(ask).mockResolvedValue({ caption: 'Lucy, from the kitchen floor to the couch, in photos Eleni and Sofia shared.' });
+  family.moments.push(rex('a', { savedAt: daysBefore(at(25, 18), 7), text: 'Lucy on the tiles' }), rex('b', { savedAt: daysBefore(at(25, 18), 2), by: { id: '2', name: 'Eleni' } }));
+
+  await memories.tick?.(family, slot18, ctx);
+
+  expect(transport.sent[0].message.text).toBe('Lucy, from the kitchen floor to the couch, in photos Eleni and Sofia shared.\nReply to a photo to add your story.');
+  const [prompt, , options] = vi.mocked(ask).mock.calls[0];
+  expect(prompt).toContain('Sofia shared: «Lucy on the tiles»');
+  expect(prompt).toContain('You are not a person');
+  expect(options).toEqual({ fast: true });
+});
+
+test('a failed or empty caption call falls back to collectionCaption', async () => {
+  vi.mocked(ask).mockRejectedValueOnce(new Error('timeout')).mockResolvedValueOnce({ caption: '  ' });
+  const pair = () => [rex('a', { savedAt: daysBefore(now, 7) }), rex('b', { savedAt: daysBefore(now, 2) })];
+  family.moments.push(...pair());
+
+  await memories.handle?.(groupEvent({ text: '/memory' }), family, ctx);
+  await memories.handle?.(groupEvent({ text: '/memory' }), family, ctx);
+
+  const expected = lines.collectionCaption(lines.labels['7'], 'Rex', [family.moments[0], family.moments[1]]);
+  expect(transport.sent[0].message.text).toBe(expected);
+  expect(transport.sent[1].message.text).toBe(lines.collectionCaption(lines.labels.fromRecord, 'Rex', [family.moments[0], family.moments[1]]));
 });
 
 test('a send that rejects keeps the marked keys, and the store still saves', async () => {

@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { Logger } from '@nestjs/common';
 import { dayIndex, slotIn } from '../core/clock';
-import { lines } from '../core/lines';
+import { cut, dateOf, lines } from '../core/lines';
 import { byPriority, isAnniversary } from '../core/priority';
 import type { Context, Family, Feature, Incoming, Media, Moment } from '../core/types';
-import { transcribe } from '../model/model';
+import { ask, transcribe, valid } from '../model/model';
 import { react } from './capture/capture';
 import { ADDRESS, isCommand, pictureOf, wordCount } from './capture/filter';
 
@@ -57,12 +57,34 @@ function collectionOf(family: Family, picked: Moment, asked?: Moment[]): { momen
   return { moments: [picked, ...others].sort((a, b) => eventTime(a) - eventTime(b)), tag: tag ?? picked.title };
 }
 
+const CAPTION_SCHEMA = { type: 'object', properties: { caption: { type: 'string' } }, required: ['caption'] };
+
+// section 4.16: the model writes a warm caption from the words of each sharer, and the fixed caption covers a failed call
+async function captionFor(label: string, tag: string, moments: Moment[]): Promise<string> {
+  const prompt = [
+    "You are Anchor, the keeper of this family's photos and stories. You are not a person.",
+    `Write the caption of a photo album that Anchor posts in the family group with the label "${label}": ${moments.length} family moments about ${tag}.`,
+    ...moments.map((moment) => `- ${lines.sharedBy(moment)} (${dateOf(moment)})`),
+    'Write one or two short sentences in plain, warm English, at most 160 characters, the way a family member captions an album. Name who shared the moments.',
+    'Mention a date only when it tells when the moments happened. Use only what the moments say. Never judge the photos with words such as "charming" or "special".',
+    'Never invent a fact, a feeling, or a memory, and never write "I remember" or "I love".',
+  ].join('\n');
+  try {
+    const answer = await ask<{ caption?: unknown }>(prompt, CAPTION_SCHEMA, { fast: true });
+    const caption = cut(valid.text(answer?.caption), 600);
+    if (caption) return `${caption}\n${lines.collectionReply}`;
+  } catch (error) {
+    logger.warn(`the collection caption call failed: ${error}`);
+  }
+  return lines.collectionCaption(label, tag, moments);
+}
+
 async function post(family: Family, moment: Moment, label: string, keys: string[], ctx: Context, asked?: Moment[]) {
   moment.lookbacks.push(...keys);
   const { moments: collection, tag } = collectionOf(family, moment, asked);
   const message =
     collection.length > 1
-      ? { album: collection.flatMap((item) => pictureOf(item) ?? []), text: lines.collectionCaption(label, tag, collection) }
+      ? { album: collection.flatMap((item) => pictureOf(item) ?? []), text: await captionFor(label, tag, collection) }
       : { ...pictureOf(moment), text: lines.memoryCaption(label, moment) };
   try {
     const sent = await ctx.transport(family.id).send(family.chatId, message);

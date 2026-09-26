@@ -13,6 +13,7 @@ import { groupNextSteps, nextSteps, nudge, showChoices, stopMember } from './mem
 
 const logger = new Logger('Intents');
 const SEVEN_DAYS_MS = 7 * 86_400_000;
+const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums?|remember|show (?:me|us))\b/i;
 
 const INTENTS = ['memory', 'find', 'sendMe', 'missed', 'settings', 'stop', 'callMe', 'forget', 'quiet', 'unclear'] as const;
 type Intent = (typeof INTENTS)[number];
@@ -43,10 +44,13 @@ function schemaFor(momentIds: string[]) {
 }
 
 // ponytail: every shareable moment goes into the prompt; shortlist by people or date when a record reaches thousands of moments
-function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean, moments: Moment[]): string {
+function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean, moments: Moment[], addressed: boolean): string {
   const where = chat === 'group' ? 'the family group' : 'a private chat with one family member';
   return [
     `You are Anchor, the keeper of this family's record. This message came from ${where}${hasVoice ? ', as a voice note' : ''}: "${text}"`,
+    ...(addressed
+      ? []
+      : ['The message does not name Anchor, and the family may be talking to each other. Pick memory only when the message asks for family memories, photos, or moments. Otherwise, pick unclear.']),
     'Pick the intent that best matches the message:',
     ...Object.entries(INTENT_EXAMPLES).map(([intent, example]) => `- ${intent}: ${example}`),
     'Pick the id of the moment the message names or asks about, or "none" when it names none.',
@@ -63,12 +67,13 @@ async function readIntent(
   text: string,
   moments: Moment[],
   ctx: Context,
+  addressed = true,
 ): Promise<{ intent: Intent; momentId?: string; momentIds: string[] }> {
   const momentIds = moments.map((moment) => moment.id);
   const schema = schemaFor(momentIds);
   try {
     const clip = event.voice ? await ctx.transport(family.id).download(event.voice) : undefined;
-    const prompt = buildPrompt(chat, text, !!event.voice, moments);
+    const prompt = buildPrompt(chat, text, !!event.voice, moments, addressed);
     const answer = await model.ask<{ intent?: unknown; momentId?: unknown; momentIds?: unknown }>(prompt, schema, clip ? { media: [clip] } : {});
     const intent = model.valid.oneOf(answer.intent, INTENTS) ?? 'unclear';
     const momentId = model.valid.oneOf(answer.momentId, [...momentIds, 'none']);
@@ -145,7 +150,9 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
   }
 
   const text = event.text ?? '';
-  if (event.forwarded || !ADDRESS.test(text)) return false;
+  const addressed = ADDRESS.test(text);
+  // section 4.16: a message without "Anchor," reaches the intent call only when it talks about memories or photos, and never as a reply to a person
+  if (event.forwarded || (!addressed && (event.replyTo !== undefined || !MEMORY_WORDS.test(text)))) return false;
   const question = text.replace(ADDRESS, '');
 
   const isNew = !family.members.some((candidate) => candidate.id === event.sender.id);
@@ -153,12 +160,14 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
   if (isNew) ctx.store.save();
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
-  const phrase = event.voice ? undefined : fixedIntent(question);
+  const phrase = event.voice || !addressed ? undefined : fixedIntent(question);
   // "send me photos of Lucy" names a subject, so the model decides between sendMe and a memory of Lucy (4.16)
   const fixed = phrase === 'sendMe' && /\bof\b/i.test(question) ? undefined : phrase;
   const { intent, momentId, momentIds } = fixed
     ? { intent: fixed, momentId: undefined, momentIds: [] }
-    : await readIntent(family, event, 'group', question, moments, ctx);
+    : await readIntent(family, event, 'group', question, moments, ctx, addressed);
+  // an unaddressed message gets an answer only when the intent call reads a memory request, so family talk stays untouched
+  if (!addressed && intent !== 'memory') return false;
   return groupAction(intent, momentId, event, family, member, ctx, momentIds);
 }
 
