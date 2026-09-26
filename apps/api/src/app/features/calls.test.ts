@@ -86,6 +86,29 @@ test('callMember rings the member about the newest moment that someone else shar
   expect(texts()).toEqual([['7', lines.calling]]);
 });
 
+test('a call asks for questions after the share question and answers them from the record without the sensitive moments', async () => {
+  family.chat = [{ id: '80', by: 'Eleni', text: "Maria's last day at the kindergarten is Friday", at: NOW }];
+  await callMember(family, nikos, ctx);
+  const steps = script().instructions;
+  expect(steps.indexOf(lines.call.askAnything)).toBeGreaterThan(steps.indexOf(lines.call.askShare));
+  expect(steps.indexOf(lines.call.askAnything)).toBeLessThan(steps.indexOf(lines.call.reachPerson('Eleni')));
+  expect(steps).toContain('Eleni shared: «An older moment»');
+  expect(steps).toContain("Maria's last day at the kindergarten is Friday");
+  expect(steps).not.toContain('A sad moment');
+});
+
+test('a call without a moment or a reminder opens with the questions and shares nothing', async () => {
+  family.moments = family.moments.filter((m) => m.by.id === '7');
+  expect(await callMember(family, nikos, ctx)).toBe(true);
+  expect(script().opener).toBe("Hello Nikos, this is Anchor, the family's record keeper. I'm not a person. Ask me anything about the family.");
+  expect(script().askShare).toBeUndefined();
+  expect(script().instructions).toContain('Nikos shared: «My own moment»');
+  await expect.poll(() => endCall).toBeDefined();
+  endCall(record({ share: 'words', tellSender: true, transcript: [{ speaker: 'person', text: 'When did Maria start school?' }] }));
+  await new Promise((done) => setTimeout(done, 10));
+  expect(texts()).toEqual([['7', lines.calling]]);
+});
+
 const eleniWithPhone = () => {
   ctx.store.joinMember(family, { id: '1', name: 'Eleni' }).phone = '+306911111111';
 };
@@ -127,7 +150,6 @@ test.each([
   ['the member has no phone', () => (nikos.phone = undefined)],
   ['TWILIO_FROM is unset', () => vi.stubEnv('TWILIO_FROM', '')],
   ['ANCHOR_PUBLIC_URL is unset', () => vi.stubEnv('ANCHOR_PUBLIC_URL', '')],
-  ['no moment of someone else is there', () => (family.moments = family.moments.filter((m) => m.by.id === '7'))],
 ])('callMember returns false and rings nobody when %s', async (_, arrange) => {
   arrange();
   expect(await callMember(family, nikos, ctx)).toBe(false);
@@ -196,6 +218,7 @@ test('a reminder call without a moment to talk about reads the reminder in the s
     "Hello Nikos, this is Anchor, the family's record keeper. I'm not a person. Your reminder. Eleni wrote: «Take your pills with you when we leave»",
   );
   expect(script().askShare).toBeUndefined();
+  expect(script().instructions).toContain(lines.call.askAnything);
   await expect.poll(() => endCall).toBeDefined();
   endCall(record({ share: 'words', tellSender: true, transcript: [{ speaker: 'person', text: 'Thanks.' }] }));
   await new Promise((done) => setTimeout(done, 10));

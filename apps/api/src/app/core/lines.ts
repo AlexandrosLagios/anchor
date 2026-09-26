@@ -66,7 +66,6 @@ export const lines = {
   missed: (count: number) => `The family shared ${count} moments since we last talked 💛`,
   nothingNew: "You're up to date 💛 Nothing new since we last talked.",
   callFailed: "I couldn't ring you just now. Shall I send you a moment here instead?",
-  nothingToCall: "You're up to date 💛 There's no new family moment to talk about on a call.",
   sharedBy,
   invitation: (moment: Moment) => invite(moment),
   spokenInvitation: (moment: Moment) => invite(moment, moment.description),
@@ -118,6 +117,7 @@ export const lines = {
   call: {
     opening: (name: string) => `Hello ${name}, this is Anchor, the family's record keeper. I'm not a person.`,
     askShare: 'Shall I share what you told me with the family?',
+    askAnything: 'Ask me anything about the family.',
     reachPerson: (sender: string) => `Shall I tell ${sender} you'd love a call?`,
     connect: (sender: string) => `Shall I connect you to ${sender} now?`,
     connecting: (name: string, sender: string) => `Thank you, ${name}. I'm connecting you to ${sender} now. Goodbye 💛`,

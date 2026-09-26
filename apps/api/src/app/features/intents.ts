@@ -6,7 +6,7 @@ import * as model from '../model/model';
 import { answerInGroup, choiceLine } from './ask';
 import { actOnReply } from './capture/capture';
 import { ADDRESS, fixedIntent, pictureOf, privateIntent } from './capture/filter';
-import { callMember, newestMoment } from './calls';
+import { callMember } from './calls';
 import { sendMe } from './invitations';
 import { postMemoryNow } from './memories';
 import { groupNextSteps, nextSteps, nudge, showChoices, stopMember } from './members';
@@ -24,6 +24,8 @@ const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums
 // "Anchor," or a subject; a bare "Memories!" or "a moment please" stays family talk
 const ANY_MEMORY =
   /^(?:(?:can|could|would|will) you |please )?(?:(?:(?:show|give|share|post|tell)(?: me| us)?|send us|(?:i|we)(?: want| would like|['’]d like)|(?:can|could|may) (?:i|we) (?:have|see|get)) (?:(?:a|another|some|any|one more) )?(?:family )?(?:memor(?:y|ies)|moments?)|(?:a|another|some|any|one more) (?:family )?memor(?:y|ies))(?: please)?[?.!]*$/i;
+// "Call me" only makes sense to Anchor, so it rings the writer without "Anchor,"; "call me when you land" and a reply to a person stay family talk
+const CALL_ME = /^(?:(?:can|could|would|will) you |please )?call me(?: please| now)?[?.!]*$/i;
 // "more memories of Lucy" leaves out the moments of the latest group memory
 const MORE = /\b(?:more|other|others|another|else|different)\b/i;
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -152,10 +154,6 @@ async function doCallMe(family: Family, member: Member, ctx: Context): Promise<v
     await tell(family, member, { text: lines.askPhone, buttons: [{ label: lines.buttons.sharePhone, contact: true }] }, ctx);
     return;
   }
-  if (!newestMoment(family, member)) {
-    await tell(family, member, { text: lines.nothingToCall, buttons: nextSteps(member, 'callMe') }, ctx);
-    return;
-  }
   const ok = await callMember(family, member, ctx);
   if (!ok) await tell(family, member, { text: lines.callFailed, buttons: nextSteps(member, 'callMe') }, ctx);
 }
@@ -231,7 +229,7 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
     return true;
   }
 
-  const addressed = ADDRESS.test(text);
+  const addressed = ADDRESS.test(text) || (event.replyTo === undefined && CALL_ME.test(text.trim()));
   // section 4.16: a message without "Anchor," reaches the intent call only when it asks about memories or photos of a subject that the record
   // knows, and never as a reply to a person
   if (event.forwarded || (!addressed && (event.replyTo !== undefined || !MEMORY_WORDS.test(text) || !namesKnownSubject(family, text)))) return false;

@@ -133,7 +133,7 @@ v2: the `intents` feature takes the position of `ask` and reads every phrase. No
 
 - `intents` reads each group message that matches the ask pattern. `intents` also reads each private message that no earlier feature owns. An open invitation still owns the replies to the invitation (section 4.5).
 - In the private chat, no "Anchor" prefix is needed. A private voice note goes to the model as audio.
-- The code decides the fixed phrases before any model call: "send me", "settings", "my settings", "call me", "what did I miss", "another moment", and "stop". In the group, the check reads the text after the ask pattern, and in private, the whole text. The same check lets these phrases pass an open invitation, so the invitation never reads them as a reply. Every other text goes to the model.
+- The code decides the fixed phrases before any model call: "send me", "settings", "my settings", "call me", "what did I miss", "another moment", and "stop". In the group, the check reads the text after the ask pattern, and in private, the whole text. In the group, a bare "Call me" without "Anchor," is `callMe` too, when the message is not a reply. The same check lets these phrases pass an open invitation, so the invitation never reads them as a reply. Every other text goes to the model.
 - In private, the code also decides two words anywhere in the text. "Birthdays" is `birthdays`. "Settings", "preferences", or "choices" is `settings`, so "I want to change my settings" shows the choices screen. An open invitation lets these words pass in a reply of 6 words or fewer. A longer reply goes to the reply call, so a story that names birthdays in passing stays a story.
 - An open invitation also lets a short request pass to `intents`: a text of at most 6 words that starts like "a memory of Lucy", "more photos?", or "remind me about". The reply call has the kind `request` for other requests, such as "when is lunch on Sunday?".
 - One model call returns `{ intent, momentId, momentIds, time, transcript }` (section 6.7). `time` is the suggested time of a `remind`. `transcript` holds the words of a voice note. The code acts on the intent:
@@ -146,7 +146,7 @@ v2: the `intents` feature takes the position of `ask` and reads every phrase. No
 | `missed` | Acts like `sendMe`. | Sends up to 3 moments with a `savedAt` after `member.seenAt`, with `missed(count)` first. With no such moment, sends `nothingNew`. |
 | `settings` | Sends the member the ephemeral `nudge`. | Sends the choices screen (section 4.11). |
 | `stop` | Sends the member the ephemeral `nudge`. | Acts like the word "stop" (section 4.7). |
-| `callMe` | Acts like the private intent when the member started. | Calls `callMember` (section 4.15). A `false` result gets `callFailed`. |
+| `callMe` | Acts like the private intent when the member started, and rings the member who wrote the message. | Calls `callMember` (section 4.15). A `false` result gets `callFailed`. |
 | `forget`, `quiet` | Acts like "Anchor, forget this" or "Anchor, don't bring this back" on the replied-to message. | Acts like `unclear`. |
 | `remind` | Runs the reminder offer (section 4.13) on the text after the ask pattern. No offer gets `unclear`. | Sends a reminder offer in private (section 4.13). |
 | `birthdays` | Acts like the private intent when the member started. | Sends this month's birthdays, and sets a reminder for each one still to come (section 4.13). |
@@ -371,7 +371,7 @@ Twilio places the call, and OpenAI Realtime is the voice. The call runs through 
 
 - `features/calls.ts` exports `callMember(family, member, ctx, reminder?)`, which returns `false` when Anchor cannot ring the member. Step 4 lands a stub that always returns `false`.
 - Step 7 builds the call in this order, and stops wherever Saturday night ends:
-  1. "Anchor, call me" (`callMe`): Anchor sends `calling`, rings `member.phone`, and talks about the newest moment that the member did not send.
+  1. "Anchor, call me" (`callMe`): Anchor sends `calling`, rings `member.phone`, and talks about the newest moment that the member did not send. When no such moment is left, the call opens with `call.askAnything`.
   2. The share: on the member's yes, `shareStory` posts the member's words and a voice note cut from the member's side of the call.
   3. The reminder call: the `calls` tick rings a member with `choices.call` for each reminder with a `sentAt` inside the window. The private reminder still arrives.
   4. The daily call: at the 11:00 slot, at most once a day (`member.lastCallDay`), and only when the family shared a moment since the last call.
@@ -379,6 +379,7 @@ Twilio places the call, and OpenAI Realtime is the voice. The call runs through 
 - The call opens with `call.opening(name)`. Anchor quotes the moment with `invitation(moment)`, listens, and asks at most one short follow-up.
 - The bridge ignores the member until the opener has played, so a "Hello?" at pickup never cancels the opener.
 - The call asks `call.askShare` before the end. Without a yes, Anchor keeps no audio and no transcript of the call.
+- After the share question, the call says `call.askAnything` and answers each question about the family. The answers come only from the family record and the latest group lines, the context of a private talk. The context holds no sensitive moment. A reminder call without a moment asks for questions after the reminder.
 - The member answers the share question in one of three ways: the words and the voice, the words only, or no. A yes to the words only posts the words without the voice note. The voice note keeps only the member's turns before the share question.
 - A yes to the voice sends the member's side to the member in private first, as `{ wav }` through `tell`, with the caption `shared`. `shareStory` then posts the returned voice media id in the group. A `file_id` belongs to the bot, so the group post needs no second upload.
 - The call code strips emoji from a line before the voice speaks the line.
