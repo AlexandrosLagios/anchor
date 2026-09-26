@@ -22,7 +22,7 @@ Anchor takes every name from Telegram. Set the first name of each demo account t
 
 Check the bot and the group:
 
-1. Make sure that the live bot runs the v2 build: revision `anchor-bot-00015-fr2` (commit `a1da6bc`) or later. Revision `00014` connects Sofia to Eleni's phone at the end of the call. Revision `00015` says what a photo shows in the voice note and the call, for a photo captured after the deploy. Revision `00007` takes the new first name of a renamed account, so Anchor calls the elder "Sofia". Revision `00008` reads the reminder and then a family moment in one call. The technical runbook names the current revision.
+1. Make sure that the live bot runs the v2 build: revision `anchor-bot-00016-xdv` (commit `c7e3b96`) or later. Revision `00014` connects Sofia to Eleni's phone at the end of the call. Revision `00015` says what a photo shows in the voice note and the call, for a photo captured after the deploy. Revision `00016` adds the scam shield. Revision `00007` takes the new first name of a renamed account, so Anchor calls the elder "Sofia". Revision `00008` reads the reminder and then a family moment in one call. The technical runbook names the current revision.
 2. Use the group of the demo. A person is a member in one family only, so a new group sends Sofia's private replies to the old family.
 3. Make sure that Anchor is an admin in the group. Anchor sends an ephemeral message only as an admin. Promote Anchor at least one day before, because a move to a supergroup posts `intro` a second time.
 4. Turn "Remain anonymous" off for Eleni. Anchor ignores commands from an anonymous admin.
@@ -48,9 +48,9 @@ Each beat names the action, the spoken lines, and what the audience sees. The ti
 
 ### The problem (0:00, Narrator)
 
-> This is Sofia. She lives on her own, and she likes it that way. Her family lives in a group chat: photos, plans, and jokes, all day long. By the time Sofia finds her glasses, the photos of her granddaughter are buried under forty new messages. She doesn't type well, and she doesn't want to be a burden, so she stops asking. Slowly, she drops out of her own family's story.
+> This is Sofia. She lives on her own, and she likes it that way. By the time she finds her glasses, the photos of her granddaughter are buried under forty new messages in the family chat. She doesn't want to be a burden, so she stops asking. Slowly, she drops out of her own family's story.
 >
-> Living independently isn't only about safety. It also means staying part of your family's life from your own home. Meet Anchor.
+> Living independently also means staying part of your family's life. Meet Anchor.
 
 ### The story, live
 
@@ -67,9 +67,9 @@ Each beat names the action, the spoken lines, and what the audience sees. The ti
 
 The close starts at 4:40 after the phone call of beat 6, or at 3:40 when the phone does not ring. Both screens stay on the group until the Operator switches the screen to the website.
 
-> Sofia asked in her own words, chose what Anchor sends her, added her story by voice, and got her reminder in a phone call. Nobody acted for her. The family saw a ❤ and a ✍.
+> Sofia asked in her own words, chose what Anchor sends her, added her story by voice, got her reminder in a phone call, and ended up talking to Eleni. Nobody acted for her. The family saw a ❤ and a ✍.
 >
-> Anchor says it is not a person. It shares nothing without a yes, and it keeps a painful memory without ever bringing it back on its own.
+> Anchor says it is not a person. It shares nothing without a yes, and it keeps a painful memory without ever bringing it back on its own. And when a message pretends to be Eleni and asks for money, Sofia forwards it to Anchor, and Anchor tells her to call Eleni first.
 >
 > Anchor runs live today, in the group chat the family already uses. And you can try it yourself, on our website: anchor-open26.vercel.app.
 >
@@ -91,6 +91,17 @@ The call in beat 6 reads the due reminder and then the newest moment that Sofia 
 - A reply between two people never reaches Anchor.
 - In a replay on the live family record on 2026-09-26, 10 of 12 memory requests got the album, and 0 of 14 ordinary messages got an answer, among them photo questions to a person, such as "Can you send me the photos from yesterday?".
 - Every offer has an easy no, an unanswered offer fades, and "stop" turns Anchor off for one person.
+
+"Is Sofia safe from scams?"
+
+- Sofia forwards a suspicious message to Anchor. When the message uses a family name to ask for money, a code, or bank details, and it did not come from that person's Telegram account, Anchor tells her to call the person on the number she knows, and offers to tell them. Anchor never says that a message is certainly safe or certainly a scam.
+- Anchor reads only what Sofia forwards to it.
+- In a test on the real model, 6 of 6 scam runs got the warning, and 0 of 6 ordinary requests did, among them "Mum, can you send me the photos from yesterday?".
+
+"What about accessibility?"
+
+- Sofia never needs to read or type: she taps large buttons and answers by voice.
+- The voice notes and the call say what each photo shows, without names or judgments, for a member who cannot see the photo well.
 
 ## If a beat fails
 
