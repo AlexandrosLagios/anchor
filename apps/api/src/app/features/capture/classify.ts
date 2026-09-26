@@ -68,7 +68,7 @@ function prompt(bundle: Bundle): string {
     '- family_moment: a moment worth keeping.',
     '- sensitive: a moment worth keeping that can hurt to see again, such as a loss, grief, or illness.',
     '- logistics: plans, errands, and money.',
-    '- small_talk: chatter, jokes, reactions, and arguments.',
+    '- small_talk: chatter, jokes, reactions, arguments, and questions or requests to Anchor, such as "a memory of Lucy?".',
     '',
     'Return: verdict; salience from 1 to 5; people, the names in the moment; eventDate as YYYY-MM-DD, or empty when unknown; ' +
       'title, a short phrase for the family record, at most 100 characters; tags, up to 5 short tags for what the moment is about: ' +

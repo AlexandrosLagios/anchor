@@ -13,7 +13,16 @@ import { groupNextSteps, nextSteps, nudge, showChoices, stopMember } from './mem
 
 const logger = new Logger('Intents');
 const SEVEN_DAYS_MS = 7 * 86_400_000;
-const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums?|remember|show (?:me|us))\b/i;
+const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums?)\b/i;
+const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// ponytail: one regex per tag and person on each gated message; build one alternation when a record reaches thousands of tags
+const namesKnownSubject = (family: Family, text: string) =>
+  family.moments.some(
+    (moment) =>
+      !moment.sensitive &&
+      [...(moment.tags ?? []), ...moment.people].some((name) => name.length > 2 && new RegExp(`(?<![\\p{L}\\p{N}])${escaped(name)}(?![\\p{L}\\p{N}])`, 'iu').test(text)),
+  );
 
 const INTENTS = ['memory', 'find', 'sendMe', 'missed', 'settings', 'stop', 'callMe', 'forget', 'quiet', 'unclear'] as const;
 type Intent = (typeof INTENTS)[number];
@@ -151,8 +160,9 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
 
   const text = event.text ?? '';
   const addressed = ADDRESS.test(text);
-  // section 4.16: a message without "Anchor," reaches the intent call only when it talks about memories or photos, and never as a reply to a person
-  if (event.forwarded || (!addressed && (event.replyTo !== undefined || !MEMORY_WORDS.test(text)))) return false;
+  // section 4.16: a message without "Anchor," reaches the intent call only when it asks about memories or photos of a subject that the record
+  // knows, and never as a reply to a person
+  if (event.forwarded || (!addressed && (event.replyTo !== undefined || !MEMORY_WORDS.test(text) || !namesKnownSubject(family, text)))) return false;
   const question = text.replace(ADDRESS, '');
 
   const isNew = !family.members.some((candidate) => candidate.id === event.sender.id);
