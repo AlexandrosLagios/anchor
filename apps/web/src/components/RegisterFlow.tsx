@@ -26,7 +26,7 @@ export function RegisterFlow() {
   const policyEndRef = useRef<HTMLParagraphElement>(null);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
+  const [mode, setMode] = useState<'choose' | 'signup' | 'signin'>('choose');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -193,7 +193,36 @@ export function RegisterFlow() {
           })}
         </ol>
 
-        {step === 1 ? (
+        {step === 1 && mode === 'choose' ? (
+          <>
+            <h1 id={headingId}>Get started</h1>
+            <p className="lede">Create an account, or sign in if you already have one.</p>
+            <div className="family-actions">
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => {
+                  setMode('signup');
+                  setError('');
+                }}
+              >
+                Create an account
+              </button>
+              <button
+                className="btn btn-secondary"
+                type="button"
+                onClick={() => {
+                  setMode('signin');
+                  setError('');
+                }}
+              >
+                Sign in
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        {step === 1 && mode !== 'choose' ? (
           <form onSubmit={(event) => void submitAccount(event)}>
             <h1 id={headingId}>{mode === 'signup' ? 'Create your account' : 'Sign in'}</h1>
             <p className="lede">
@@ -316,7 +345,7 @@ export function RegisterFlow() {
                     setError('');
                   }}
                 >
-                  I already have an account
+                  Sign in instead
                 </button>
               ) : (
                 <button
