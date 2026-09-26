@@ -1,0 +1,229 @@
+##  Brand System, apply these EXACTLY before writing any UI code
+
+> These tokens are non-negotiable. Do not "interpret", "improve", or swap them for safer defaults. Do not fall back to Inter, Poppins, slate, gray, indigo, or any Tailwind default palette. If you find yourself reaching for `bg-slate-900`, `text-gray-700`, or a hex literal in a component, STOP and use the tokens below instead.
+
+### Step 1, Add fonts to `index.html` `<head>`
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700;800&family=Lato:wght@400;500;600;700&display=swap" rel="stylesheet">
+```
+
+### Step 2, REPLACE the `:root` block in `src/index.css` (or your global stylesheet) with this. Keep the existing shadcn tokens, but add these brand tokens alongside them:
+
+```css
+:root {
+  --primary: 242 100% 62%; /* Primary #433BFF */
+  --accent: 243 100% 93%; /* Accent #DEDCFF */
+  --highlight: 243 68% 48%; /* Highlight #2F27CE */
+  --background: 240 60% 99%; /* Background #FBFBFE */
+  --text: 247 75% 5%; /* Text #050315 */
+  /* Map shadcn semantic tokens to brand tokens */
+  --background: var(--background);
+  --foreground: var(--text);
+  --primary: var(--primary);
+  --primary-foreground: var(--background);
+  --accent: var(--primary);
+}
+```
+
+### Step 3, Extend `tailwind.config.ts` (or equivalent) with the brand colors AND fonts
+
+```ts
+theme: {
+  extend: {
+    fontFamily: {
+      display: ['Merriweather', 'system-ui', 'sans-serif'],
+      body: ['Lato', 'system-ui', 'sans-serif'],
+    },
+    colors: {
+        "primary": "hsl(var(--primary))",
+        "accent": "hsl(var(--accent))",
+        "highlight": "hsl(var(--highlight))",
+        "background": "hsl(var(--background))",
+        "text": "hsl(var(--text))",
+    },
+  },
+}
+```
+
+### Step 4, Use the tokens, not raw values
+
+- Headings: `<h1 class="font-display">`, never default-sans
+- Body: `<body class="font-body">`, set once on the root layout
+- Backgrounds: `bg-background` or `bg-background`
+- Text: `text-text` or `text-foreground`
+- Accents/CTAs: `bg-primary` or `bg-primary`
+- Borders: `border-primary` (use sparingly)
+
+### Brand voice
+
+Hannah says: Witty, encouraging, slightly cheeky. I write like a hype-friend who also happens to be a senior product designer plus technical co-founder. I believe every builder, first-timer or vibecoder, deserves a real shot. I am warm, direct, never condescending.
+
+### Hard rules (read before shipping)
+
+1. ONLY the 5 colors above appear in the final UI. No grays, slates, or Tailwind defaults.
+2. The two Google Fonts above are the ONLY fonts. No Inter, Poppins, or system-ui except as last-resort fallback.
+3. Generous whitespace + real hierarchy (display vs body vs caption sizes).
+4. ONE bold accent (`primary`) drives the eye. Don't spread color evenly.
+5. Pick one border-radius scale (e.g. `rounded-xl`) and commit across buttons, cards, inputs.
+6. If a section looks generic, you used the wrong tokens. Re-read this block.
+
+### If you're not Lovable (Bolt, v0, Replit, Cursor, ChatGPT, Claude, Gemini)
+
+The same tokens apply. If your stack doesn't use Tailwind, translate the HSL vars and font families into the equivalent system (CSS custom properties + font-family declarations). The palette and fonts above are the source of truth, the framework around them is your call.
+
+
+---
+
+# Project: Anchor
+# Tagline: Keeping memories alive for the whole family
+
+## Brand voice
+Hannah says: Witty, encouraging, slightly cheeky. I write like a hype-friend who also happens to be a senior product designer plus technical co-founder. I believe every builder, first-timer or vibecoder, deserves a real shot. I am warm, direct, never condescending.
+
+## Visual system
+Fonts: Headings: Merriweather · Body: Lato
+Palette:
+- primary: #433BFF (Primary)
+- accent: #DEDCFF (Accent)
+- highlight: #2F27CE (Highlight)
+- background: #FBFBFE (Background)
+- text: #050315 (Text)
+
+## Product spec
+## Overview
+Use Brand System tokens only (see Brand System block below). No raw hex, no default Tailwind grays.
+Anchor keeps a family's memories alive for everyone. It matters most, though, for those who are beginning to lose their memory. It turns the family group chat into a living, personal memory and requires no new app. It plugs into the messaging apps families already use, starting with Telegram.
+
+## Target user & jobs-to-be-done
+Use Brand System tokens only (see Brand System block below). No raw hex, no default Tailwind grays.
+Primary persona: A family caregiver for a loved one with Mild Cognitive Impairment (MCI).
+Job 1: They want to effortlessly capture and organize family moments to preserve memories.
+Job 2: They need a simple way for their loved one with MCI to re-engage with those memories without new app fatigue.
+Job 3: They wish to foster stronger family connections through shared, easily accessible reminiscence.
+
+## Tech stack & architecture
+Use Brand System tokens only (see Brand System block below). No raw hex, no default Tailwind grays.
+We are building a powerful, intuitive, and highly scalable web application. The frontend will be a snappy React application, bundled with Vite, written in TypeScript for type safety, styled beautifully with Tailwind CSS, and using shadcn/ui for accessible, composable components. The backend infrastructure will leverage Lovable Cloud (Supabase) for robust persistence, secure authentication, and scalable server logic, specifically utilizing its PostgreSQL database, built-in authentication, and serverless edge functions for Telegram integration. We'll build for rapid deployment and easy maintenance.
+
+Pieces:
+*   Frontend: React, Vite, TypeScript, Tailwind CSS, shadcn/ui
+*   Authentication: Supabase Auth (email/password, Google OAuth)
+*   Database: Supabase PostgreSQL
+*   Edge Functions: Supabase Edge Functions (for Telegram bot interactions, memory generation)
+*   Storage: Supabase Storage (for images, videos, audio)
+*   Third-party APIs: Telegram Bot API, OpenAI API (for narration generation), ElevenLabs API (for voice generation).
+
+## Component library setup
+Use Brand System tokens only (see Brand System block below). No raw hex, no default Tailwind grays.
+Start by setting up shadcn/ui with these core components:
+*   `button`
+*   `card`
+*   `dialog`
+*   `dropdown-menu`
+*   `form`
+*   `input`
+*   `label`
+*   `sheet`
+*   `sonner`
+*   `tabs`
+*   `toast`
+*   `tooltip`
+*   `avatar`
+*   `badge`
+*   `separator`
+*   `skeleton`
+*   `textarea`
+
+Create these composite components in `src/components/`:
+*   `Hero`: Displays primary call to action with title, subtitle, CTAs, and visual slot for the landing page.
+*   `FeatureGrid`: Renders a responsive grid of feature cards with icons, titles, and descriptions.
+*   `FAQ`: Manages a list of collapsible question and answer items.
+*   `CTA`: A reusable call to action block with headline and button.
+*   `EmptyState`: Presents a friendly message and optional action button for empty lists or dashboards.
+*   `PageHeader`: Consistent header for authenticated routes, including title and user avatar/menu.
+
+## Routing map
+Use Brand System tokens only (see Brand System block below). No raw hex, no default Tailwind grays.
+Here's where everyone can go in Anchor:
+*   `/`: Public landing page, product overview and conversion.
+*   `/about`: Public about page, our story and mission.
+*   `/pricing`: Public pricing details, plan comparison.
+*   `/privacy`: Public privacy policy.
+*   `/terms`: Public terms of service.
+*   `/auth`: Public authentication entry point for sign-in/sign-up.
+*   `/auth/reset`: Public password reset flow.
+*   `/onboarding` (protected): User setup after first sign-in.
+*   `/dashboard` (protected): Main user dashboard, overview of memories.
+*   `/memories/new` (protected): Create new memory, upload media.
+*   `/memories/:id` (protected): View a specific memory detail.
+*   `/memories/:id/edit` (protected): Edit an existing memory.
+*   `/conversations` (protected): Manage Telegram bot connections and conversations.
+*   `/settings` (protected): User account and app settings.
+*   `/settings/profile` (protected): Edit user profile details.
+*   `/404`: Public page for unknown routes.
+
+## Auth & user accounts
+Use Brand System tokens only (see Brand System block below). No raw hex, no default Tailwind grays.
+Users will sign up via email and password, with Google OAuth enabled for convenience. Sign-in and password reset flows will be standard. Email confirmation is OFF for this MVP. Session handling will be managed by Supabase Auth, keeping users logged in securely. New users land on `/onboarding` after successful sign-up, while returning users go directly to `/dashboard`. A `profiles` table will mirror `auth.users`, automatically creating a row upon new user sign-up via a database trigger. The `handle` will default to the first part of their email address, ensuring a unique identifier for public profiles.
+
+## Roles & permissions
+Use Brand System tokens only (see Brand System block below). No raw hex, no default Tailwind grays.
+For v1, we will primarily have `authenticated_user`. Future versions might include `family_admin` or `caregiver`. Roles will be managed in a `user_roles` table, linking to the `profiles` table via `user_id`. An `app_role` enum will define available roles. A `SECURITY DEFINER` function `has_role(uid, role)` will enforce role-based access control throughout the application. Roles are never stored directly on the `profiles` table, maintaining a clean separation of concerns and enhancing security.
+
+## Data model
+Use Brand System tokens only (see Brand System block below). No raw hex, no default Tailwind grays.
+Here's how we'll store all those precious memories:
+
+*   `profiles`:
+    *   `id` uuid PK refs `auth.users` (`id`) ON DELETE CASCADE
+    *   `handle` citext unique (user's public URL identifier, e.g., `/u/janedoe`)
+    *   `display_name` text
+    *   `bio` text
+    *   `avatar_url` text
+    *   `links` jsonb (social media or personal links)
+    *   `onboarding_completed_at` timestamptz
+    *   `created_at` timestamptz default `now()`
+    *   `updated_at` timestamptz default `now()`
+    *   Purpose: Stores public user profile information and onboarding status.
+
+*   `user_roles`:
+    *   `id` uuid PK default `gen_random_uuid()`
+    *   `user_id` uuid FK refs `profiles` (`id`) ON DELETE CASCADE
+    *   `app_role` app_role enum (`authenticated_user`)
+    *   `created_at` timestamptz default `now()`
+    *   Purpose: Manages user roles for access control.
+
+*   `memories`:
+    *   `id` uuid PK default `gen_random_uuid()`
+    *   `user_id` uuid FK refs `profiles` (`id`) ON DELETE CASCADE
+    *   `title` text
+    *   `description` text
+    *   `narrated_text` text (AI generated narration text)
+    *   `audio_url` text (URL to AI generated audio narration)
+    *   `media_urls` text[] (array of URLs to images/videos)
+    *   `telegram_message_id` text unique (link back to Telegram original message)
+    *   `event_date` date (when the memory happened)
+    *   `location` text
+    *   `tags` text[]
+    *   `is_private` boolean default `false` (can be shared with family members)
+    *   `created_at` timestamptz default `now()`
+    *   `updated_at` timestamptz default `now()`
+    *   Index: `user_id`, `event_date`
+    *   Purpose: Stores individual family memories, including media and AI-generated narration.
+
+*   `family_members`:
+    *   `id` uuid PK default `gen_random_uuid()`
+    *   `owner_id` uuid FK refs `profiles` (`id`) ON DELETE CASCADE
+    *   `member_profile_id` uuid FK refs `profiles` (`id`) ON DELETE SET NULL (if family member has Anchor account)
+    *   `name` text (display name for the family member)
+    *   `telegram_user_id` text unique (Telegram ID for non-Anchor family members)
+    *   `relationship` text (e.g., 
+
+## Coding rules
+- TypeScript strict mode. React function components. Tailwind for styling.
+- Match the brand voice in all UI copy. Never use em-dashes.
+- Use the palette via CSS variables, not hard-coded hexes inside components.
+- Prefer small, focused components over large files.
+- When unsure, ask one clarifying question before scaffolding.
+- Follow the Design System block below verbatim. Do not substitute fonts or colors.

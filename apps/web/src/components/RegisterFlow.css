@@ -40,7 +40,7 @@
 
 .reg-steps li[aria-current='step'] .reg-step-num {
   background: var(--brand);
-  color: #fff;
+  color: hsl(var(--background));
 }
 
 .reg h1 {

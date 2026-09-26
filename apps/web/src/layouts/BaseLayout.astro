@@ -13,11 +13,11 @@ interface Props {
 
 const {
   title,
-  description = 'A keeper of the memories your family already shares in its group chat — so they can come back, in your own voices.',
+  description = 'Keeping memories alive for the whole family. Anchor turns your family chat into a living memory assistant, no new app needed.',
   currentPath = '/',
 } = Astro.props;
 
-const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : `${title} · Anchor`;
+const fullTitle = title === 'Anchor' ? 'Anchor · Keeping memories alive for the whole family' : `${title} · Anchor`;
 ---
 
 <!doctype html>
@@ -26,10 +26,12 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f9fafb" />
+    <meta name="theme-color" content="#FBFBFE" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="/brand/anchor-og.png" />
+    <link rel="icon" href="/brand/anchor-favicon.png" type="image/png" />
     <title>{fullTitle}</title>
     <script is:inline>
       (function () {
@@ -55,16 +57,19 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Manrope:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700;800&family=Lato:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <slot name="head" />
   </head>
-  <body class="slate">
+  <body class="slate font-body">
     <a class="slate-skip" href="#main">Skip to content</a>
 
     <header class="slate-header">
-      <a class="slate-word" href="/">Anchor</a>
+      <a class="slate-word font-display" href="/">
+        <img class="slate-logo" src="/brand/anchor-icon.png" alt="" width="28" height="28" />
+        Anchor
+      </a>
       <nav class="slate-nav" aria-label="Primary">
         <a href="/how-it-works" aria-current={currentPath === '/how-it-works' ? 'page' : undefined}>How it works</a>
         <a href="/app" aria-current={currentPath === '/app' ? 'page' : undefined}>Try the demo</a>

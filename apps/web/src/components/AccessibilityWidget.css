@@ -21,12 +21,12 @@ body.consent-open .a11y-widget {
   min-height: var(--tap);
   padding: 0.45rem 0.9rem;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   color: var(--ink);
   font: 700 0.9rem / 1.2 var(--font);
   cursor: pointer;
-  box-shadow: var(--shadow-nav);
+  box-shadow: none;
 }
 
 .a11y-widget-toggle:hover {
@@ -46,7 +46,7 @@ body.consent-open .a11y-widget {
   border-radius: 0.75rem;
   background: var(--bg-elevated);
   color: var(--ink);
-  box-shadow: 0 12px 36px color-mix(in srgb, #000 45%, transparent);
+  box-shadow: 0 12px 36px hsl(var(--text) / 0.18);
 }
 
 .a11y-widget-head {
@@ -115,7 +115,7 @@ body.consent-open .a11y-widget {
 .a11y-widget-scale button.is-active,
 .a11y-widget-scale button[aria-pressed='true'] {
   background: var(--brand);
-  color: #fff;
+  color: hsl(var(--background));
   border-color: var(--brand);
 }
 

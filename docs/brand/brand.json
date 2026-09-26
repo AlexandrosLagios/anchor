@@ -1,0 +1,102 @@
+{
+  "$schema": "https://midnightsprint.lovable.app/schema/brand.v1.json",
+  "name": "Anchor",
+  "tagline": "Keeping memories alive for the whole family",
+  "audience": "Families that have member diagnoses with MCI",
+  "vibe": "Earnest-outdoorsy with a human-welcoming",
+  "voice": "Hannah says: Witty, encouraging, slightly cheeky. I write like a hype-friend who also happens to be a senior product designer plus technical co-founder. I believe every builder, first-timer or vibecoder, deserves a real shot. I am warm, direct, never condescending.",
+  "palette": [
+    {
+      "name": "Primary",
+      "role": "primary",
+      "hex": "#433BFF",
+      "hsl": {
+        "h": 242,
+        "s": 100,
+        "l": 62
+      }
+    },
+    {
+      "name": "Accent",
+      "role": "accent",
+      "hex": "#DEDCFF",
+      "hsl": {
+        "h": 243,
+        "s": 100,
+        "l": 93
+      }
+    },
+    {
+      "name": "Highlight",
+      "role": "highlight",
+      "hex": "#2F27CE",
+      "hsl": {
+        "h": 243,
+        "s": 68,
+        "l": 48
+      }
+    },
+    {
+      "name": "Background",
+      "role": "background",
+      "hex": "#FBFBFE",
+      "hsl": {
+        "h": 240,
+        "s": 60,
+        "l": 99
+      }
+    },
+    {
+      "name": "Text",
+      "role": "text",
+      "hex": "#050315",
+      "hsl": {
+        "h": 247,
+        "s": 75,
+        "l": 5
+      }
+    }
+  ],
+  "fonts": {
+    "heading": "Merriweather",
+    "body": "Lato",
+    "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700;800&family=Lato:wght@400;500;600;700&display=swap"
+  },
+  "assets": {
+    "logos": [
+      {
+        "path": "logos/anchor-wordmark.png",
+        "style": "Wordmark",
+        "selected": false
+      },
+      {
+        "path": "logos/anchor-icon-mark-CHOSEN.png",
+        "style": "Icon + mark",
+        "selected": true
+      },
+      {
+        "path": "logos/anchor-badge.png",
+        "style": "Badge",
+        "selected": false
+      }
+    ],
+    "brand": [
+      {
+        "path": "brand/anchor-favicon-icon-mark-CHOSEN.png",
+        "kind": "favicon",
+        "selected": true
+      },
+      {
+        "path": "brand/anchor-og.png",
+        "kind": "og",
+        "selected": true
+      }
+    ]
+  },
+  "instructions": [
+    "This is the brand source of truth. Use ONLY these colors and fonts.",
+    "Do NOT fall back to Inter, Poppins, slate, gray, or indigo.",
+    "Map the palette role 'background' to --background and 'primary'/'accent' to --primary.",
+    "Generate tokens.css from this file's `palette` HSL values if your stack needs CSS vars."
+  ]
+}
