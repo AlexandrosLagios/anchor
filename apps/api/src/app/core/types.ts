@@ -150,6 +150,7 @@ export type Family = {
   reminders: Reminder[]; // v2
   birthdays?: Birthday[];
   chat?: ChatLine[]; // the latest group messages, the context of a private chat with Anchor
+  lastShown?: string[]; // the moment ids of the latest group memory, which "more memories" leaves out
   lastMemoryDay?: number;
   counters: Record<string, number>;
 };

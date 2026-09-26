@@ -146,6 +146,7 @@ export const lines = {
   whichMoment: (moment: Moment) => clip(`${moment.by.name}: ${moment.title}`, 40),
   voiceNote: '🎤 voice note',
   nothingToShare: 'The family record is empty so far. Share a photo with a few words 🙂',
+  noMoreMoments: "That's every moment about it in the family record so far 🙂 Share a photo with a few words to add one.",
   adminOnly: 'Only a group admin can do that 🙂',
   // the menu that Telegram shows when someone types "/"; an admin sees only the admin list, so it repeats /memory
   commands: {

@@ -19,7 +19,9 @@ import { answerTalk } from './talk';
 const logger = new Logger('Intents');
 const SEVEN_DAYS_MS = 7 * 86_400_000;
 const ABOUT = /\b(?:of|about|with)\b/i;
-const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums?)\b/i;
+const MEMORY_WORDS = /\b(?:memor(?:y|ies)|photos?|pictures?|pics|moments?|albums?|show (?:me|us))\b/i;
+// "more memories of Lucy" leaves out the moments of the latest group memory
+const MORE = /\b(?:more|other|others|another|else|different)\b/i;
 const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // the words of a title or a description that name no subject, so "photos of the trip" never matches "The photo shows the sea"
@@ -83,7 +85,7 @@ function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean,
       ? []
       : [
           'The message does not name Anchor, and the family may be talking to each other. Pick memory when the message asks for family memories, photos, or moments, ' +
-            'also in a short phrase such as "memories of the dog" or "photos of Lucy?". Otherwise, pick unclear.',
+            'also in a short phrase such as "memories of the dog", "photos of Lucy?", or "show me Lucy". Otherwise, pick unclear.',
         ]),
     'Pick the intent that best matches the message:',
     ...Object.entries(INTENT_EXAMPLES)
@@ -93,6 +95,7 @@ function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean,
     'For memory, when the message names a person, a pet, a place, or an activity, list in momentIds every moment about it, from the titles and the tags. ' +
       'Include a moment that names the same person or pet only by a general word, such as a "dog" moment when another moment shows that the family dog is Lucy, ' +
       'and for a general word such as "the dog", include every moment about the family dog by its name. Otherwise, momentIds is empty.',
+    ...(MORE.test(text) ? ['The message asks for more or other moments, so list every moment about it, also each moment that shows it only by a general word.'] : []),
     `For remind: ${TIME_RULE} For any other intent, time is empty.`,
     ...(hasVoice ? ['Set transcript to the words of the voice note.'] : []),
     ...moments.map(choiceLine),
@@ -163,7 +166,13 @@ async function groupAction(
 ): Promise<boolean> {
   switch (intent) {
     case 'memory': {
-      const asked = [...new Set([momentId, ...momentIds])].flatMap((id) => findAsked(family, id) ?? []);
+      const picked = [...new Set([momentId, ...momentIds])].flatMap((id) => findAsked(family, id) ?? []);
+      const seen = new Set(MORE.test(event.text ?? '') ? family.lastShown : []);
+      const asked = picked.filter((moment) => !seen.has(moment.id));
+      if (picked.length && !asked.length) {
+        await ctx.transport(family.id).send(event.chatId, { text: lines.noMoreMoments, replyTo: event.messageId });
+        return true;
+      }
       // an unaddressed request names a subject, so it gets an answer only when the record holds a moment about it
       if (!addressed && !asked.length) return false;
       await postMemoryNow(family, ctx, asked);
@@ -338,6 +347,13 @@ async function inPrivate(event: Incoming, family: Family, ctx: Context): Promise
   const said = event.text ?? reading.transcript;
   if (reading.intent === 'remind' && said) {
     await offerInPrivate(family, member, said, reading.time ?? '', event.messageId, ctx);
+    return true;
+  }
+  // a private memory request that names a subject sends a moment about it, with a picture when one has one
+  const named = reading.intent === 'memory' ? [reading.momentId, ...reading.momentIds].flatMap((id) => findAsked(family, id) ?? []) : [];
+  const lead = named.find((moment) => pictureOf(moment)) ?? named[0];
+  if (lead) {
+    await privateFind(lead.id, family, member, ctx);
     return true;
   }
   // a question with no moment to show, or a message that asks for nothing Anchor can do, gets an answer in words, with the group chat as the context

@@ -20,13 +20,13 @@ import {
 } from '../core/types';
 import { ask, speak, valid } from '../model/model';
 import { react } from './capture/capture';
-import { pictureOf, privateIntent, wordCount } from './capture/filter';
+import { asksAnchor, pictureOf, privateIntent, wordCount } from './capture/filter';
 import { nextSteps } from './members';
 
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];
 export const MAX_RETURNS = 7;
 const THREE_HOURS = 3 * 3_600_000;
-const KINDS = ['story', 'unsure', 'question', 'other'] as const;
+const KINDS = ['story', 'unsure', 'question', 'request', 'other'] as const;
 const REPLY_SCHEMA = {
   type: 'object',
   properties: { transcript: { type: 'string' }, kind: { type: 'string', enum: KINDS } },
@@ -157,7 +157,7 @@ async function inPrivate(event: Incoming, family: Family, member: Member, ctx: C
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
   if ((event.button && !action) || event.text?.startsWith('/')) return false;
   // a fixed phrase such as "settings" or "what did I miss?" goes to intents, and the open invitation stays open
-  if (!action && !event.voice && privateIntent(event.text)) return false;
+  if (!action && !event.voice && (privateIntent(event.text) || asksAnchor(event.text))) return false;
   if (action === 'never') {
     const moment = family.moments.find((item) => item.id === momentId);
     let changed = false;
@@ -186,7 +186,7 @@ async function inPrivate(event: Incoming, family: Family, member: Member, ctx: C
     markReplied(invitation, ctx);
     await explain(tellDirectly(moment), invitation, moment, family, member, ctx);
   } else if (action) await settle(action, invitation, moment, family, member, ctx);
-  else await reply(event, invitation, moment, family, member, ctx);
+  else return reply(event, invitation, moment, family, member, ctx);
   return true;
 }
 
@@ -242,13 +242,15 @@ async function settle(action: string, invitation: Invitation, moment: Moment, fa
   }
 }
 
-async function reply(event: Incoming, invitation: Invitation, moment: Moment, family: Family, member: Member, ctx: Context) {
+// false hands a request to Anchor on to intents, and the invitation stays open
+async function reply(event: Incoming, invitation: Invitation, moment: Moment, family: Family, member: Member, ctx: Context): Promise<boolean> {
   markReplied(invitation, ctx);
   const reading: Reading =
     event.unsupported || event.forwarded
       ? { kind: 'other', transcript: '' }
       : (readShortQuestion(event) ?? (await readReply(event, moment, ctx.transport(family.id))));
-  if (!isOpen(family, member, invitation, moment)) return;
+  if (reading.kind === 'request') return false;
+  if (!isOpen(family, member, invitation, moment)) return true;
   if (reading.kind === 'story') {
     const text = event.voice ? reading.transcript || lines.voiceNote : (event.text ?? '');
     invitation.story = invitation.story
@@ -257,25 +259,29 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
     const first = !invitation.shareAsked;
     invitation.shareAsked = true;
     ctx.store.save();
-    if (!first) return;
+    if (!first) return true;
     const buttons = [
       { label: lines.buttons.share, data: `inv:share:${moment.id}` },
       { label: lines.buttons.dontShare, data: `inv:keep:${moment.id}` },
     ];
     await tell(family, member, { text: lines.thanks, buttons }, ctx);
-    return;
+    return true;
   }
-  if (reading.kind === 'question') return explain(tellDirectly(moment), invitation, moment, family, member, ctx);
-  if (invitation.story) return;
+  if (reading.kind === 'question') {
+    await explain(tellDirectly(moment), invitation, moment, family, member, ctx);
+    return true;
+  }
+  if (invitation.story) return true;
   if (reading.kind === 'unsure' && !invitation.helped) {
     invitation.helped = true;
     ctx.store.save();
     await explain(gentleHelp(moment), invitation, moment, family, member, ctx);
-    return;
+    return true;
   }
   member.invitation = undefined;
   ctx.store.save();
   await tell(family, member, { text: lines.warmClose }, ctx);
+  return true;
 }
 
 async function helpIfSilent(family: Family, member: Member, now: number, ctx: Context) {
@@ -324,6 +330,7 @@ function replyPrompt(event: Incoming, moment: Moment) {
     '- story: a detail, a feeling, or a memory that the moment brings back.',
     '- unsure: a hesitation, for example "a school?".',
     '- question: a direct question about what the moment is, for example "who is that?" or "what is this?".',
+    '- request: a request or a question to Anchor about something else, for example "a memory of Lucy", "remind me about my pills", or "when is lunch on Sunday?".',
     '- other: an acknowledgement, for example "ok" or an emoji.',
   ].join('\n');
 }
