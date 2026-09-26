@@ -70,11 +70,26 @@ function findFamilyByPayload(payload: string, ctx: Context): Family | undefined 
   return ctx.store.state.families.find((item) => item.reminders.some((reminder) => reminder.id === reminderId));
 }
 
+// the start link travels outside the group, so a person who is new to the record joins only while in the group
+async function inGroupChat(family: Family, userId: string, ctx: Context): Promise<boolean> {
+  if (family.members.some((person) => person.id === userId)) return true;
+  try {
+    return await ctx.transport(family.id).isMember(family.chatId, userId);
+  } catch (error) {
+    logger.warn(`The membership check of ${userId} failed: ${error}`);
+    return false;
+  }
+}
+
 // the payload finds the family also for a person who is not a member yet; the router answers a person with no family
 async function start(event: Incoming, family: Family | undefined, ctx: Context): Promise<boolean> {
   const payload = event.text?.slice('/start'.length).trim();
   const target = (payload && findFamilyByPayload(payload, ctx)) || family;
   if (!target) return false;
+  if (!(await inGroupChat(target, event.sender.id, ctx))) {
+    await ctx.transport(target.id).send(event.chatId, { text: lines.notInGroup });
+    return true;
+  }
   const member = ctx.store.joinMember(target, event.sender);
   member.started = true;
   ctx.store.save();

@@ -6,6 +6,7 @@ export class FakeTransport implements Transport {
   readonly removed: { chatId: string; messageId: string; onlyFor?: string }[] = [];
   readonly reactions: { chatId: string; messageId: string; emoji: string; big?: boolean }[] = [];
   readonly admins = new Set<string>();
+  readonly outsiders = new Set<string>(); // every other person is in the group
   readonly files = new Map<string, { data: Buffer; mimeType: string }>();
 
   async send(chatId: string, message: Outgoing) {
@@ -41,6 +42,10 @@ export class FakeTransport implements Transport {
 
   async isAdmin(_chatId: string, userId: string) {
     return this.admins.has(userId);
+  }
+
+  async isMember(_chatId: string, userId: string) {
+    return !this.outsiders.has(userId);
   }
 
   startLink(payload: string) {

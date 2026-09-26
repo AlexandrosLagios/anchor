@@ -492,6 +492,24 @@ test('isAdmin is true for the creator and the administrators only', async () => 
   expect(answers).toEqual([true, true, false, false, false, false]);
 });
 
+test('isMember is true for a person in the group, and false for a restricted person who left, a person who left, and a banned person', async () => {
+  const members = [
+    { status: 'creator' },
+    { status: 'administrator' },
+    { status: 'member' },
+    { status: 'restricted', is_member: true },
+    { status: 'restricted', is_member: false },
+    { status: 'left' },
+    { status: 'kicked' },
+  ];
+  let next = 0;
+  botApi((method) => (method === 'getChatMember' ? ok({ ...members[next++], user: nikos }) : ok(true)));
+  const telegram = await TelegramTransport.connect('TOKEN');
+  const answers = [];
+  for (let i = 0; i < members.length; i++) answers.push(await telegram.isMember('-1001234567890', '222'));
+  expect(answers).toEqual([true, true, true, true, false, false, false]);
+});
+
 test('startLink opens a private chat with the payload and rejects an invalid payload', async () => {
   botApi();
   const telegram = await TelegramTransport.connect('TOKEN');
