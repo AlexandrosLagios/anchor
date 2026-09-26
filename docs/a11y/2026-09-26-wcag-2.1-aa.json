@@ -1,0 +1,972 @@
+{
+  "generatedAt": "2026-09-26T12:49:56.490Z",
+  "commit": "5dfefce588eeb23295bd6d3fa8de3386473a1021",
+  "axeVersion": "4.13.0",
+  "tags": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa"
+  ],
+  "base": "http://127.0.0.1:4321",
+  "engine": "Google Chrome via Playwright channel chrome, headless",
+  "scanCount": 62,
+  "findings": [
+    {
+      "route": "/how-it-works",
+      "label": "load",
+      "viewport": "1280x900",
+      "consent": "open",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [],
+      "contrastIncomplete": [
+        {
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "target": [
+                ".btn-primary.btn[href$=\"family\"]"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/how-it-works",
+      "label": "load",
+      "viewport": "1280x900",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [],
+      "contrastIncomplete": [
+        {
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/how-it-works",
+      "label": "load",
+      "viewport": "320x800",
+      "consent": "open",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [],
+      "contrastIncomplete": [
+        {
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "target": [
+                ".btn-primary.btn[href$=\"family\"]"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/how-it-works",
+      "label": "load",
+      "viewport": "320x800",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [],
+      "contrastIncomplete": [
+        {
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/app",
+      "label": "load",
+      "viewport": "320x800",
+      "consent": "open",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#_r3R_0H3_"
+              ],
+              "html": "<button type=\"button\" id=\"_r3R_0H3_\" role=\"tab\" aria-selected=\"true\" aria-controls=\"_r3R_0H1_\" tabindex=\"0\">Family group</button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.21 (foreground color: #f4fffc, background color: #c9a77a, font size: 11.4pt (15.2px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 1
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/app",
+      "label": "load",
+      "viewport": "320x800",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#_r3R_0H3_"
+              ],
+              "html": "<button type=\"button\" id=\"_r3R_0H3_\" role=\"tab\" aria-selected=\"true\" aria-controls=\"_r3R_0H1_\" tabindex=\"0\">Family group</button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.21 (foreground color: #f4fffc, background color: #c9a77a, font size: 11.4pt (15.2px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 1
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/404",
+      "label": "load",
+      "viewport": "1280x900",
+      "consent": "open",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [],
+      "contrastIncomplete": [
+        {
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".btn-primary.btn[href=\"/\"]"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/\">Back to Anchor</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/404",
+      "label": "load",
+      "viewport": "1280x900",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [],
+      "contrastIncomplete": [
+        {
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/\">Back to Anchor</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/404",
+      "label": "load",
+      "viewport": "320x800",
+      "consent": "open",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [],
+      "contrastIncomplete": [
+        {
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "target": [
+                ".btn-primary.btn[href=\"/\"]"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/\">Back to Anchor</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/404",
+      "label": "load",
+      "viewport": "320x800",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [],
+      "contrastIncomplete": [
+        {
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/\">Back to Anchor</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "route": "/designs/slate",
+      "label": "design",
+      "viewport": "1280x900",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#slate-brand"
+              ],
+              "html": "<h1 id=\"slate-brand\" class=\"slate-brand\">Anchor</h1>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.13 (foreground color: #f2f0eb, background color: #ffffff, font size: 78.0pt (104px), font weight: normal). Expected contrast ratio of 3:1"
+            },
+            {
+              "target": [
+                ".slate-line"
+              ],
+              "html": "<p class=\"slate-line\">Family memories, returning in the group chat.</p>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.13 (foreground color: #f2f0eb, background color: #ffffff, font size: 21.0pt (28px), font weight: normal). Expected contrast ratio of 3:1"
+            },
+            {
+              "target": [
+                ".slate-support"
+              ],
+              "html": "<p class=\"slate-support\">Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.</p>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.83 (foreground color: #c4bfb5, background color: #ffffff, font size: 12.8pt (17px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".slate-btn-ghost"
+              ],
+              "html": "<a class=\"slate-btn slate-btn-ghost\" href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.13 (foreground color: #f2f0eb, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".slate-link"
+              ],
+              "html": "<a class=\"slate-link\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.26 (foreground color: #c9a77a, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 5
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/designs/slate",
+      "label": "design",
+      "viewport": "320x800",
+      "consent": "dismissed",
+      "overflowsX": true,
+      "scrollWidth": 374,
+      "clientWidth": 320,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#slate-brand"
+              ],
+              "html": "<h1 id=\"slate-brand\" class=\"slate-brand\">Anchor</h1>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.13 (foreground color: #f2f0eb, background color: #ffffff, font size: 42.0pt (56px), font weight: normal). Expected contrast ratio of 3:1"
+            },
+            {
+              "target": [
+                ".slate-line"
+              ],
+              "html": "<p class=\"slate-line\">Family memories, returning in the group chat.</p>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.13 (foreground color: #f2f0eb, background color: #ffffff, font size: 16.2pt (21.6px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".slate-support"
+              ],
+              "html": "<p class=\"slate-support\">Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.</p>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.83 (foreground color: #c4bfb5, background color: #ffffff, font size: 12.8pt (17px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".slate-btn-ghost"
+              ],
+              "html": "<a class=\"slate-btn slate-btn-ghost\" href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.13 (foreground color: #f2f0eb, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".slate-link"
+              ],
+              "html": "<a class=\"slate-link\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.26 (foreground color: #c9a77a, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 5
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/designs/ink",
+      "label": "design",
+      "viewport": "1280x900",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                ".ink-action[href$=\"app\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">01</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".ink-action[href$=\"how-it-works\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">02</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".ink-action[href$=\"family\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">03</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 3
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/designs/ink",
+      "label": "design",
+      "viewport": "320x800",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                ".ink-action[href$=\"app\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">01</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".ink-action[href$=\"how-it-works\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">02</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".ink-action[href$=\"family\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">03</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 3
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/family",
+      "label": "record-chat-overflow",
+      "viewport": "1280x900",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/scrollable-region-focusable?application=axeAPI",
+          "tags": [
+            "cat.keyboard",
+            "wcag2a",
+            "wcag211",
+            "wcag213",
+            "TTv5",
+            "TT4.a",
+            "EN-301-549",
+            "EN-9.2.1.1",
+            "EN-9.2.1.3",
+            "RGAAv4",
+            "RGAA-7.3.2"
+          ],
+          "nodes": [
+            {
+              "target": [
+                ".family-chat-log"
+              ],
+              "html": "<div class=\"family-chat-log\" role=\"log\" aria-live=\"polite\" aria-relevant=\"additions\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+            }
+          ],
+          "nodeCount": 1
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/family",
+      "label": "record-upload-chat",
+      "viewport": "320x800",
+      "consent": "dismissed",
+      "overflowsX": true,
+      "scrollWidth": 416,
+      "clientWidth": 320,
+      "violations": [],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/app",
+      "label": "demo-after-bring-back",
+      "viewport": "1280x900",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                ".sofia > .who"
+              ],
+              "html": "<span class=\"who\">Sofia</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.3 (foreground color: #6e3000, background color: #2a3328, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(1) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".nikos > .who"
+              ],
+              "html": "<span class=\"who\">Nikos</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.23 (foreground color: #003f61, background color: #332c26, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(3) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 4
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/scrollable-region-focusable?application=axeAPI",
+          "tags": [
+            "cat.keyboard",
+            "wcag2a",
+            "wcag211",
+            "wcag213",
+            "TTv5",
+            "TT4.a",
+            "EN-301-549",
+            "EN-9.2.1.1",
+            "EN-9.2.1.3",
+            "RGAAv4",
+            "RGAA-7.3.2"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#_r3R_0H2_ > .chat-log[role=\"log\"][aria-relevant=\"additions\"]"
+              ],
+              "html": "<div class=\"chat-log\" role=\"log\" aria-live=\"polite\" aria-relevant=\"additions\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+            }
+          ],
+          "nodeCount": 1
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/app",
+      "label": "demo-after-sample-line",
+      "viewport": "1280x900",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                ".sofia > .who"
+              ],
+              "html": "<span class=\"who\">Sofia</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.3 (foreground color: #6e3000, background color: #2a3328, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(1) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".nikos.bubble:nth-child(2) > .who"
+              ],
+              "html": "<span class=\"who\">Nikos</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.23 (foreground color: #003f61, background color: #332c26, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(3) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".nikos.bubble:nth-child(4) > .who"
+              ],
+              "html": "<span class=\"who\">Nikos</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.23 (foreground color: #003f61, background color: #332c26, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(5) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 6
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/scrollable-region-focusable?application=axeAPI",
+          "tags": [
+            "cat.keyboard",
+            "wcag2a",
+            "wcag211",
+            "wcag213",
+            "TTv5",
+            "TT4.a",
+            "EN-301-549",
+            "EN-9.2.1.1",
+            "EN-9.2.1.3",
+            "RGAAv4",
+            "RGAA-7.3.2"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#_r3R_0H2_ > .chat-log[role=\"log\"][aria-relevant=\"additions\"]"
+              ],
+              "html": "<div class=\"chat-log\" role=\"log\" aria-live=\"polite\" aria-relevant=\"additions\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+            }
+          ],
+          "nodeCount": 1
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/app",
+      "label": "demo-after-bring-back",
+      "viewport": "320x800",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#_r3R_0H4_"
+              ],
+              "html": "<button type=\"button\" id=\"_r3R_0H4_\" role=\"tab\" aria-selected=\"true\" aria-controls=\"_r3R_0H2_\" tabindex=\"0\">Nikos, in private</button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.21 (foreground color: #f4fffc, background color: #c9a77a, font size: 11.4pt (15.2px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(1) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".nikos > .who"
+              ],
+              "html": "<span class=\"who\">Nikos</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.23 (foreground color: #003f61, background color: #332c26, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(3) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 4
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/scrollable-region-focusable?application=axeAPI",
+          "tags": [
+            "cat.keyboard",
+            "wcag2a",
+            "wcag211",
+            "wcag213",
+            "TTv5",
+            "TT4.a",
+            "EN-301-549",
+            "EN-9.2.1.1",
+            "EN-9.2.1.3",
+            "RGAAv4",
+            "RGAA-7.3.2"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#_r3R_0H2_ > .chat-log[role=\"log\"][aria-relevant=\"additions\"]"
+              ],
+              "html": "<div class=\"chat-log\" role=\"log\" aria-live=\"polite\" aria-relevant=\"additions\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+            }
+          ],
+          "nodeCount": 1
+        }
+      ],
+      "contrastIncomplete": []
+    },
+    {
+      "route": "/app",
+      "label": "demo-after-sample-line",
+      "viewport": "320x800",
+      "consent": "dismissed",
+      "overflowsX": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#_r3R_0H4_"
+              ],
+              "html": "<button type=\"button\" id=\"_r3R_0H4_\" role=\"tab\" aria-selected=\"true\" aria-controls=\"_r3R_0H2_\" tabindex=\"0\">Nikos, in private</button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.21 (foreground color: #f4fffc, background color: #c9a77a, font size: 11.4pt (15.2px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(1) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".nikos.bubble:nth-child(2) > .who"
+              ],
+              "html": "<span class=\"who\">Nikos</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.23 (foreground color: #003f61, background color: #332c26, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(3) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".nikos.bubble:nth-child(4) > .who"
+              ],
+              "html": "<span class=\"who\">Nikos</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.23 (foreground color: #003f61, background color: #332c26, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "target": [
+                ".anchor.bubble:nth-child(5) > .who"
+              ],
+              "html": "<span class=\"who\">Anchor</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.35 (foreground color: #084740, background color: #2a2a2a, font size: 9.4pt (12.48px), font weight: bold). Expected contrast ratio of 4.5:1"
+            }
+          ],
+          "nodeCount": 6
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/scrollable-region-focusable?application=axeAPI",
+          "tags": [
+            "cat.keyboard",
+            "wcag2a",
+            "wcag211",
+            "wcag213",
+            "TTv5",
+            "TT4.a",
+            "EN-301-549",
+            "EN-9.2.1.1",
+            "EN-9.2.1.3",
+            "RGAAv4",
+            "RGAA-7.3.2"
+          ],
+          "nodes": [
+            {
+              "target": [
+                "#_r3R_0H2_ > .chat-log[role=\"log\"][aria-relevant=\"additions\"]"
+              ],
+              "html": "<div class=\"chat-log\" role=\"log\" aria-live=\"polite\" aria-relevant=\"additions\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+            }
+          ],
+          "nodeCount": 1
+        }
+      ],
+      "contrastIncomplete": []
+    }
+  ]
+}
