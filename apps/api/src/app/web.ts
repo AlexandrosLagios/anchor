@@ -54,24 +54,25 @@ const person = ({ id, name }: Person): Person => ({ id, name });
 
 const iso = (ms: number) => new Date(ms).toISOString();
 
+const inRecord = (family: Family, userId: string) => family.members.some((member) => member.id === userId);
+
 // the family view is only for a person who is in the record and in the group now
 async function familyOf(user: Person, ctx: Context): Promise<Family> {
-  const family = ctx.store.familyOfMember(user.id);
-  if (!family || !(await inGroup(family, user.id, ctx))) throw new ForbiddenException('Join your family group, then sign in again');
-  return family;
+  for (const family of ctx.store.state.families) if (inRecord(family, user.id) && (await inGroup(family, user.id, ctx))) return family;
+  throw new ForbiddenException('Join your family group, then sign in again');
 }
 
-// the data rights stay with a person who left the group
-function recordOf(user: Person, ctx: Context): Family {
-  const family = ctx.store.familyOfMember(user.id);
-  if (!family) throw new ForbiddenException('Anchor has no record of you');
-  return family;
+// the data rights reach every family of the person, also a family whose group the person left
+function recordsOf(user: Person, ctx: Context): Family[] {
+  const families = ctx.store.state.families.filter((family) => inRecord(family, user.id));
+  if (!families.length) throw new ForbiddenException('Anchor has no record of you');
+  return families;
 }
 
 // the website sends a person to join on every visit, so only a member who has not started gets the choices in private
 export async function join(user: Person, ctx: Context, addLink: string) {
-  const known = ctx.store.familyOfMember(user.id);
-  const families = known ? [known, ...ctx.store.state.families.filter((family) => family !== known)] : ctx.store.state.families;
+  // the families of the record come first, in the order that familyOf reads them
+  const families = [...ctx.store.state.families].sort((a, b) => Number(inRecord(b, user.id)) - Number(inRecord(a, user.id)));
   for (const family of families) {
     if (!(await inGroup(family, user.id, ctx))) continue;
     const member = ctx.store.joinMember(family, user);
@@ -117,29 +118,31 @@ export async function media(user: Person, ctx: Context, momentId: string, kind: 
 }
 
 export function myData(user: Person, ctx: Context) {
-  const family = recordOf(user, ctx);
   return {
-    member: family.members.find((member) => member.id === user.id),
-    moments: family.moments.filter((moment) => moment.by.id === user.id),
-    stories: family.moments.flatMap((moment) => moment.stories.filter((story) => story.by.id === user.id).map((story) => ({ momentId: moment.id, ...story }))),
-    reminders: family.reminders.filter((reminder) => reminder.to === user.id),
+    families: recordsOf(user, ctx).map((family) => ({
+      member: family.members.find((member) => member.id === user.id),
+      moments: family.moments.filter((moment) => moment.by.id === user.id),
+      stories: family.moments.flatMap((moment) => moment.stories.filter((story) => story.by.id === user.id).map((story) => ({ momentId: moment.id, ...story }))),
+      reminders: family.reminders.filter((reminder) => reminder.to === user.id),
+    })),
   };
 }
 
 // Telegram keeps the group messages; this removes what Anchor holds about the person
 export function deleteMyData(user: Person, ctx: Context) {
-  const family = recordOf(user, ctx);
-  const name = family.members.find((member) => member.id === user.id)?.name;
-  unlog(family, family.moments.filter((moment) => moment.by.id === user.id).flatMap((moment) => moment.messageIds));
-  family.moments = family.moments.filter((moment) => moment.by.id !== user.id);
-  for (const moment of family.moments) {
-    moment.stories = moment.stories.filter((story) => story.by.id !== user.id);
-    delete moment.returns[user.id];
+  for (const family of recordsOf(user, ctx)) {
+    const name = family.members.find((member) => member.id === user.id)?.name;
+    unlog(family, family.moments.filter((moment) => moment.by.id === user.id).flatMap((moment) => moment.messageIds));
+    family.moments = family.moments.filter((moment) => moment.by.id !== user.id);
+    for (const moment of family.moments) {
+      moment.stories = moment.stories.filter((story) => story.by.id !== user.id);
+      delete moment.returns[user.id];
+    }
+    family.members = family.members.filter((member) => member.id !== user.id);
+    family.reminders = family.reminders.filter((reminder) => reminder.to !== user.id);
+    family.offers = family.offers.filter((offer) => offer.to !== user.id);
+    // ponytail: a chat line keeps only the name, so the lines of a namesake go too; add the sender id to ChatLine when that matters
+    if (family.chat) family.chat = family.chat.filter((line) => line.by !== name);
   }
-  family.members = family.members.filter((member) => member.id !== user.id);
-  family.reminders = family.reminders.filter((reminder) => reminder.to !== user.id);
-  family.offers = family.offers.filter((offer) => offer.to !== user.id);
-  // ponytail: a chat line keeps only the name, so the lines of a namesake go too; add the sender id to ChatLine when that matters
-  if (family.chat) family.chat = family.chat.filter((line) => line.by !== name);
   ctx.store.save();
 }

@@ -118,7 +118,14 @@ test('the family view hides sensitive moments, lists the newest first, and close
   await expect(media(sofia, ctx, 'm3', 'photo')).rejects.toThrow(NotFoundException);
   await expect(media(sofia, ctx, 'm1', 'voice')).rejects.toThrow(NotFoundException);
 
-  transport.outsiders.add(sofia.id);
+  const other = ctx.store.addFamily('-200', '-200');
+  const leftFirst = (chatId: string, userId: string) => Promise.resolve(!(chatId === '-100' && userId === sofia.id));
+  transport.isMember = leftFirst;
+  expect(await join(sofia, ctx, ADD_LINK)).toEqual({ status: 'joined', family: { members: [sofia] } });
+  expect(await me(sofia, ctx)).toEqual({ member: sofia, family: { members: [sofia] } });
+  expect(await moments(sofia, ctx)).toEqual([]);
+
+  other.members = [];
   await expect(moments(sofia, ctx)).rejects.toThrow(ForbiddenException);
   await expect(media(sofia, ctx, 'm1', 'photo')).rejects.toThrow(ForbiddenException);
   await expect(me({ id: '333', name: 'Eleni' }, ctx)).rejects.toThrow(ForbiddenException);
@@ -140,13 +147,20 @@ test('my data exports what the person shared, sensitive included, and delete rem
     { id: 'g2', by: 'Nikos', text: 'hello', at: 2 },
   ];
 
-  const exported = myData(sofia, ctx);
+  const other = ctx.store.addFamily('-200', '-200');
+  ctx.store.joinMember(other, sofia);
+  other.moments.push(moment('m9', sofia));
+
+  const [exported, second] = myData(sofia, ctx).families;
   expect(exported.member).toMatchObject(sofia);
   expect(exported.moments.map((item) => item.id)).toEqual(['m1']);
   expect(exported.stories).toEqual([{ momentId: 'm2', ...mine }]);
   expect(exported.reminders.map((item) => item.id)).toEqual(['r1']);
+  expect(second.moments.map((item) => item.id)).toEqual(['m9']);
 
   deleteMyData(sofia, ctx);
+  expect(other.members).toEqual([]);
+  expect(other.moments).toEqual([]);
   expect(family.members.map((member) => member.id)).toEqual([nikos.id]);
   expect(family.moments.map((item) => item.id)).toEqual(['m2']);
   expect(family.moments[0].stories).toEqual([theirs]);
