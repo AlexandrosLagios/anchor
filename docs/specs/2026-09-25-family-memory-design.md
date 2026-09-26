@@ -363,6 +363,21 @@ Twilio places the call, and OpenAI Realtime is the voice. The call runs through 
 - Ingress: `anchor-bot` runs with `ANCHOR_BOT_ONLY=true` before the service becomes public, so the public service exposes no prototype route. The Nest HTTP server upgrades `/call/stream` to a WebSocket. Cloud Run closes a WebSocket at the request timeout, so the service runs with `--timeout=900`. The inline TwiML passes a random token per call as a stream `<Parameter>`. The bridge drops a stream whose token Anchor did not issue. A webhook for calls to Anchor's number checks the Twilio signature.
 - The demo gate: the call joins the demo script only when the call rings a demo phone by Saturday night, through the deployed bot.
 
+### 4.16 Subject collections (v2, step 5b)
+
+A group memory brings back several moments of one subject together, as a photo album. An example is three photos of the family dog that different members shared over the months.
+
+- The capture call (section 6.3) returns `subject`: the one recurring thing that the moment is about, such as a pet, a person, a place, or an activity, for example "Rex the dog". The value is empty when the moment has no clear subject.
+- The prompt lists the subjects that the family's moments already hold. The model reuses a listed subject when the moment is about the same thing, so that every photo of one dog gets one subject. The code stores the value in `moment.subject`.
+- A moment without a `subject`, such as a moment that was saved before this section, never joins a collection.
+- A collection is the moment that the group memory picks (section 4.3), plus the other moments with the same `subject`. The match ignores letter case. The code skips every sensitive moment.
+- A collection needs at least 2 moments with a photo or a video. Otherwise, the memory posts the one moment as before.
+- The album holds at most 6 moments. The picked moment always stays in the album. The other places go to the moments with the highest salience, and the album orders the moments by `eventDate`, then by `savedAt`, oldest first.
+- The post is an album with the caption `collectionCaption(label, subject, moments)`: the label, the subject, and one `sharedBy` line for each moment. The code cuts the caption at 1024 characters.
+- The code marks the due keys on the picked moment only. The code adds the message id of each album item to `memoryPostIds` of its own moment, so a reply to one photo adds a story to that photo's moment (section 4.4).
+- The 18:00 slot, `/memory`, and the `memory` intent ("Anchor, show us a memory") all post a collection when one exists.
+- The demo shows no collection on stage. The Closer mentions collections in one sentence after the deploy, and the team answers questions about them in the Q&A.
+
 ## 5. Architecture
 
 ### 5.1 Extension points
