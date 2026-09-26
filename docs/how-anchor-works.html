@@ -239,7 +239,7 @@
   <li><strong>Fixed phrases, in code.</strong> A regex catches "send me", "another moment", "settings", "call me", "what did I miss", and "stop", so the key demo phrases never depend on the model.</li>
   <li><strong>One model call</strong> returns <code>{ intent, momentId, momentIds }</code>. The intent is an enum of ten, and the moment ids are an enum of the family's non-sensitive moments, so the model can pick only a moment that exists. Code validates both anyway. An invalid answer or a failed call becomes <code>unclear</code>, which replies with "here is what I can do" and buttons.</li>
 </ol>
-<p>The newest addition lets people ask for a memory without "Anchor,". To stay out of ordinary family chat, such a message reaches the model only when it holds a memory word (memory, photo, album, and a few more), names a person or a tag that the record knows, and is neither a reply to someone nor forwarded. Even then, Anchor answers only when the model reads a memory request. In a replay on the live family record, 10 of 12 requests got their album, and 0 of 14 ordinary messages got a reply. A general request, such as "Give me a memory" or "any memories?", names no subject but only makes sense to Anchor, so code posts a memory for it without a model call. A leading "@anchor_family_bot" counts as "Anchor,".</p>
+<p>The newest addition lets people ask for a memory without "Anchor,". To stay out of ordinary family chat, such a message reaches the model only when it holds a memory word (memory, photo, album, and a few more), names a person or a tag that the record knows, and is neither a reply to someone nor forwarded. Even then, Anchor answers only when the model reads a memory request. In a replay on the live family record, 10 of 12 requests got their album, and 0 of 14 ordinary messages got a reply. A general request, such as "Give me a memory" or "any memories?", names no subject but only makes sense to Anchor, so code posts a memory for it without a model call. A leading "@anchor_family_bot" counts as "Anchor,". A voice note counts as the text of its transcript, so a spoken request gets the answer of the typed request.</p>
 <p>Code picks the buttons under each private answer ("Send me a moment", "What did I miss?", "My settings", "Call me"). The model never does.</p>
 
 <h2 id="members">8. Members, choices, and offers that fade</h2>
@@ -368,7 +368,7 @@
     <tr><td class="wrap">Every moment and tag goes into the prompts</td><td class="wrap">A family reaches thousands of moments</td><td class="wrap">A shortlist</td></tr>
     <tr><td class="wrap">The "I don't remember" filter is a phrase list</td><td class="wrap">It drops "I don't know how she did it"</td><td class="wrap">A model check</td></tr>
     <tr><td class="wrap">The model cache lives in the temp folder</td><td class="wrap">UNVERIFIED: on Cloud Run that folder uses the 512 MiB of memory, uncapped</td><td class="wrap">A size cap</td></tr>
-    <tr><td class="wrap">The scam shield reads only the words of a forward</td><td class="wrap">A scam arrives as a voice note</td><td class="wrap">Pass the voice as media</td></tr>
+    <tr><td class="wrap">Every voice note waits for one transcription before Anchor reads it</td><td class="wrap">A busy group sends many voice notes of family talk</td><td class="wrap">Skip the transcription for plain family talk</td></tr>
     <tr><td class="wrap">A person belongs to one family</td><td class="wrap">A grandparent is in two family groups</td><td class="wrap">Membership per chat</td></tr>
   </tbody>
 </table>
