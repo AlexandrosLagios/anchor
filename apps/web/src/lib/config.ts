@@ -1,8 +1,8 @@
 export const privacyEmail =
   import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@anchor.com';
 
-/** Telegram Login Client ID from BotFather (Login Widget). Audience of the id_token. */
-export const telegramClientId = (import.meta.env.PUBLIC_TELEGRAM_CLIENT_ID?.trim() || '').replace(/\D/g, '');
+/** Telegram Login Client ID from BotFather (Login Widget). Audience of the id_token. Defaults to @anchor_family_bot. */
+export const telegramClientId = (import.meta.env.PUBLIC_TELEGRAM_CLIENT_ID?.trim() || '8957920956').replace(/\D/g, '');
 
 /** Cloud Run bot that holds the family record. id_token is sent only here. */
 export const botOrigin = (
