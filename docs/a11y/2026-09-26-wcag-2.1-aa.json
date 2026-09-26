@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-09-26T16:14:32.323Z",
+  "commit": "aa4312e9ea1df2fa8b6bb67425fc3cf1fda17d42",
+  "standard": "WCAG 2.1 Level A and Level AA",
+  "axeVersion": "4.13.0",
+  "tags": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+  "target": "astro preview of the static build",
+  "gate": {
+    "command": "BASE_URL=http://127.0.0.1:4322 pnpm a11y:web",
+    "result": "pass",
+    "detail": "10 routes x 2 consent states, 0 violations. The script ignores axe incomplete and does not open high contrast or the demo."
+  },
+  "passed": {
+    "routes": ["/", "/how-it-works", "/app", "/family", "/my-data", "/privacy", "/terms", "/cookies", "/sitemap", "/404"],
+    "viewports": ["1280x800", "320x640"],
+    "states": ["consent-open", "consent-dismissed", "a11y-panel-open"],
+    "horizontalOverflowAt320": false,
+    "designStudiesWithoutViolations": ["/designs/linen", "/designs/mist", "/designs/slate", "/designs/quiet"]
+  },
+  "findings": [
+    {
+      "id": "prose-primary-buttons",
+      "status": "fail",
+      "axe": "incomplete",
+      "criteria": ["1.4.3"],
+      "impact": "serious",
+      "ratio": 1,
+      "pages": ["/how-it-works", "/404"],
+      "selectors": [".prose a.btn-primary"],
+      "colors": { "foreground": "#443dff", "background": "#443dff" },
+      "files": [
+        "apps/web/src/styles/tokens.css",
+        "apps/web/src/pages/how-it-works.astro",
+        "apps/web/src/pages/404.astro"
+      ],
+      "cause": ".prose a overrides .btn-primary color",
+      "relatedPass": {
+        "selectors": [".prose a.btn-secondary"],
+        "ratio": 4.66,
+        "colors": { "foreground": "#443dff", "background": "#dddbff" },
+        "note": "Same override. Passes AA today. Restore with the primary buttons."
+      }
+    },
+    {
+      "id": "high-contrast-text-150",
+      "status": "fail",
+      "axe": "violation",
+      "rule": "color-contrast",
+      "criteria": ["1.4.3"],
+      "impact": "serious",
+      "nodes": 159,
+      "state": "html.a11y-contrast.a11y-text-150",
+      "files": ["apps/web/src/styles/tokens.css"],
+      "groups": [
+        {
+          "ratio": 3.25,
+          "foreground": "#443dff",
+          "background": "#050316",
+          "what": "Header, footer, and body links, plus the family registration step"
+        },
+        {
+          "ratio": 3.25,
+          "foreground": "#050316",
+          "background": "#443dff",
+          "what": "Primary buttons (color uses swapped --background)"
+        },
+        {
+          "ratio": 1.21,
+          "foreground": "#f3f2fe",
+          "background": "#dddbff",
+          "what": "/app chips, panel headings, empty states"
+        },
+        {
+          "ratio": 1.29,
+          "foreground": "#fbfbfe",
+          "background": "#dddbff",
+          "what": "/family Sign in secondary button"
+        }
+      ]
+    },
+    {
+      "id": "demo-after-sample-line",
+      "status": "fail",
+      "page": "/app",
+      "steps": ["Send the photo", "Yes, I’ll take part", "A little later — bring it back", "Use a sample line"],
+      "issues": [
+        {
+          "axe": "violation",
+          "rule": "color-contrast",
+          "criteria": ["1.4.3"],
+          "ratio": 3.94,
+          "foreground": "#443dff",
+          "background": "#cbc8ff",
+          "selector": ".voice-tag",
+          "files": ["apps/web/src/components/MvpDemo.css", "apps/web/src/components/MvpDemo.tsx"]
+        },
+        {
+          "axe": "violation",
+          "rule": "scrollable-region-focusable",
+          "criteria": ["2.1.1"],
+          "alsoTagged": ["2.1.3"],
+          "selector": ".chat-log[role=log]",
+          "files": ["apps/web/src/components/MvpDemo.tsx", "apps/web/src/components/MvpDemo.css"]
+        }
+      ]
+    },
+    {
+      "id": "designs-ink-index",
+      "status": "fail",
+      "axe": "violation",
+      "rule": "color-contrast",
+      "criteria": ["1.4.3"],
+      "ratio": 4.41,
+      "foreground": "#787878",
+      "background": "#ffffff",
+      "page": "/designs/ink",
+      "inGate": false,
+      "selector": ".ink-action-index",
+      "files": ["apps/web/src/components/designs/ink/ink.css", "apps/web/src/pages/designs/ink.astro"],
+      "cause": "opacity 0.55 on 12px text"
+    }
+  ]
+}
