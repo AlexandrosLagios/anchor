@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Logger } from '@nestjs/common';
 import { dayIndex, slotIn } from '../core/clock';
+import { grounded } from '../core/grounded';
 import { cut, dateOf, lines } from '../core/lines';
 import { byPriority, isAnniversary } from '../core/priority';
 import type { Context, Family, Feature, Incoming, Media, Moment } from '../core/types';
@@ -59,20 +60,26 @@ function collectionOf(family: Family, picked: Moment, asked?: Moment[]): { momen
 
 const CAPTION_SCHEMA = { type: 'object', properties: { caption: { type: 'string' } }, required: ['caption'] };
 
-// section 4.16: the model writes a warm caption from the words of each sharer, and the fixed caption covers a failed call
+// section 4.16: the model writes a warm caption from the words of each sharer and each story, and the fixed caption covers a failed call or a caption
+// with a number, a name, or a quote that the moments do not hold
 async function captionFor(label: string, tag: string, moments: Moment[]): Promise<string> {
+  const facts = moments.map((moment) => {
+    const stories = moment.stories.map((story) => `${story.by.name}: «${cut(story.text, 200)}»`).join(' ');
+    return `- ${lines.sharedBy(moment)} (${dateOf(moment)})${stories ? ` Stories: ${stories}` : ''}`;
+  });
   const prompt = [
     "You are Anchor, the keeper of this family's photos and stories. You are not a person.",
     `Write the caption of a photo album that Anchor posts in the family group with the label "${label}": ${moments.length} family moments about ${tag}.`,
-    ...moments.map((moment) => `- ${lines.sharedBy(moment)} (${dateOf(moment)})`),
+    ...facts,
     'Write one or two short sentences in plain, warm English, at most 160 characters, the way a family member captions an album. Name who shared the moments.',
+    'You may quote a few words of a sharer or of a story, word for word, in «».',
     'Mention a date only when it tells when the moments happened. Use only what the moments say. Never judge the photos with words such as "charming" or "special".',
     'Never invent a fact, a feeling, or a memory, and never write "I remember" or "I love".',
   ].join('\n');
   try {
     const answer = await ask<{ caption?: unknown }>(prompt, CAPTION_SCHEMA, { fast: true });
     const caption = cut(valid.text(answer?.caption), 600);
-    if (caption) return `${caption}\n${lines.collectionReply}`;
+    if (caption && grounded(caption, [label, tag, String(moments.length), ...facts])) return `${caption}\n${lines.collectionReply}`;
   } catch (error) {
     logger.warn(`the collection caption call failed: ${error}`);
   }

@@ -114,6 +114,24 @@ test('classify drops the description when the model saw no picture, or when the 
   expect((await classify(bundle([event({ photo: { id: 'photo-1' } })]), transport))?.description).toBeUndefined();
 });
 
+test('classify drops a description that names someone of the family or judges the picture, and keeps a plain one of up to 300 characters', async () => {
+  const transport = new FakeTransport();
+  transport.files.set('photo-1', { data: Buffer.from('photo'), mimeType: 'image/jpeg' });
+  const photo = () => classify(bundle([event({ photo: { id: 'photo-1' } })]), transport);
+  const plain = 'The photo shows a girl with a red backpack holding a woman\'s hand at a white school gate, with other children behind them under a clear sky.';
+  (ask as Mock)
+    .mockResolvedValueOnce({ ...valid, description: 'The photo shows Maria at a school gate.' })
+    .mockResolvedValueOnce({ ...valid, description: 'The photo shows Sofia on a bench.' })
+    .mockResolvedValueOnce({ ...valid, description: 'The photo shows a lovely girl at a school gate.' })
+    .mockResolvedValueOnce({ ...valid, description: plain });
+
+  expect((await photo())?.description).toBeUndefined();
+  expect((await photo())?.description).toBeUndefined();
+  expect((await photo())?.description).toBeUndefined();
+  expect((await photo())?.description).toBe(plain);
+  expect((ask as Mock).mock.calls[0][0]).toContain('at most 30 words');
+});
+
 test('classify downloads the photo and the voice note, and calls ask once with the typed text and the sender name', async () => {
   const transport = new FakeTransport();
   transport.files.set('photo-1', { data: Buffer.from('photo'), mimeType: 'image/jpeg' });

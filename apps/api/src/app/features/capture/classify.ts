@@ -36,6 +36,13 @@ const SCHEMA = {
 // each tag once, whatever the case
 const unique = (tags: string[]) => tags.filter((tag, index) => tags.findIndex((other) => other.toLowerCase() === tag.toLowerCase()) === index);
 
+// a description names nobody and judges nothing, so a family name or a judgment word drops it
+const JUDGMENTS = new Set(['beautiful', 'lovely', 'cute', 'happy', 'special']);
+function plainDescription(description: string, names: string[]): boolean {
+  const named = new Set(names.flatMap((name) => name.split(/\s+/)).filter((word) => word.length > 2));
+  return (description.match(/[\p{L}\p{M}-]+/gu) ?? []).every((word) => !named.has(word) && !JUDGMENTS.has(word.toLowerCase()));
+}
+
 const tagsOf = (raw: unknown) => unique(valid.strings(raw).map((tag) => cut(tag.trim(), 40)).filter(Boolean)).slice(0, 5);
 
 export function validate(raw: unknown): Classification | undefined {
@@ -53,7 +60,7 @@ export function validate(raw: unknown): Classification | undefined {
     title,
     tags: tagsOf(record.tags),
     transcript: valid.text(record.transcript),
-    description: valid.text(record.description, 200) || undefined,
+    description: valid.text(record.description, 300) || undefined,
   };
 }
 
@@ -80,12 +87,13 @@ function prompt(bundle: Bundle, picture: Picture | undefined): string {
       'the names of people and pets, places, events, and activities, for example ["Lucy", "dog", "park"], never generic words such as family, photo, or happy; ' +
       'transcript, the words spoken in the voice note, or empty; ' +
       (picture
-        ? `and description, one plain sentence of at most 20 words that starts with "The ${picture} shows" and says what is visible: ` +
-          `the people, the animals, the place, and what happens, for example "The ${picture} shows a girl with a red backpack at a school gate."`
+        ? `and description, one plain sentence of at most 30 words that starts with "The ${picture} shows" and says what is visible: ` +
+          `the people, the animals, the place, the colours, and what happens, for example ` +
+          `"The ${picture} shows a girl with a red backpack holding a woman's hand at a school gate, with other children behind them."`
         : 'and description, empty.'),
     ...(picture
       ? [
-          'The description is for a family member who cannot see the picture well, so it is short and says only what the picture shows. ' +
+          'The description is for a family member who cannot see the picture well, so it says only what the picture shows. ' +
             'The description never names a person or a pet, even when the words name one: it says "a girl" or "a small dog" instead. The title and the tags still use the names. ' +
             'The description never guesses an age, a feeling, or a relation, and never judges the picture with words such as beautiful, lovely, cute, happy, or special.',
         ]
@@ -106,5 +114,7 @@ export async function classify(bundle: Bundle, transport: Transport): Promise<Cl
   const result = validate(await ask<unknown>(prompt(bundle, kind), SCHEMA, { media }));
   // a description needs a picture that the model saw, and it reads as Anchor's words only when it opens with the picture words
   if (result?.description && !(kind && result.description.startsWith(`The ${kind} shows `))) result.description = undefined;
+  const names = [bundle.sender.name, ...bundle.family.members.map((member) => member.name), ...bundle.family.moments.flatMap((moment) => moment.people), ...(result?.people ?? [])];
+  if (result?.description && !plainDescription(result.description, names)) result.description = undefined;
   return result;
 }
