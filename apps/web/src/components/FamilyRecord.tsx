@@ -287,7 +287,7 @@ export function FamilyRecord() {
           <p className="lede">
             Optional. Sign in with Telegram only if you want moments from a Telegram family group on this page.
           </p>
-          <TelegramLogin onSignedIn={() => void refresh()} label="Sign in with Telegram" />
+          <TelegramLogin onSignedIn={() => void refresh()} />
         </section>
       ) : null}
 

@@ -227,7 +227,7 @@ export function RegisterFlow() {
                 <p>
                   Anchor is a keeper of the memories a family shares in its group chat — not a person and not a member
                   of the family. For privacy requests email {privacyEmail}, or use <a href="/my-data">My data</a> when
-                  signed in with Telegram.
+                  signed in with your email account.
                 </p>
 
                 <h3>What we collect</h3>

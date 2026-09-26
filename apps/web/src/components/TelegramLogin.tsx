@@ -80,9 +80,16 @@ function openTelegramAuth(clientId: string, callback: (result: AuthResult) => vo
 type Props = {
   onSignedIn?: () => void;
   label?: string;
+  title?: string;
+  description?: string;
 };
 
-export function TelegramLogin({ onSignedIn, label = 'Get started with Telegram' }: Props) {
+export function TelegramLogin({
+  onSignedIn,
+  label = 'Sign in with Telegram',
+  title = 'Telegram group (optional)',
+  description = 'Only if you want moments from a Telegram family group. Your website account stays email and password.',
+}: Props) {
   const headingId = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -129,7 +136,7 @@ export function TelegramLogin({ onSignedIn, label = 'Get started with Telegram' 
   if (!configured) {
     return (
       <section className="tg-login" aria-labelledby={headingId}>
-        <h2 id={headingId}>Get started with Telegram</h2>
+        <h2 id={headingId}>{title}</h2>
         <p className="lede">
           Telegram Login is not configured yet. Add <code>PUBLIC_TELEGRAM_CLIENT_ID</code> from BotFather (Login Widget)
           for <code>@anchor_family_bot</code>.
@@ -143,23 +150,18 @@ export function TelegramLogin({ onSignedIn, label = 'Get started with Telegram' 
 
   return (
     <section className="tg-login" aria-labelledby={headingId}>
-      <h2 id={headingId}>Get started with Telegram</h2>
-      <p className="lede">
-        Sign in with your Telegram account. Anchor uses that identity for the family record — no email or password.
-      </p>
-      <button className="btn btn-primary" type="button" disabled={busy} onClick={() => openLogin()}>
+      <h2 id={headingId}>{title}</h2>
+      <p className="lede">{description}</p>
+      <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => openLogin()}>
         {busy ? 'Opening Telegram…' : label}
       </button>
-      <p className="tg-accept">
-        By signing in, you accept the <a href="/terms">Terms</a> and the <a href="/privacy">Privacy Policy</a>.
-      </p>
       {error ? (
         <p className="form-error" role="alert">
           {error}
         </p>
       ) : null}
       <p className="lede">
-        If Anchor’s private message does not arrive, <a href={botOpenLink}>open Anchor in Telegram</a>.
+        Prefer the messenger app? <a href={botOpenLink}>Open Anchor in Telegram</a>.
       </p>
     </section>
   );
