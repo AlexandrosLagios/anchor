@@ -218,7 +218,7 @@ export function FamilyRecord() {
         <div>
           <h1>Family record</h1>
           <p className="lede">
-            {`Signed in as ${name}${accountFamily ? ` · ${accountFamily.name}` : ''}. Upload memories here, ask Anchor what it knows, or keep sharing in the group chat.`}
+            {`Signed in as ${name}${accountFamily ? ` · ${accountFamily.name}` : ''}. This page is a mirror of the family’s kept moments — not a score. Everyday sharing lives in the group chat; choices and stop live with Anchor in Telegram.`}
           </p>
         </div>
         <div className="family-actions">

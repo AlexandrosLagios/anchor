@@ -14,12 +14,12 @@ export const botOpenLink = 'https://t.me/anchor_family_bot';
 /** Opens Telegram’s group picker and adds Anchor as an admin. */
 export const botAddLink = 'https://t.me/anchor_family_bot?startgroup&admin=delete_messages';
 
-/** Optional WhatsApp chat to invite Anchor (Twilio sandbox by default). */
+/** WhatsApp invite link — unused on the website; RegisterFlow shows a disabled demo placeholder. */
 export const whatsappAddLink =
   import.meta.env.PUBLIC_WHATSAPP_ADD_LINK?.trim() ||
   'https://wa.me/14155238886?text=join%20anchor';
 
-/** Optional Viber public-account chat. Empty means the button is shown as unavailable. */
+/** Viber invite link — unused on the website; RegisterFlow shows a disabled demo placeholder. */
 export const viberAddLink = import.meta.env.PUBLIC_VIBER_ADD_LINK?.trim() || '';
 
 export function botUrl(path: string): string {

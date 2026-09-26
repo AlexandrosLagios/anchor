@@ -13,7 +13,7 @@ import {
   writeProgress,
   type AccountFamily,
 } from '../lib/account';
-import { botAddLink, botOpenLink, privacyEmail, viberAddLink, whatsappAddLink } from '../lib/config';
+import { botAddLink, botOpenLink, privacyEmail } from '../lib/config';
 import './RegisterFlow.css';
 
 const STEPS = ['Account', 'Group', 'Family'] as const;
@@ -225,9 +225,9 @@ export function RegisterFlow() {
 
                 <h3>Who we are</h3>
                 <p>
-                  Anchor is a family memory product that helps practise spaced retrieval in a Telegram family group. For
-                  privacy requests email {privacyEmail}, or use <a href="/my-data">My data</a> when signed in with
-                  Telegram.
+                  Anchor is a keeper of the memories a family shares in its group chat — not a person and not a member
+                  of the family. For privacy requests email {privacyEmail}, or use <a href="/my-data">My data</a> when
+                  signed in with Telegram.
                 </p>
 
                 <h3>What we collect</h3>
@@ -440,13 +440,14 @@ export function RegisterFlow() {
             <h1 id={headingId}>Add Anchor to the group</h1>
             <p className="lede">
               {signedInAs ? `Signed in as ${signedInAs}. ` : null}
-              Pick a messenger if you want Anchor in the family chat. None of these is required — you can continue and
-              add a bot later.
+              Invite Anchor with the family — he should know it is a keeper of photos and stories, not a person. Telegram
+              is recommended and working. WhatsApp and Viber are demo placeholders only.
             </p>
             <ul className="reg-channels">
               <li>
                 <div>
                   <strong>Telegram</strong>
+                  <span className="reg-channel-badge">Recommended</span>
                   <p>Opens Telegram so you can add Anchor as an admin in a family group.</p>
                 </div>
                 <div className="family-actions">
@@ -461,27 +462,25 @@ export function RegisterFlow() {
               <li>
                 <div>
                   <strong>WhatsApp</strong>
-                  <p>Optional. Opens a WhatsApp chat if you want to try Anchor there.</p>
+                  <span className="reg-channel-badge">Coming soon</span>
+                  <p>Demo placeholder — not connected in this prototype.</p>
                 </div>
                 <div className="family-actions">
-                  <a className="btn btn-secondary" href={whatsappAddLink} target="_blank" rel="noreferrer">
+                  <button type="button" className="btn btn-secondary" disabled aria-disabled="true">
                     Open WhatsApp
-                  </a>
+                  </button>
                 </div>
               </li>
               <li>
                 <div>
                   <strong>Viber</strong>
-                  <p>Optional. Opens Viber if a public Anchor chat is configured.</p>
+                  <span className="reg-channel-badge">Coming soon</span>
+                  <p>Demo placeholder — not connected in this prototype.</p>
                 </div>
                 <div className="family-actions">
-                  {viberAddLink ? (
-                    <a className="btn btn-secondary" href={viberAddLink} target="_blank" rel="noreferrer">
-                      Open Viber
-                    </a>
-                  ) : (
-                    <p className="reg-hint">Viber is not set up for this demo yet.</p>
-                  )}
+                  <button type="button" className="btn btn-secondary" disabled aria-disabled="true">
+                    Open Viber
+                  </button>
                 </div>
               </li>
             </ul>
