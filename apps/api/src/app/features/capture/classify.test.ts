@@ -139,6 +139,27 @@ test('classify sends a bare photo, and the prompt says the moment may have no wo
   expect(options.media).toEqual([{ data: Buffer.from('photo'), mimeType: 'image/jpeg' }]);
 });
 
+test('validate keeps a trimmed subject, and turns a missing or empty subject into undefined', () => {
+  expect(validate({ ...valid, subject: '  Rex the dog ' })?.subject).toBe('Rex the dog');
+  expect(validate({ ...valid, subject: '' })?.subject).toBeUndefined();
+  expect(validate(valid)?.subject).toBeUndefined();
+});
+
+test('classify lists the subjects the family already holds, once each, so the model reuses them', async () => {
+  const withSubjects: Family = {
+    ...family,
+    moments: [{ subject: 'Bella the cat' }, { subject: 'Bella the cat' }, { subject: 'The beach house' }, {}] as Family['moments'],
+  };
+  (ask as Mock).mockResolvedValue(valid);
+
+  await classify({ family: withSubjects, sender, events: [event({ text: 'Bella on the sofa' })] }, new FakeTransport());
+
+  const [prompt, schema] = (ask as Mock).mock.calls[0];
+  expect(prompt).toContain('Subjects the family already has: Bella the cat; The beach house');
+  expect(prompt.match(/Bella the cat/g)).toHaveLength(1);
+  expect(schema.properties.subject).toEqual({ type: 'string' });
+});
+
 test('classify returns validate(raw)', async () => {
   const transport = new FakeTransport();
   (ask as Mock).mockResolvedValue({ ...valid, verdict: 'logistics' });
