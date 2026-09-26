@@ -1,6 +1,6 @@
 # Demo runbook: Anchor v2 live in a family group
 
-The 6-minute presentation is one story: the problem, a day in Sofia's family with Anchor, and the close. The live part shows Anchor v2: no commands, every member chooses what Anchor sends them, a share offer, a reminder offer, voice both ways, and a phone call that brings the reminder and a second family moment.
+The 6-minute presentation is one story: the problem, a day in Sofia's family with Anchor, and the close on the website. The live part shows Anchor v2: no commands, every member chooses what Anchor sends them, a share offer, a reminder offer, voice both ways, and a phone call that brings the reminder and a second family moment.
 
 The demo runs against the live bot `@anchor_family_bot` on Cloud Run (`DEPLOY.md`). The rehearsals run against the dev bot `@anchor_family_dev_bot` in its own group, because `/fastforward` moves the clock of the live bot for good. Every line and every staged message is in English.
 
@@ -14,7 +14,7 @@ Five teammates present, and four of them speak.
 | Eleni, the daughter | Teammate 2, a group admin | Phone 1, the family group. Speaks in character. |
 | Sofia, the grandmother | Teammate 3 | Phone 2, the family group, then her private chat with Anchor. Speaks in character. |
 | Closer | Teammate 4 | Closes the story, and takes the Q&A. |
-| Operator | Teammate 5 | Shows both phones side by side, keeps the stopwatch, and plays the recording if two beats fail. Silent. |
+| Operator | Teammate 5 | Shows both phones side by side, keeps the stopwatch, switches the screen to the website in the close, and plays the recording if two beats fail. Silent. |
 
 Anchor takes every name from Telegram. Set the first name of each demo account to its role name before the demo, for example "Eleni" and "Sofia".
 
@@ -39,10 +39,11 @@ Reset and prepare, before the demo and before each rehearsal:
 3. Let Eleni post a second staged photo in the group with the caption "Sunday lunch at the beach with the whole family!". The call in beat 6 reads this moment.
 4. Put a staged photo of a child's first day at school on Eleni's phone.
 5. Keep a screen recording of the best rehearsal ready. Play the recording if the live bot fails.
+6. Open the website https://anchor-open26.vercel.app in a browser tab on the Operator's laptop, next to the phones.
 
 ## The script
 
-Each beat names the action, the spoken lines, and what the audience sees. The times include about 5 seconds of model latency per beat, so a speaker talks while Anchor works. With the call, the run ends at about 5:25. Without the call, the run ends at about 4:25.
+Each beat names the action, the spoken lines, and what the audience sees. The times include about 5 seconds of model latency per beat, so a speaker talks while Anchor works. With the call, the run ends at about 5:35. Without the call, the run ends at about 4:35.
 
 ### The problem (0:00, Narrator)
 
@@ -63,13 +64,17 @@ Each beat names the action, the spoken lines, and what the audience sees. The ti
 
 ### The close (4:40, Closer)
 
-The close starts at 4:40 after the phone call of beat 6, or at 3:40 when the phone does not ring. Both screens stay on the group.
+The close starts at 4:40 after the phone call of beat 6, or at 3:40 when the phone does not ring. Both screens stay on the group until the Operator switches the screen to the website.
 
 > Sofia asked in her own words, chose what Anchor sends her, added her story by voice, and got her reminder in a phone call. Nobody acted for her. The family saw a ❤ and a ✍.
 >
 > Anchor says it is not a person. It shares nothing without a yes, and it keeps a painful memory without ever bringing it back on its own.
 >
-> Anchor runs live today, in the group chat the family already uses. Anchor keeps the family's story, so nobody drops out of it.
+> Anchor runs live today, in the group chat the family already uses. And you can try it yourself, on our website: anchor-open26.vercel.app.
+>
+> Anchor keeps the family's story, so nobody drops out of it.
+
+On "our website", the Operator switches the screen from the phones to the landing page of the website. The screen stays on the website for the Q&A.
 
 Beat 5 uses the sentence of the design, because Anchor offers a reminder only for a clear future action with a time or a trigger. Eleni writes the sentence as a reply, because the reply tells Anchor that "Mum" is Sofia. The rehearsals must show the offer both times.
 
@@ -86,6 +91,7 @@ The call in beat 6 reads the due reminder and then the newest moment that Sofia 
 - No reminder after `/fastforward` in beat 6 after 10 seconds: the Narrator tells the reminder, and the story continues.
 - No ring in beat 6 after 15 seconds: the Narrator says "The phone call is our next step", and the Closer starts the close.
 - The call rings, but Anchor stays silent for 5 seconds: Sofia hangs up. The Narrator says "The phone call is our next step", and the Closer starts the close.
+- The website does not load in the close: the Operator keeps the phones on the screen, and the Closer says the line with the address.
 - Two beats fail: the Operator stops the live demo and plays the screen recording. The speakers say their lines over the recording.
 
 To read what the bot did, run this command after the demo:
@@ -100,7 +106,7 @@ Caution: `/fastforward` moves the family clock of the whole bot for good. After 
 
 1. Before each rehearsal, do steps 1 and 2 of "Reset and prepare".
 2. Run the full script on the dev bot with a stopwatch, and write down the time of each beat.
-3. If the run without the call takes more than 4:30, shorten the spoken lines first.
+3. If the run without the call takes more than 4:40, shorten the spoken lines first.
 4. After the deploy of the v2 build, run beats 1 to 5 once on the live bot, without beat 6. Then do steps 1 and 2 of "Reset and prepare" again.
 5. On the live bot, never run `/fastforward` before the demo. Beat 6 on stage is the only jump.
 6. Rehearse the call of beat 6 on the live bot with a reminder in real time, because `/fastforward` stays off the live bot. Eleni replies to Sofia's message with "Mum, remember to take your pills at 10:45", a few minutes ahead, and Sofia taps the offered time. At 10:45, the reminder arrives and the phone rings. The dev bot cannot ring a phone without a public tunnel (`ngrok http 3000`, then `ANCHOR_PUBLIC_URL` in `apps/api/.env.local`).

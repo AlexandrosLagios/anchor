@@ -64,6 +64,7 @@
     <li><input type="checkbox" id="r5"><label for="r5">Let Eleni post a second staged photo in the group with the caption "Sunday lunch at the beach with the whole family!". The call in beat 6 reads this moment.</label></li>
     <li><input type="checkbox" id="r3"><label for="r3">Put a staged photo of a child's first day at school on Eleni's phone.</label></li>
     <li><input type="checkbox" id="r4"><label for="r4">Keep a screen recording of the best rehearsal ready. Play the recording if the live bot fails.</label></li>
+    <li><input type="checkbox" id="r6"><label for="r6">Open the website <code>https://anchor-open26.vercel.app</code> in a browser tab on the Operator's laptop, next to the phones. The close ends on its landing page.</label></li>
   </ol>
 
   <h2>4 · Rules that keep the live bot healthy</h2>
@@ -74,7 +75,7 @@
   <ol class="check">
     <li><input type="checkbox" id="h1"><label for="h1">Before each rehearsal, do steps 1 and 2 of "Reset and prepare".</label></li>
     <li><input type="checkbox" id="h2"><label for="h2">Run the full script on the dev bot with a stopwatch. Write down the time of each beat.</label></li>
-    <li><input type="checkbox" id="h3"><label for="h3">If the run takes more than 4:30 without the call, shorten the spoken lines first.</label></li>
+    <li><input type="checkbox" id="h3"><label for="h3">If the run takes more than 4:40 without the call, shorten the spoken lines first.</label></li>
     <li><input type="checkbox" id="h4"><label for="h4">After the deploy of the v2 build, run beats 1 to 5 once on the live bot, without beat 6. Then do steps 1 and 2 of "Reset and prepare" again.</label></li>
     <li><input type="checkbox" id="h5"><label for="h5">On the live bot, never run /fastforward before the demo. Beat 6 on stage is the only jump.</label></li>
     <li><input type="checkbox" id="h6"><label for="h6">Rehearse the call of beat 6 on the live bot with a reminder in real time, because /fastforward stays off the live bot. Eleni replies to Sofia's message with "Mum, remember to take your pills at 10:45", a few minutes ahead, and Sofia taps the offered time. At 10:45, the reminder arrives and the phone rings. The dev bot cannot ring a phone without a public tunnel (<code>ngrok http 3000</code>, then <code>ANCHOR_PUBLIC_URL</code> in <code>apps/api/.env.local</code>).</label></li>
