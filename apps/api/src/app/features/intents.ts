@@ -102,7 +102,12 @@ async function unclearGroup(event: Incoming, family: Family, ctx: Context): Prom
   return true;
 }
 
+// the call choice can be on without a number, when the member skipped the share button after the toggle
 async function doCallMe(family: Family, member: Member, ctx: Context): Promise<void> {
+  if (!member.phone) {
+    await tell(family, member, { text: lines.askPhone, buttons: [{ label: lines.buttons.sharePhone, contact: true }] }, ctx);
+    return;
+  }
   const ok = await callMember(family, member, ctx);
   if (!ok) await tell(family, member, { text: lines.callFailed, buttons: nextSteps(member, 'callMe') }, ctx);
 }

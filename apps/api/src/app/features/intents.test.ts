@@ -139,7 +139,7 @@ test('group: settings and stop send the ephemeral nudge', async () => {
 
 test('group: callMe rings the member when started', async () => {
   const { family, router } = setup();
-  member(family, { started: true });
+  member(family, { started: true, phone: '+306900000000' });
   vi.mocked(callMember).mockResolvedValue(true);
   vi.mocked(model.ask).mockResolvedValue({ intent: 'callMe', momentId: 'none' });
 
@@ -533,7 +533,7 @@ test('private: stop acts like stopMember', async () => {
 
 test('private: callMe calls callMember', async () => {
   const { family, router } = setup();
-  member(family, { started: true });
+  member(family, { started: true, phone: '+306900000000' });
   vi.mocked(callMember).mockResolvedValue(true);
   vi.mocked(model.ask).mockResolvedValue({ intent: 'callMe', momentId: 'none' });
 
@@ -542,9 +542,24 @@ test('private: callMe calls callMember', async () => {
   expect(callMember).toHaveBeenCalledTimes(1);
 });
 
+test('private: callMe asks for the phone number when the member has none', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family, { started: true, choices: { ...DEFAULT_CHOICES, call: true } });
+
+  await router.route({ ...privateEvent, button: 'nxt:callMe' });
+
+  expect(callMember).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([
+    expect.objectContaining({
+      chatId: m.id,
+      message: expect.objectContaining({ text: lines.askPhone, buttons: [{ label: lines.buttons.sharePhone, contact: true }] }),
+    }),
+  ]);
+});
+
 test('private: callMe tells callFailed with nextSteps on a false result', async () => {
   const { transport, family, router } = setup();
-  const m = member(family, { started: true });
+  const m = member(family, { started: true, phone: '+306900000000' });
   vi.mocked(callMember).mockResolvedValue(false);
   vi.mocked(model.ask).mockResolvedValue({ intent: 'callMe', momentId: 'none' });
 
