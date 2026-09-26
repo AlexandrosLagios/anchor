@@ -1,7 +1,11 @@
 .family-shell {
-  max-width: 42rem;
-  margin: 0 auto;
-  padding: var(--space);
+  max-width: none;
+  margin: 0;
+  padding: 0 0 calc(var(--space) * 1.5);
+}
+
+.family-shell > .family-panel {
+  margin-top: 1rem;
 }
 
 .family-header {
@@ -120,6 +124,13 @@
 
 .family-stories p {
   margin: 0.35rem 0 0;
+}
+
+.family-panel h2 {
+  font-family: var(--display);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
 }
 
 .tg-login,

@@ -24,6 +24,9 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>What we collect</h2>
     <ul>
+      <li>Account: email address, a password stored only as a hash, and an optional display name.</li>
+      <li>Consent: that you read this policy and accepted the Terms before continuing.</li>
+      <li>Files you upload on the website, such as photos and voice notes.</li>
       <li>Telegram identity: Telegram user id and display name from Telegram Login.</li>
       <li>Family membership: Telegram group and the people who belong to it with Anchor.</li>
       <li>Family moments: text, photos, voice notes, and stories shared in the group or private chat with Anchor.</li>
@@ -33,7 +36,9 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <h2>Purposes and legal bases (GDPR)</h2>
     <ul>
       <li><strong>Contract / steps prior to contract</strong> — run the family memory service you asked for.</li>
-      <li><strong>Consent</strong> — acceptance of Terms and Privacy when you sign in with Telegram on the website.</li>
+      <li>
+        <strong>Consent</strong> — you read this policy and accept it, with the Terms, when you register with email.
+      </li>
       <li>
         <strong>Legitimate interests</strong> — secure the service, prevent abuse, improve the prototype (balanced against
         your rights).
@@ -42,14 +47,16 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Where data is stored</h2>
     <p>
-      The family record lives with the Telegram bot on <strong>Google Cloud Run in <code>europe-west1</code></strong>,
-      stored as a file in <strong>Cloud Storage</strong> in the same region. The website is hosted on Vercel. It reads
-      your record only through the bot API after Telegram Login; it does not keep a second copy of the family record.
+      Account, consent, and the family you create on the website are stored in <strong>Neon Postgres</strong> in{' '}
+      <code>eu-central-1</code>. Files you upload are stored in <strong>Vercel Blob</strong> (<code>fra1</code>). The
+      Telegram family record lives with the bot on <strong>Google Cloud Run in <code>europe-west1</code></strong>, stored
+      as a file in <strong>Cloud Storage</strong> in the same region. The website is hosted on Vercel.
     </p>
 
     <h2>Telegram Login</h2>
     <p>
-      Website sign-in uses <strong>Telegram Login</strong> (OpenID Connect). Telegram issues a short-lived{' '}
+      After email registration, group moments use <strong>Telegram Login</strong> (OpenID Connect). Telegram issues a
+      short-lived{' '}
       <code>id_token</code>. The website keeps that token in <code>sessionStorage</code> and sends it only to the bot API.
       It is not put in the URL, in logs, or in <code>localStorage</code>.
     </p>
@@ -64,6 +71,8 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Processors</h2>
     <ul>
+      <li>Neon — account, consent, and website family records (<code>eu-central-1</code>).</li>
+      <li>Vercel Blob — files you upload (<code>fra1</code>).</li>
       <li>Telegram — group chat, private messages, and Telegram Login.</li>
       <li>Google Cloud Run (<code>europe-west1</code>) — the Anchor bot.</li>
       <li>Google Cloud Storage — the family record file.</li>

@@ -11,6 +11,9 @@ export const botOrigin = (
 
 export const botOpenLink = 'https://t.me/anchor_family_bot';
 
+/** Opens Telegram’s group picker and adds Anchor as an admin. */
+export const botAddLink = 'https://t.me/anchor_family_bot?startgroup&admin=delete_messages';
+
 export function botUrl(path: string): string {
   const normalized = path.startsWith('/') ? path : `/${path}`;
   return `${botOrigin}${normalized}`;

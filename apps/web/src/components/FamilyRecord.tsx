@@ -1,4 +1,15 @@
 import { useCallback, useEffect, useId, useState } from 'react';
+import {
+  accountLabel,
+  getAccountToken,
+  isRegistrationComplete,
+  listFamilies,
+  listFiles,
+  signOut,
+  watchAccountAuth,
+  type AccountFamily,
+  type AccountFile,
+} from '../lib/account';
 import { botOpenLink } from '../lib/config';
 import {
   BotAuthError,
@@ -7,14 +18,15 @@ import {
   fetchMoments,
   getIdToken,
   joinFamily,
-  setIdToken,
   tokenDisplayName,
   type FamilyMoment,
   type MeResult,
   watchTelegramAuth,
 } from '../lib/telegram';
+import { RegisterFlow } from './RegisterFlow';
 import { TelegramLogin } from './TelegramLogin';
 import './FamilyRecord.css';
+import './RegisterFlow.css';
 
 function formatWhen(value?: string) {
   if (!value) return '';
@@ -110,6 +122,10 @@ function MomentCard({ moment }: { moment: FamilyMoment }) {
 }
 
 export function FamilyRecord() {
+  const [phase, setPhase] = useState<'loading' | 'register' | 'record'>('loading');
+  const [accountToken, setAccountTokenState] = useState<string | null>(null);
+  const [accountFamily, setAccountFamily] = useState<AccountFamily | null>(null);
+  const [uploads, setUploads] = useState<AccountFile[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [me, setMe] = useState<MeResult | null>(null);
   const [moments, setMoments] = useState<FamilyMoment[]>([]);
@@ -117,7 +133,38 @@ export function FamilyRecord() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(
+    () =>
+      watchAccountAuth((next) => {
+        setAccountTokenState(next);
+        setPhase(isRegistrationComplete() ? 'record' : 'register');
+      }),
+    [],
+  );
+
   useEffect(() => watchTelegramAuth(setToken), []);
+
+  useEffect(() => {
+    if (phase !== 'record') return;
+    let cancelled = false;
+    void listFamilies()
+      .then((families) => {
+        if (!cancelled) setAccountFamily(families[0] ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setAccountFamily(null);
+      });
+    void listFiles()
+      .then((files) => {
+        if (!cancelled) setUploads(files);
+      })
+      .catch(() => {
+        if (!cancelled) setUploads([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [phase]);
 
   const refresh = useCallback(async () => {
     if (!getIdToken()) {
@@ -154,16 +201,21 @@ export function FamilyRecord() {
   }, []);
 
   useEffect(() => {
+    if (phase !== 'record') return;
     void refresh();
-  }, [refresh, token]);
+  }, [refresh, token, phase]);
 
-  if (!token) {
+  if (phase === 'loading') {
     return (
       <div className="family-shell">
-        <TelegramLogin onSignedIn={() => void refresh()} />
+        <p className="lede" role="status">
+          Loading…
+        </p>
       </div>
     );
   }
+
+  if (phase === 'register') return <RegisterFlow />;
 
   if (addLink) {
     return (
@@ -197,7 +249,8 @@ export function FamilyRecord() {
     );
   }
 
-  const name = me?.member.name || tokenDisplayName(token) || 'You';
+  const name =
+    me?.member.name || tokenDisplayName(token) || accountLabel(accountToken || getAccountToken()) || 'You';
 
   return (
     <div className="family-shell">
@@ -205,7 +258,7 @@ export function FamilyRecord() {
         <div>
           <h1>Family record</h1>
           <p className="lede">
-            Signed in as {name}. Choices and admin tools stay in Telegram.
+            {`Signed in as ${name}${accountFamily ? ` · ${accountFamily.name}` : ''}. Choices and admin tools stay in Telegram.`}
           </p>
         </div>
         <div className="family-actions">
@@ -219,7 +272,7 @@ export function FamilyRecord() {
             className="btn btn-secondary"
             type="button"
             onClick={() => {
-              setIdToken(null);
+              signOut();
             }}
           >
             Sign out
@@ -227,33 +280,58 @@ export function FamilyRecord() {
         </div>
       </header>
 
-      {me?.family.members?.length ? (
+      {accountFamily?.members?.length ? (
+        <p className="family-members" aria-label="Family members">
+          {accountFamily.members.map((member) => member.displayName || member.email).join(' · ')}
+        </p>
+      ) : me?.family.members?.length ? (
         <p className="family-members" aria-label="Family members">
           {me.family.members.map((member) => member.name).join(' · ')}
         </p>
       ) : null}
 
-      {error ? (
+      {uploads.length ? (
+        <section className="family-panel" aria-labelledby="uploaded-memories">
+          <h2 id="uploaded-memories">Memories you uploaded</h2>
+          <ul className="reg-uploads">
+            {uploads.map((file) => (
+              <li key={file.id}>{file.originalName || 'Memory'}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {!token ? (
+        <section className="family-panel" aria-labelledby="group-moments">
+          <h2 id="group-moments">Group moments</h2>
+          <p className="lede">Sign in with Telegram when you want moments from the family group on this page.</p>
+          <TelegramLogin onSignedIn={() => void refresh()} label="Sign in with Telegram" />
+        </section>
+      ) : null}
+
+      {token && error ? (
         <p className="form-error" role="alert">
           {error}
         </p>
       ) : null}
 
-      {busy && !moments.length ? (
+      {token && busy && !moments.length ? (
         <p className="lede" role="status">
           Loading the family record…
         </p>
       ) : null}
 
-      {!busy && !error && moments.length === 0 ? (
+      {token && !busy && !error && moments.length === 0 ? (
         <p className="lede">No moments yet. Share a photo or story in the family group on Telegram.</p>
       ) : null}
 
-      <div className="family-moments">
-        {moments.map((moment) => (
-          <MomentCard key={moment.id} moment={moment} />
-        ))}
-      </div>
+      {token ? (
+        <div className="family-moments">
+          {moments.map((moment) => (
+            <MomentCard key={moment.id} moment={moment} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

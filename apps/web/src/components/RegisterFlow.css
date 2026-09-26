@@ -1,0 +1,148 @@
+.reg-kicker {
+  margin: 0 0 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
+}
+
+.reg-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  list-style: none;
+  margin: 0 0 1.15rem;
+  padding: 0;
+}
+
+.reg-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--tap);
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+.reg-steps li[aria-current='step'] {
+  color: var(--brand);
+}
+
+.reg-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: var(--soft-bg);
+  font-size: 0.85rem;
+}
+
+.reg-steps li[aria-current='step'] .reg-step-num {
+  background: var(--brand);
+  color: #1a1a1a;
+}
+
+.reg h1 {
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+}
+
+.reg-policy {
+  max-height: 16rem;
+  overflow: auto;
+  margin: 1rem 0 0.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--soft-bg);
+}
+
+.reg-policy h2,
+.reg-policy h3 {
+  margin: 0.85rem 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.reg-policy h2 {
+  margin-top: 0;
+}
+
+.reg-policy p,
+.reg-policy li {
+  margin: 0.35rem 0;
+}
+
+.reg-policy ul {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.2rem;
+}
+
+.reg-hint {
+  margin: 0 0 0.85rem;
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+
+.reg-field {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.9rem;
+  font-weight: 700;
+}
+
+.reg-field input {
+  font: 400 1rem / 1.4 var(--font);
+  min-height: var(--tap);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.reg-file {
+  font-weight: 400;
+}
+
+.reg-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0 0 0.65rem;
+  min-height: var(--tap);
+  font-weight: 600;
+}
+
+.reg-check input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+}
+
+.reg-switch {
+  margin: 0.85rem 0 0;
+}
+
+.reg-text-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: 700 1rem / 1.4 var(--font);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+  min-height: var(--tap);
+}
+
+.reg-uploads {
+  margin: 0 0 1rem;
+  padding-left: 1.2rem;
+}
+
+.reg-uploads li {
+  margin: 0.25rem 0;
+}

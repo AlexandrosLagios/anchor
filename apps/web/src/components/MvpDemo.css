@@ -21,7 +21,7 @@
   text-transform: uppercase;
   color: var(--ink-muted);
   border-bottom: 1px solid var(--line);
-  background: #f7f4ee;
+  background: var(--soft-bg);
 }
 
 .chat-meta {

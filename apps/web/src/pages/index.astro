@@ -1,131 +1,73 @@
 ---
-import '../styles/tokens.css';
-import '../components/designs/slate/slate.css';
-import { AuthNav } from '../components/AuthNav';
-import { ConsentBanner } from '../components/ConsentBanner';
+import BaseLayout from '../layouts/BaseLayout.astro';
 
 const description =
   'Family memories, returning in the group chat. Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.';
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content={description} />
-    <meta name="theme-color" content="#1a1a1a" />
-    <meta property="og:title" content="Anchor · family memories, returning" />
-    <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
-    <title>Anchor · family memories, returning</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Figtree:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body class="slate">
-    <a class="slate-skip" href="#main">Skip to content</a>
+<BaseLayout title="Anchor" description={description} currentPath="/">
+  <section class="slate-hero" aria-labelledby="slate-title">
+    <p class="slate-brand" aria-hidden="true">Anchor</p>
+    <h1 id="slate-title" class="slate-line">Family memories, returning in the group chat.</h1>
+    <p class="slate-support">
+      Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.
+    </p>
+    <div class="slate-actions">
+      <a class="slate-btn slate-btn-primary" href="/family">Get started</a>
+      <a class="slate-btn slate-btn-ghost" href="/app">Try the demo</a>
+      <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
+    </div>
+  </section>
 
-    <header class="slate-header">
-      <a class="slate-word" href="/">Anchor</a>
-      <nav class="slate-nav" aria-label="Primary">
-        <a href="/how-it-works">How it works</a>
-        <a href="/app">Try the demo</a>
-        <a href="/family">Family</a>
-        <a href="/privacy">Privacy</a>
-        <AuthNav client:load />
-      </nav>
-    </header>
+  <section class="slate-section" aria-labelledby="how-it-works">
+    <h2 id="how-it-works" class="slate-heading">How it works</h2>
+    <ol class="slate-steps">
+      <li>
+        <span class="slate-step-num" aria-hidden="true">1</span>
+        <p>The family shares a moment in the group chat — a story, a photo, a voice note.</p>
+      </li>
+      <li>
+        <span class="slate-step-num" aria-hidden="true">2</span>
+        <p>Anchor saves it quietly, so it is there when it is needed later.</p>
+      </li>
+      <li>
+        <span class="slate-step-num" aria-hidden="true">3</span>
+        <p>Athina gets a gentle cue in the same chat, at a paced moment.</p>
+      </li>
+    </ol>
+  </section>
 
-    <main id="main" class="slate-main">
-      <section class="slate-hero" aria-labelledby="slate-title">
-        <p class="slate-brand" aria-hidden="true">Anchor</p>
-        <h1 id="slate-title" class="slate-line">Family memories, returning in the group chat.</h1>
-        <p class="slate-support">
-          Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.
-        </p>
-        <div class="slate-actions">
-          <a class="slate-btn slate-btn-primary" href="/family">Get started with Telegram</a>
-          <a class="slate-btn slate-btn-ghost" href="/app">Try the demo</a>
-          <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
-        </div>
-      </section>
+  <section class="slate-section" aria-labelledby="what-comes-back">
+    <h2 id="what-comes-back" class="slate-heading">What comes back</h2>
+    <p class="slate-section-lead">
+      The same kinds of things the family already shares — not a clinical exercise.
+    </p>
+    <ul class="slate-list">
+      <li>Memories and stories from the people who know her</li>
+      <li>Photos from ordinary days and bigger ones</li>
+      <li>Voice notes in familiar voices</li>
+      <li>
+        Spaced retrieval: free recall first, then a cue, then a gentle reveal if she wants it
+      </li>
+    </ul>
+  </section>
 
-      <section class="slate-section" aria-labelledby="how-it-works">
-        <h2 id="how-it-works" class="slate-heading">How it works</h2>
-        <ol class="slate-steps">
-          <li>
-            <span class="slate-step-num" aria-hidden="true">1</span>
-            <p>The family shares a moment in the group chat — a story, a photo, a voice note.</p>
-          </li>
-          <li>
-            <span class="slate-step-num" aria-hidden="true">2</span>
-            <p>Anchor saves it quietly, so it is there when it is needed later.</p>
-          </li>
-          <li>
-            <span class="slate-step-num" aria-hidden="true">3</span>
-            <p>Athina gets a gentle cue in the same chat, at a paced moment.</p>
-          </li>
-        </ol>
-      </section>
+  <section class="slate-section" aria-labelledby="where-data-lives">
+    <h2 id="where-data-lives" class="slate-heading">Where data lives</h2>
+    <p class="slate-prose">
+      You register with email first. Account data sits in Neon in the EU. The Telegram family record sits with the bot on
+      Cloud Run in the EU (<code>europe-west1</code>), in Cloud Storage. Prompts sent to OpenAI may leave the EU when the
+      model runs. More detail is on the <a class="slate-link" href="/privacy">privacy page</a>.
+    </p>
+  </section>
 
-      <section class="slate-section" aria-labelledby="what-comes-back">
-        <h2 id="what-comes-back" class="slate-heading">What comes back</h2>
-        <p class="slate-section-lead">
-          The same kinds of things the family already shares — not a clinical exercise.
-        </p>
-        <ul class="slate-list">
-          <li>Memories and stories from the people who know her</li>
-          <li>Photos from ordinary days and bigger ones</li>
-          <li>Voice notes in familiar voices</li>
-          <li>
-            Spaced retrieval: free recall first, then a cue, then a gentle reveal if she wants it
-          </li>
-        </ul>
-      </section>
-
-      <section class="slate-section" aria-labelledby="where-data-lives">
-        <h2 id="where-data-lives" class="slate-heading">Where data lives</h2>
-        <p class="slate-prose">
-          The family record sits with the Telegram bot on Cloud Run in the EU (<code>europe-west1</code>),
-          in Cloud Storage. The website signs you in with Telegram Login and reads that record through the
-          bot. Prompts sent to OpenAI may leave the EU when the model runs. More detail is on the{' '}
-          <a class="slate-link" href="/privacy">privacy page</a>.
-        </p>
-      </section>
-
-      <section class="slate-section slate-close" aria-labelledby="slate-close">
-        <h2 id="slate-close" class="slate-heading slate-heading-soft">
-          Keep Athina in the conversation.
-        </h2>
-        <p class="slate-section-lead">
-          Start with Telegram, try the scripted demo, or read how it works.
-        </p>
-        <div class="slate-actions">
-          <a class="slate-btn slate-btn-primary" href="/family">Get started with Telegram</a>
-          <a class="slate-btn slate-btn-ghost" href="/app">Try the demo</a>
-          <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
-        </div>
-      </section>
-    </main>
-
-    <footer class="slate-footer">
-      <p>Built on spaced retrieval: the family's own stories, returning gently so Athina keeps her place in family life.</p>
-      <nav aria-label="Footer">
-        <a href="/how-it-works">How it works</a>
-        <a href="/app">Try the demo</a>
-        <a href="/family">Family</a>
-        <a href="/my-data">My data</a>
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <a href="/cookies">Cookies</a>
-        <a href="/sitemap">Sitemap</a>
-      </nav>
-    </footer>
-
-    <ConsentBanner client:load />
-  </body>
-</html>
+  <section class="slate-section slate-close" aria-labelledby="slate-close">
+    <h2 id="slate-close" class="slate-heading slate-heading-soft">Keep Athina in the conversation.</h2>
+    <p class="slate-section-lead">Create an account, add Anchor to the family group, then share a memory.</p>
+    <div class="slate-actions">
+      <a class="slate-btn slate-btn-primary" href="/family">Get started</a>
+      <a class="slate-btn slate-btn-ghost" href="/app">Try the demo</a>
+      <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
+    </div>
+  </section>
+</BaseLayout>
