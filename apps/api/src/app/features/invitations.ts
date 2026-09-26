@@ -157,7 +157,7 @@ async function inPrivate(event: Incoming, family: Family, member: Member, ctx: C
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
   if ((event.button && !action) || event.text?.startsWith('/')) return false;
   // a fixed phrase such as "settings" or "what did I miss?" goes to intents, and the open invitation stays open
-  if (!action && !event.voice && (privateIntent(event.text) || asksAnchor(event.text))) return false;
+  if (!action && (privateIntent(event.text) || asksAnchor(event.text))) return false;
   if (action === 'never') {
     const moment = family.moments.find((item) => item.id === momentId);
     let changed = false;
@@ -252,7 +252,7 @@ async function reply(event: Incoming, invitation: Invitation, moment: Moment, fa
   if (reading.kind === 'request') return false;
   if (!isOpen(family, member, invitation, moment)) return true;
   if (reading.kind === 'story') {
-    const text = event.voice ? reading.transcript || lines.voiceNote : (event.text ?? '');
+    const text = event.text ?? (event.voice ? reading.transcript || lines.voiceNote : '');
     invitation.story = invitation.story
       ? { text: `${invitation.story.text}\n${text}`, voice: invitation.story.voice ?? event.voice }
       : { text, voice: event.voice };
@@ -301,13 +301,13 @@ async function helpIfSilent(family: Family, member: Member, now: number, ctx: Co
 // a short text that ends with "?" is a hesitation or a question, so code decides it and the model cannot turn it into a story
 function readShortQuestion(event: Incoming): Reading | undefined {
   const text = event.text?.trim() ?? '';
-  if (event.voice || !text.endsWith('?') || wordCount(text) > 4) return undefined;
+  if (!text.endsWith('?') || wordCount(text) > 4) return undefined;
   return { kind: QUESTION_WORD.test(text) ? 'question' : 'unsure', transcript: '' };
 }
 
 async function readReply(event: Incoming, moment: Moment, transport: Transport): Promise<Reading> {
   try {
-    const media = event.voice ? [await transport.download(event.voice)] : [];
+    const media = event.voice && !event.text ? [await transport.download(event.voice)] : [];
     const answer = await ask<{ kind?: unknown; transcript?: unknown } | null>(replyPrompt(event, moment), REPLY_SCHEMA, { media, fast: true });
     const kind = valid.oneOf(answer?.kind, KINDS);
     if (kind) return { kind, transcript: valid.text(answer.transcript) };

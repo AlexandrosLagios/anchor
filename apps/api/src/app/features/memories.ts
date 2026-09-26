@@ -136,7 +136,7 @@ async function handleStory(event: Incoming, family: Family, ctx: Context): Promi
   if (!moment || event.unsupported || event.forwarded) return false;
   if (!event.voice && wordCount(event.text) < 3) return false;
 
-  const text = event.voice ? await transcribeVoice(event.voice, family, ctx) : (event.text ?? '');
+  const text = event.voice && !event.text ? await transcribeVoice(event.voice, family, ctx) : (event.text ?? '');
 
   if (!family.moments.includes(moment)) return true;
 

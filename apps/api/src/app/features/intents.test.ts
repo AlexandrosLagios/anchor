@@ -16,10 +16,12 @@ import { intents } from './intents';
 import { memories } from './memories';
 import { choiceButtons, groupNextSteps, nextSteps } from './members';
 import { talk } from './talk';
+import { transcripts } from './transcripts';
 
 vi.mock('../model/model', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../model/model')>()),
   ask: vi.fn(),
+  transcribe: vi.fn(),
 }));
 
 vi.mock('./calls', async (importOriginal) => ({ ...(await importOriginal<typeof import('./calls')>()), callMember: vi.fn() }));
@@ -499,16 +501,35 @@ test('group: joinMember runs on a new sender, and saves', async () => {
   expect(reloaded?.members.some((m) => m.id === 'u1')).toBe(true);
 });
 
-test('group: a voice note goes to the model as audio', async () => {
-  const { transport, family, router } = setup();
+test('group: a voice note with its transcript as the text goes to the model without the audio', async () => {
+  const { family, router } = setup();
   member(family);
-  transport.files.set('clip-1', { data: Buffer.from('hello'), mimeType: 'audio/ogg' });
   vi.mocked(model.ask).mockResolvedValue({ intent: 'unclear', momentId: 'none' });
 
   await router.route({ ...groupEvent, text: 'Anchor, what happened here?', voice: { id: 'clip-1', mimeType: 'audio/ogg' } });
 
-  const [, , options] = vi.mocked(model.ask).mock.calls[0];
-  expect(options).toEqual({ media: [{ data: Buffer.from('hello'), mimeType: 'audio/ogg' }] });
+  const [prompt, schema, options] = vi.mocked(model.ask).mock.calls[0];
+  expect(prompt).toContain(': "what happened here?"');
+  expect(schema).not.toHaveProperty('properties.transcript');
+  expect(options).toEqual({});
+});
+
+test('a voice note reads as its transcript, so a spoken demo phrase gets the answer of the typed one', async () => {
+  const { transport, family, ctx } = setup();
+  const m = member(family);
+  family.moments.push(moment());
+  const router = createRouter([transcripts, intents], ctx);
+  transport.files.set('clip-1', { data: Buffer.from('clip'), mimeType: 'audio/ogg' });
+  const voice = { id: 'clip-1', mimeType: 'audio/ogg' };
+
+  vi.mocked(model.transcribe).mockResolvedValueOnce('Anchor, show us a memory.');
+  await router.route({ ...groupEvent, text: undefined, voice });
+  expect(transport.sent.at(-1)?.message.text).toContain(lines.labels.fromRecord);
+
+  vi.mocked(model.transcribe).mockResolvedValueOnce('What did I miss?');
+  await router.route({ ...privateEvent, text: undefined, voice });
+  expect(transport.sent.at(-2)).toMatchObject({ chatId: m.id, message: { text: lines.missed(1) } });
+  expect(model.ask).not.toHaveBeenCalled();
 });
 
 test('group: a plain group message with no address prefix returns false', async () => {

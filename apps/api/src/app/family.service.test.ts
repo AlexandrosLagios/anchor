@@ -101,6 +101,7 @@ test('with a token the host polls Telegram, introduces Anchor to a new group, an
 
 test('FEATURES keeps the order of spec 5.4', () => {
   expect(FEATURES.map((feature) => feature.name)).toEqual([
+    'transcripts',
     'talk',
     'intro',
     'fastforward',

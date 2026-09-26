@@ -329,7 +329,7 @@ These additions put journey steps 2 and 5 on stage, and they let the live demo r
 The `reminders` feature reads a group message before `capture`, and returns `false`, so `capture` still sees the message. A reminder never enters the family record, so memories, Ask Anchor, and then and now never see a reminder.
 
 - The offer call gives an offer to a direct request, such as "remind me about my pills", also with no time. An empty time shows the four default times.
-- The gate: a group text or caption that does not match the ask pattern, and that matches the code word filter. The filter matches remember, don't forget, remind, a clock time, "when we leave", "in the morning", "tonight", and "tomorrow". A voice note never passes the gate, because a gate on voice costs one transcription per group voice note.
+- The gate: a group text or caption that does not match the ask pattern, and that matches the code word filter. The filter matches remember, don't forget, remind, a clock time, "when we leave", "in the morning", "tonight", and "tomorrow". A voice note passes the gate on its transcript.
 - The offer call (section 6.8) returns `{ offer, who, time }`. `offer` is false by default. `who` is a member id or `unknown`, and `unknown` makes no offer, because a reminder for a person who is not a member must never land on the sender.
 - A message that names a day after tomorrow (a weekday, a date, or "next week") makes no offer, because a reminder has a time and no date. The code checks the weekday names, so the rule does not depend on the model.
 - The recipient must have `choices.reminders`. Anchor sends the recipient an ephemeral `reminderOffer(who, text)` that quotes the sender's words. The buttons are "Yes, at {time}", "Another time", "No thanks", and "Stop offering reminders".
@@ -798,14 +798,14 @@ The website, the prototype engine, the auth, the file routes, and the Vercel dep
 
 - `transcribe(media)` (step 1) returns the transcript of a voice note, or an empty string. The schema is `{ transcript: string }`, and the call uses the fast models. Group voice stories use this call.
 - The reply call (step 2, in `features/invitations.ts`) reads one private reply, text or voice, next to the moment's title and the sender's words. The schema is `{ transcript: string, kind: story | unsure | question | other }`.
-- A text reply of at most 4 words that ends with "?" is decided in code, with no model call. It is `question` when it starts with who, what, where, when, which, or why, and `unsure` otherwise, so "a school?" always gets the gentle help. Voice replies and longer texts go to the model.
+- A text reply of at most 4 words that ends with "?" is decided in code, with no model call. It is `question` when it starts with who, what, where, when, which, or why, and `unsure` otherwise, so "a school?" always gets the gentle help. A voice reply counts as the text of its transcript. Longer texts go to the model.
 - The kinds are `story | unsure | question | other`. `story` is a detail, a feeling, or a memory. `unsure` is a hesitation, for example "a school?". `question` asks what the moment is, for example "who is that?". `other` is an acknowledgement, for example "ok" or an emoji.
 
 ### 6.4 Find a moment (step 2b)
 
 - The prompt holds the question and one line per moment: id, title, date, people, and the first 200 characters of each story.
 - The schema is `{ momentId: enum }`, with the moment ids of the family and `none`.
-- A voice question goes in as audio in the same call. A voice question needs a caption that starts with "Anchor,". A spoken "Anchor, …" without a caption goes to capture, because detecting it would cost one transcription per group voice note.
+- The `transcripts` feature sits first in `FEATURES`. It transcribes each voice note and puts the transcript in `event.text`, so every feature reads a spoken "Anchor, …" as the typed one. A voice question goes in as audio only when the transcription fails.
 
 ### 6.5 Speak (existing)
 
