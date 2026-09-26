@@ -1,5 +1,6 @@
 import { Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Req, ServiceUnavailableException, StreamableFile } from '@nestjs/common';
 import type { Request } from 'express';
+import type { Context, Person } from './core/types';
 import { FamilyService } from './family.service';
 import { deleteMyData, join, media, me, moments, myData, verifyIdToken } from './web';
 
@@ -14,6 +15,11 @@ export class WebController {
     return { ...bot, user: await verifyIdToken(req.header('authorization'), bot.botId) };
   }
 
+  private async run<T>(req: Request, handle: (user: Person, ctx: Context) => T) {
+    const { user, ctx } = await this.caller(req);
+    return handle(user, ctx);
+  }
+
   @Post('join')
   @HttpCode(200)
   async join(@Req() req: Request) {
@@ -22,15 +28,13 @@ export class WebController {
   }
 
   @Get('me')
-  async me(@Req() req: Request) {
-    const { user, ctx } = await this.caller(req);
-    return me(user, ctx);
+  me(@Req() req: Request) {
+    return this.run(req, me);
   }
 
   @Get('moments')
-  async moments(@Req() req: Request) {
-    const { user, ctx } = await this.caller(req);
-    return moments(user, ctx);
+  moments(@Req() req: Request) {
+    return this.run(req, moments);
   }
 
   @Get('moments/:id/:kind')
@@ -42,15 +46,13 @@ export class WebController {
   }
 
   @Get('my-data')
-  async myData(@Req() req: Request) {
-    const { user, ctx } = await this.caller(req);
-    return myData(user, ctx);
+  myData(@Req() req: Request) {
+    return this.run(req, myData);
   }
 
   @Delete('my-data')
   @HttpCode(204)
   async deleteMyData(@Req() req: Request) {
-    const { user, ctx } = await this.caller(req);
-    deleteMyData(user, ctx);
+    await this.run(req, deleteMyData);
   }
 }

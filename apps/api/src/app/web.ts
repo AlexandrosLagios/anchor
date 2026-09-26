@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { createPublicKey, type JsonWebKey } from 'node:crypto';
 import { lines } from './core/lines';
 import type { Context, Family, Person } from './core/types';
-import { showChoices } from './features/members';
+import { isInGroup, showChoices } from './features/members';
 import { unlog } from './features/talk';
 import { httpFetch } from './http';
 
@@ -41,15 +41,6 @@ export async function verifyIdToken(authorization: string | undefined, botId: st
   }
 }
 
-async function inGroup(family: Family, userId: string, ctx: Context): Promise<boolean> {
-  try {
-    return await ctx.transport(family.id).isMember(family.chatId, userId);
-  } catch (error) {
-    logger.warn(`The membership check of ${userId} failed: ${error}`);
-    return false;
-  }
-}
-
 const person = ({ id, name }: Person): Person => ({ id, name });
 
 const iso = (ms: number) => new Date(ms).toISOString();
@@ -57,8 +48,9 @@ const iso = (ms: number) => new Date(ms).toISOString();
 const inRecord = (family: Family, userId: string) => family.members.some((member) => member.id === userId);
 
 // the family view is only for a person who is in the record and in the group now
+// ponytail: each request asks Telegram once, so a page with N photos makes N membership checks; cache a yes for a minute if Telegram answers 429
 async function familyOf(user: Person, ctx: Context): Promise<Family> {
-  for (const family of ctx.store.state.families) if (inRecord(family, user.id) && (await inGroup(family, user.id, ctx))) return family;
+  for (const family of ctx.store.state.families) if (inRecord(family, user.id) && (await isInGroup(family, user.id, ctx))) return family;
   throw new ForbiddenException('Join your family group, then sign in again');
 }
 
@@ -74,7 +66,7 @@ export async function join(user: Person, ctx: Context, addLink: string) {
   // the families of the record come first, in the order that familyOf reads them
   const families = [...ctx.store.state.families].sort((a, b) => Number(inRecord(b, user.id)) - Number(inRecord(a, user.id)));
   for (const family of families) {
-    if (!(await inGroup(family, user.id, ctx))) continue;
+    if (!(await isInGroup(family, user.id, ctx))) continue;
     const member = ctx.store.joinMember(family, user);
     if (!member.started) {
       member.started = true;
@@ -118,11 +110,12 @@ export async function media(user: Person, ctx: Context, momentId: string, kind: 
 }
 
 export function myData(user: Person, ctx: Context) {
+  const mine = (by: Person) => by.id === user.id;
   return {
     families: recordsOf(user, ctx).map((family) => ({
       member: family.members.find((member) => member.id === user.id),
-      moments: family.moments.filter((moment) => moment.by.id === user.id),
-      stories: family.moments.flatMap((moment) => moment.stories.filter((story) => story.by.id === user.id).map((story) => ({ momentId: moment.id, ...story }))),
+      moments: family.moments.filter((moment) => mine(moment.by)),
+      stories: family.moments.flatMap((moment) => moment.stories.filter((story) => mine(story.by)).map((story) => ({ momentId: moment.id, ...story }))),
       reminders: family.reminders.filter((reminder) => reminder.to === user.id),
     })),
   };
@@ -130,12 +123,13 @@ export function myData(user: Person, ctx: Context) {
 
 // Telegram keeps the group messages; this removes what Anchor holds about the person
 export function deleteMyData(user: Person, ctx: Context) {
+  const mine = (by: Person) => by.id === user.id;
   for (const family of recordsOf(user, ctx)) {
     const name = family.members.find((member) => member.id === user.id)?.name;
-    unlog(family, family.moments.filter((moment) => moment.by.id === user.id).flatMap((moment) => moment.messageIds));
-    family.moments = family.moments.filter((moment) => moment.by.id !== user.id);
+    unlog(family, family.moments.filter((moment) => mine(moment.by)).flatMap((moment) => moment.messageIds));
+    family.moments = family.moments.filter((moment) => !mine(moment.by));
     for (const moment of family.moments) {
-      moment.stories = moment.stories.filter((story) => story.by.id !== user.id);
+      moment.stories = moment.stories.filter((story) => !mine(story.by));
       delete moment.returns[user.id];
     }
     family.members = family.members.filter((member) => member.id !== user.id);

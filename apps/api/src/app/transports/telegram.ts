@@ -284,4 +284,9 @@ export class TelegramTransport implements Transport {
     if (!/^[\w-]{1,64}$/.test(payload)) throw new Error(`A start payload holds 1 to 64 of A-Z, a-z, 0-9, _ and -: ${payload}`);
     return `https://t.me/${this.username}?start=${payload}`;
   }
+
+  // opens the group picker of Telegram and adds Anchor as an admin that can delete messages
+  groupLink() {
+    return `https://t.me/${this.username}?startgroup&admin=delete_messages`;
+  }
 }
