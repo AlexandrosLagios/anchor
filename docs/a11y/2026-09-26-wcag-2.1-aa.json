@@ -1,0 +1,137 @@
+{
+  "audited": "2026-09-26",
+  "commit": "ce691c0ea6599d503b63a0e1e5d600ed6e6305ae",
+  "app": "apps/web",
+  "build": "astro build then astro preview at http://127.0.0.1:4321",
+  "engine": "axe-core 4.13.0",
+  "browser": "Playwright Chromium",
+  "tags": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+  "standard": "WCAG 2.1 Level A and Level AA",
+  "gate": {
+    "command": "pnpm a11y:web",
+    "script": "apps/web/scripts/a11y-check.mjs",
+    "result": "pass",
+    "routes": 10,
+    "consentStates": ["consent-open", "consent-dismissed"],
+    "violations": 0
+  },
+  "verdict": "Repository gate passes. The site does not meet WCAG 2.1 AA.",
+  "summary": {
+    "defaultThemeViolations": 0,
+    "narrow320Overflow": false,
+    "highContrastNodes": 174,
+    "highContrastPlusText150Nodes": 66,
+    "prosePrimaryButtons": "fail-incomplete",
+    "demoAfterSampleLine": "fail",
+    "designs": {
+      "ink": "fail",
+      "quiet": "incomplete-gradient-passes-endpoints",
+      "linen": "pass",
+      "mist": "pass",
+      "slate": "pass"
+    }
+  },
+  "findings": [
+    {
+      "id": "high-contrast-1.4.3",
+      "criterion": "1.4.3",
+      "level": "AA",
+      "axe": "violation",
+      "impact": "serious",
+      "routes": ["/", "/how-it-works", "/app", "/family", "/my-data", "/privacy", "/terms", "/cookies", "/sitemap", "/404"],
+      "nodes": 174,
+      "cause": "html.a11y-contrast in apps/web/src/styles/tokens.css keeps --primary at 242 100% 62% and swaps --background and --text. Links and button labels follow those tokens.",
+      "pairs": [
+        { "foreground": "#443dff", "background": "#050316", "ratio": 3.25, "required": 4.5, "nodes": 156, "examples": [".slate-nav a", ".auth-nav-link", ".prose a", ".slate-text-link"] },
+        { "foreground": "#050316", "background": "#443dff", "ratio": 3.25, "required": 4.5, "nodes": 7, "examples": [".btn-primary", ".slate-btn-primary"] },
+        { "foreground": "#f3f2fe", "background": "#dddbff", "ratio": 1.21, "required": 4.5, "nodes": 10, "examples": ["/app li > span", "#group-heading", ".chat-log .empty"] },
+        { "foreground": "#fbfbfe", "background": "#dddbff", "ratio": 1.29, "required": 4.5, "nodes": 1, "examples": ["/family .btn-secondary"] }
+      ],
+      "widget": [
+        { "text": "Default", "foreground": "#050316", "background": "#443dff", "ratio": 3.26, "selector": ".a11y-widget-scale button[aria-pressed=true]" },
+        { "text": "Larger", "foreground": "#fbfbfe", "background": "#dddbff", "ratio": 1.3, "selector": ".a11y-widget-scale button" },
+        { "text": "Largest", "foreground": "#fbfbfe", "background": "#dddbff", "ratio": 1.3, "selector": ".a11y-widget-scale button" }
+      ],
+      "textScale150": {
+        "routes": ["/", "/app", "/family", "/how-it-works"],
+        "nodes": 66,
+        "note": "Some 3.25:1 links become large text and clear the 3:1 floor. Accent chips at 1.21:1 still fail."
+      },
+      "laterFix": "Choose a link color and a primary-button label color that stay at least 4.5:1 on the dark surface. Restyle accent fills used by secondary buttons, demo chips, and the widget scale buttons."
+    },
+    {
+      "id": "prose-primary-buttons-1.4.3",
+      "criterion": "1.4.3",
+      "level": "AA",
+      "axe": "incomplete",
+      "message": "Element has a 1:1 contrast ratio with the background",
+      "routes": ["/how-it-works", "/404"],
+      "selectors": [".prose a.btn-primary"],
+      "labels": ["Get started", "Back to Anchor"],
+      "measured": { "color": "rgb(68, 61, 255)", "background": "rgb(68, 61, 255)", "ratio": 1, "fontSize": "15px", "fontWeight": "600", "required": 4.5 },
+      "secondaryStillPasses": { "ratio": 4.66, "note": "Inherited link color on accent fill, not the .btn-secondary color." },
+      "cause": ".prose a in tokens.css beats .btn-primary.",
+      "laterFix": "Add .prose a.btn, .prose a.btn-primary, and .prose a.btn-secondary rules, including hover, so button colors win."
+    },
+    {
+      "id": "demo-sample-line",
+      "criteria": ["1.4.3", "2.1.1"],
+      "levels": ["AA", "A"],
+      "axe": "violation",
+      "route": "/app",
+      "steps": ["Send the photo", "Yes, I’ll take part", "A little later — bring it back", "Use a sample line"],
+      "contrast": {
+        "selector": ".voice-tag",
+        "foreground": "#443dff",
+        "background": "#cbc8ff",
+        "ratio": 3.94,
+        "fontSize": "12.48px",
+        "fontWeight": "bold",
+        "required": 4.5,
+        "source": "apps/web/src/components/MvpDemo.css .voice-tag color: var(--brand)"
+      },
+      "keyboard": {
+        "rule": "scrollable-region-focusable",
+        "selector": ".chat-log[role=log]",
+        "pane": "private",
+        "scrollHeight": 978,
+        "clientHeight": 416,
+        "tabIndex": -1,
+        "focusableInside": 0,
+        "groupLogOverflows": false
+      },
+      "laterFix": "Raise the voice-tag contrast to at least 4.5:1. Make an overflowing .chat-log keyboard scrollable, with a visible focus style."
+    },
+    {
+      "id": "design-ink-1.4.3",
+      "criterion": "1.4.3",
+      "level": "AA",
+      "axe": "violation",
+      "route": "/designs/ink",
+      "selector": ".ink-action-index",
+      "foreground": "#787878",
+      "background": "#ffffff",
+      "ratio": 4.41,
+      "fontSize": "12px",
+      "required": 4.5,
+      "cause": "opacity: 0.55 in apps/web/src/components/designs/ink/ink.css",
+      "viewports": ["1280", "320"],
+      "laterFix": "Raise the index color so visible text is at least 4.5:1. aria-hidden does not exempt it."
+    }
+  ],
+  "passes": [
+    "Default theme, 10 public routes, consent open and dismissed, 1280 and 320: 0 axe violations.",
+    "No horizontal overflow at 320px CSS width on public routes or design studies.",
+    "Homepage primary buttons measure 6.06:1 in the default theme.",
+    "Consent banner text measures about 8.63:1. Heading about 19.72:1.",
+    "Homepage focus order starts at Skip to content. Focus ring is 2px solid rgb(68, 61, 255).",
+    "/designs/slate, /designs/linen, and /designs/mist: 0 violations. Slate no longer overflows at 320px.",
+    "/designs/quiet gradient endpoints are all at least 7.29:1."
+  ],
+  "notTested": [
+    "Signed-in /family and /my-data",
+    "Full keyboard walk, screen reader, and 400% zoom",
+    "Telegram login window",
+    "Text size 125%, grayscale, and the other accessibility toggles besides high contrast and the 150% sample"
+  ]
+}
