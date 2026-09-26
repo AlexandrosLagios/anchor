@@ -7,11 +7,11 @@ const OIDC_ORIGIN = 'https://oauth.telegram.org';
 type AuthResult = { id_token?: string; error?: string };
 
 /**
- * Telegram's library sets redirect_uri to origin + pathname (e.g. /family).
- * BotFather Allowed URLs are usually the site origin only, so that fails with
+ * The OIDC library sets redirect_uri to origin + pathname (e.g. /family).
+ * Allowed URLs are usually the site origin only, so that fails with
  * "redirect_uri required". Open the popup ourselves with the origin as redirect_uri.
  */
-function openTelegramAuth(clientId: string, callback: (result: AuthResult) => void): void {
+function openChatAuth(clientId: string, callback: (result: AuthResult) => void): void {
   const redirectUri = `${window.location.origin}/`;
   const scope = ['openid', 'profile', 'telegram:bot_access'].join(' ');
   const authUrl =
@@ -61,7 +61,7 @@ function openTelegramAuth(clientId: string, callback: (result: AuthResult) => vo
   const popup = window.open(authUrl, 'telegram_oidc_login', features);
   if (!popup) {
     finish({
-      error: 'Could not open Telegram Login. Allow popups for this site, then try again.',
+      error: 'Could not open the sign-in window. Allow popups for this site, then try again.',
     });
     return;
   }
@@ -86,9 +86,9 @@ type Props = {
 
 export function TelegramLogin({
   onSignedIn,
-  label = 'Sign in with Telegram',
-  title = 'Telegram group (optional)',
-  description = 'Only if you want moments from a Telegram family group. Your website account stays email and password.',
+  label = 'Connect a chat',
+  title = 'Connect a chat (optional)',
+  description = 'Only if you want moments from a family group chat on this page. Your website account stays email and password.',
 }: Props) {
   const headingId = useId();
   const [busy, setBusy] = useState(false);
@@ -100,10 +100,10 @@ export function TelegramLogin({
   function handleResult(result: AuthResult) {
     if (result.error) {
       if (result.error === 'popup_closed') {
-        setError('Telegram Login was closed before signing in.');
+        setError('Sign-in was closed before finishing.');
       } else if (/redirect_uri/i.test(result.error)) {
         setError(
-          `Telegram rejected this site’s login URL. In BotFather → Login Widget, add ${window.location.origin} to Allowed URLs.`,
+          `Login rejected this site’s URL. Ask the team to add ${window.location.origin} to the allowed login URLs.`,
         );
       } else {
         setError(result.error);
@@ -112,7 +112,7 @@ export function TelegramLogin({
       return;
     }
     if (!result.id_token) {
-      setError('Telegram did not return a sign-in token.');
+      setError('Sign-in did not return a token.');
       setBusy(false);
       return;
     }
@@ -126,10 +126,10 @@ export function TelegramLogin({
     setError('');
     setBusy(true);
     try {
-      openTelegramAuth(telegramClientId, handleResult);
+      openChatAuth(telegramClientId, handleResult);
     } catch (err) {
       setBusy(false);
-      setError(err instanceof Error ? err.message : 'Telegram Login failed.');
+      setError(err instanceof Error ? err.message : 'Chat connection failed.');
     }
   }
 
@@ -137,12 +137,9 @@ export function TelegramLogin({
     return (
       <section className="tg-login" aria-labelledby={headingId}>
         <h2 id={headingId}>{title}</h2>
-        <p className="lede">
-          Telegram Login is not configured yet. Add <code>PUBLIC_TELEGRAM_CLIENT_ID</code> from BotFather (Login Widget)
-          for <code>@anchor_family_bot</code>.
-        </p>
+        <p className="lede">Chat connection is not configured yet. Ask the team to finish setup.</p>
         <a className="btn btn-secondary" href={botOpenLink}>
-          Open Anchor in Telegram
+          Open Anchor in chat
         </a>
       </section>
     );
@@ -153,7 +150,7 @@ export function TelegramLogin({
       <h2 id={headingId}>{title}</h2>
       <p className="lede">{description}</p>
       <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => openLogin()}>
-        {busy ? 'Opening Telegram…' : label}
+        {busy ? 'Opening…' : label}
       </button>
       {error ? (
         <p className="form-error" role="alert">
@@ -161,7 +158,7 @@ export function TelegramLogin({
         </p>
       ) : null}
       <p className="lede">
-        Prefer the messenger app? <a href={botOpenLink}>Open Anchor in Telegram</a>.
+        Prefer the messenger app? <a href={botOpenLink}>Open Anchor in chat</a>.
       </p>
     </section>
   );

@@ -18,8 +18,8 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
     <h2>Essential</h2>
     <p>
-      Telegram Login keeps a short-lived <code>id_token</code> in <code>sessionStorage</code> as{' '}
-      <code>anchor_telegram_id_token</code> while this browser tab is open. The consent banner preference is stored under{' '}
+      When you connect a chat under Connections, a short-lived <code>id_token</code> is kept in{' '}
+      <code>sessionStorage</code> while this browser tab is open. The consent banner preference is stored under{' '}
       <code>anchor-consent-v1</code> in <code>localStorage</code>. Accessibility display settings from the Accessibility
       button are stored under <code>anchor-a11y-prefs-v1</code> in <code>localStorage</code> on this device only.
     </p>
@@ -30,7 +30,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <h2>Change your choice</h2>
     <p>
       Clear site data for this domain in your browser, or remove <code>anchor-consent-v1</code> from local storage, then
-      reload to see the banner again. Closing the tab clears the Telegram sign-in token.
+      reload to see the banner again. Closing the tab clears the connected-chat sign-in token.
     </p>
   </article>
 </BaseLayout>

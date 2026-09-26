@@ -13,7 +13,8 @@ import {
   writeProgress,
   type AccountFamily,
 } from '../lib/account';
-import { botAddLink, botOpenLink, privacyEmail } from '../lib/config';
+import { privacyEmail } from '../lib/config';
+import { ChannelConnections } from './ChannelConnections';
 import './RegisterFlow.css';
 
 const STEPS = ['Account', 'Group', 'Family'] as const;
@@ -235,8 +236,11 @@ export function RegisterFlow() {
                   <li>Account: email address, a password stored only as a hash, and an optional display name.</li>
                   <li>Consent: that you read this policy and accepted the Terms before continuing.</li>
                   <li>Files you upload on the website, such as photos and voice notes.</li>
-                  <li>Telegram identity: Telegram user id and display name from Telegram Login.</li>
-                  <li>Family membership: Telegram group and the people who belong to it with Anchor.</li>
+                  <li>
+                    Connected-chat identity: messaging-app user id and display name when you connect a chat under
+                    Connections.
+                  </li>
+                  <li>Family membership: the connected group and the people who belong to it with Anchor.</li>
                   <li>
                     Family moments: text, photos, voice notes, and stories shared in the group or private chat with
                     Anchor.
@@ -263,7 +267,7 @@ export function RegisterFlow() {
                 <p>
                   Account, consent, and the family you create on the website are stored in <strong>Neon Postgres</strong>{' '}
                   in <code>eu-central-1</code>. Files you upload are stored in <strong>Vercel Blob</strong> (
-                  <code>fra1</code>). The Telegram family record lives with the bot on{' '}
+                  <code>fra1</code>). The family record from connected chats lives with the bot on{' '}
                   <strong>
                     Google Cloud Run in <code>europe-west1</code>
                   </strong>
@@ -271,11 +275,12 @@ export function RegisterFlow() {
                   Vercel.
                 </p>
 
-                <h3>Telegram Login</h3>
+                <h3>Chat connection</h3>
                 <p>
-                  After email registration, group moments use <strong>Telegram Login</strong> (OpenID Connect). Telegram
-                  issues a short-lived <code>id_token</code>. The website keeps that token in <code>sessionStorage</code>{' '}
-                  and sends it only to the bot API. It is not put in the URL, in logs, or in <code>localStorage</code>.
+                  After email registration, group moments use OpenID Connect login from the messaging app you choose
+                  under Connections. That provider issues a short-lived <code>id_token</code>. The website keeps that
+                  token in <code>sessionStorage</code> and sends it only to the bot API. It is not put in the URL, in
+                  logs, or in <code>localStorage</code>.
                 </p>
 
                 <h3>Artificial intelligence (OpenAI)</h3>
@@ -290,7 +295,10 @@ export function RegisterFlow() {
                 <ul>
                   <li>Neon — account, consent, and website family records (<code>eu-central-1</code>).</li>
                   <li>Vercel Blob — files you upload (<code>fra1</code>).</li>
-                  <li>Telegram — group chat, private messages, and Telegram Login.</li>
+                  <li>
+                    Connected messaging providers — group chat, private messages, and connection login (named under
+                    Connections).
+                  </li>
                   <li>
                     Google Cloud Run (<code>europe-west1</code>) — the Anchor bot.
                   </li>
@@ -306,8 +314,8 @@ export function RegisterFlow() {
                 <h3>Retention</h3>
                 <p>
                   The family record is kept while the family uses Anchor, or until you delete your data from{' '}
-                  <a href="/my-data">My data</a>. Messages in Telegram remain in Telegram under Telegram’s own rules.
-                  Cached OpenAI answers on the bot filesystem are ephemeral operational caches.
+                  <a href="/my-data">My data</a>. Messages already in the family’s messaging app remain there under that
+                  provider’s rules. Cached OpenAI answers on the bot filesystem are ephemeral operational caches.
                 </p>
 
                 <h3>Your rights</h3>
@@ -437,53 +445,13 @@ export function RegisterFlow() {
 
         {step === 2 ? (
           <>
-            <h1 id={headingId}>Add Anchor to the group</h1>
+            <h1 id={headingId}>Connect a chat</h1>
             <p className="lede">
               {signedInAs ? `Signed in as ${signedInAs}. ` : null}
-              Invite Anchor with the family — he should know it is a keeper of photos and stories, not a person. Telegram
-              is recommended and working. WhatsApp and Viber are demo placeholders only.
+              Invite Anchor with the family — a keeper of photos and stories, not a person. Pick a channel below, or skip
+              and connect later from the family page.
             </p>
-            <ul className="reg-channels">
-              <li>
-                <div>
-                  <strong>Telegram</strong>
-                  <span className="reg-channel-badge">Recommended</span>
-                  <p>Opens Telegram so you can add Anchor as an admin in a family group.</p>
-                </div>
-                <div className="family-actions">
-                  <a className="btn btn-secondary" href={botAddLink} target="_blank" rel="noreferrer">
-                    Add to a Telegram group
-                  </a>
-                  <a className="btn btn-secondary" href={botOpenLink} target="_blank" rel="noreferrer">
-                    Open Telegram
-                  </a>
-                </div>
-              </li>
-              <li>
-                <div>
-                  <strong>WhatsApp</strong>
-                  <span className="reg-channel-badge">Coming soon</span>
-                  <p>Demo placeholder — not connected in this prototype.</p>
-                </div>
-                <div className="family-actions">
-                  <button type="button" className="btn btn-secondary" disabled aria-disabled="true">
-                    Open WhatsApp
-                  </button>
-                </div>
-              </li>
-              <li>
-                <div>
-                  <strong>Viber</strong>
-                  <span className="reg-channel-badge">Coming soon</span>
-                  <p>Demo placeholder — not connected in this prototype.</p>
-                </div>
-                <div className="family-actions">
-                  <button type="button" className="btn btn-secondary" disabled aria-disabled="true">
-                    Open Viber
-                  </button>
-                </div>
-              </li>
-            </ul>
+            <ChannelConnections title="" description="" />
             <div className="family-actions">
               <button className="btn btn-primary" type="button" onClick={confirmBot}>
                 Continue

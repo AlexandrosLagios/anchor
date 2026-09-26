@@ -21,16 +21,16 @@ import './FamilyRecord.css';
 
 export function MyDataPanel() {
   const [accountToken, setAccountToken] = useState<string | null>(null);
-  const [telegramToken, setTelegramToken] = useState<string | null>(null);
+  const [chatToken, setChatToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => watchAccountAuth(setAccountToken), []);
-  useEffect(() => watchTelegramAuth(setTelegramToken), []);
+  useEffect(() => watchTelegramAuth(setChatToken), []);
 
   const account = accountToken || getAccountToken();
-  const telegram = telegramToken || getIdToken();
+  const chatConnected = chatToken || getIdToken();
   const name = accountLabel(account);
 
   async function onDownloadAccount() {
@@ -66,7 +66,7 @@ export function MyDataPanel() {
     }
   }
 
-  async function onDownloadTelegram() {
+  async function onDownloadChatData() {
     setError('');
     setStatus('');
     setBusy(true);
@@ -75,21 +75,21 @@ export function MyDataPanel() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `anchor-telegram-data-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.download = `anchor-family-record-${new Date().toISOString().slice(0, 10)}.json`;
       anchor.click();
       URL.revokeObjectURL(url);
-      setStatus('Saved your Telegram family-record data as a JSON file.');
+      setStatus('Saved your connected-chat family-record data as a JSON file.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not download Telegram data.');
+      setError(err instanceof Error ? err.message : 'Could not download connected-chat data.');
       if (err instanceof BotAuthError && err.status === 401) setIdToken(null);
     } finally {
       setBusy(false);
     }
   }
 
-  async function onDeleteTelegram() {
+  async function onDeleteChatData() {
     const confirmed = window.confirm(
-      'Delete Telegram data removes your moments and stories from Anchor’s Telegram family record. Messages already in the Telegram group stay in Telegram. Continue?',
+      'This removes your moments and stories from Anchor’s family record for the connected chat. Messages already in the group chat stay in that chat. Continue?',
     );
     if (!confirmed) return;
     setError('');
@@ -97,10 +97,10 @@ export function MyDataPanel() {
     setBusy(true);
     try {
       await deleteMyData();
-      setStatus('Your Telegram family-record data was deleted from Anchor.');
+      setStatus('Your connected-chat family-record data was deleted from Anchor.');
       setIdToken(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete Telegram data.');
+      setError(err instanceof Error ? err.message : 'Could not delete connected-chat data.');
     } finally {
       setBusy(false);
     }
@@ -130,15 +130,15 @@ export function MyDataPanel() {
         <h1 id="my-data-heading">My data</h1>
         <p className="lede">
           {name ? `Signed in as ${name}. ` : null}
-          Download a copy of what this website account holds, or manage optional Telegram group data separately.
+          Download a copy of what this website account holds, or manage optional connected-chat data separately.
         </p>
         <ul className="my-data-list">
           <li>
             <strong>Download my data</strong> exports your families and uploaded-file metadata from the website account.
           </li>
           <li>
-            <strong>Telegram (optional)</strong> can export or delete moments from the Telegram family record if you
-            linked that identity.
+            <strong>Connected chat (optional)</strong> can export or delete moments from the family record if you linked
+            a chat under Connections.
           </li>
         </ul>
         <div className="family-actions">
@@ -170,24 +170,24 @@ export function MyDataPanel() {
         ) : null}
       </section>
 
-      {telegram ? (
-        <section className="family-panel" aria-labelledby="telegram-data">
-          <h2 id="telegram-data">Telegram family record</h2>
-          <p className="lede">Optional. Export or delete what Anchor keeps from your Telegram group identity.</p>
+      {chatConnected ? (
+        <section className="family-panel" aria-labelledby="chat-data">
+          <h2 id="chat-data">Connected-chat family record</h2>
+          <p className="lede">Optional. Export or delete what Anchor keeps from your connected group identity.</p>
           <div className="family-actions">
-            <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void onDownloadTelegram()}>
-              Download Telegram data
+            <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void onDownloadChatData()}>
+              Download chat data
             </button>
-            <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void onDeleteTelegram()}>
-              Delete Telegram data
+            <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void onDeleteChatData()}>
+              Delete chat data
             </button>
           </div>
         </section>
       ) : (
         <TelegramLogin
-          label="Sign in with Telegram"
-          title="Telegram family record (optional)"
-          description="Only if you also use Anchor in a Telegram group and want to export or delete that record."
+          label="Connect a chat"
+          title="Connected-chat family record (optional)"
+          description="Only if you also use Anchor in a family group chat and want to export or delete that record. You can connect from the family page under Connections."
         />
       )}
     </div>

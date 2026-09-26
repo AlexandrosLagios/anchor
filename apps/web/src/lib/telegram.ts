@@ -107,7 +107,7 @@ async function parseError(response: Response): Promise<string> {
 
 export async function botFetch(path: string, init?: RequestInit): Promise<Response> {
   const token = getIdToken();
-  if (!token) throw new BotAuthError('Sign in with Telegram', 401);
+  if (!token) throw new BotAuthError('Connect a chat under Connections', 401);
   const response = await fetch(botUrl(path), {
     ...init,
     headers: {

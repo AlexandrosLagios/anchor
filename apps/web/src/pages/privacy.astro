@@ -6,7 +6,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
 <BaseLayout
   title="Privacy"
-  description="How Anchor processes personal data under GDPR, Telegram Login, and where the family record is stored."
+  description="How Anchor processes personal data under GDPR, and where the family record is stored."
   currentPath="/privacy"
 >
   <article class="prose">
@@ -28,8 +28,8 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
       <li>Account: email address, a password stored only as a hash, and an optional display name.</li>
       <li>Consent: that you read this policy and accepted the Terms before continuing.</li>
       <li>Files you upload on the website, such as photos and voice notes.</li>
-      <li>Telegram identity: Telegram user id and display name from Telegram Login.</li>
-      <li>Family membership: Telegram group and the people who belong to it with Anchor.</li>
+      <li>Connected-chat identity: messaging-app user id and display name when you connect a chat under Connections.</li>
+      <li>Family membership: the connected group and the people who belong to it with Anchor.</li>
       <li>Family moments: text, photos, voice notes, and stories shared in the group or private chat with Anchor.</li>
       <li>Technical logs needed to run the service (security, errors).</li>
     </ul>
@@ -50,16 +50,16 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <p>
       Account, consent, and the family you create on the website are stored in <strong>Neon Postgres</strong> in{' '}
       <code>eu-central-1</code>. Files you upload are stored in <strong>Vercel Blob</strong> (<code>fra1</code>). The
-      Telegram family record lives with the bot on <strong>Google Cloud Run in <code>europe-west1</code></strong>, stored
+      family record from connected chats lives with the bot on <strong>Google Cloud Run in <code>europe-west1</code></strong>, stored
       as a file in <strong>Cloud Storage</strong> in the same region. The website is hosted on Vercel.
     </p>
 
-    <h2>Telegram Login</h2>
+    <h2>Chat connection</h2>
     <p>
-      After email registration, group moments use <strong>Telegram Login</strong> (OpenID Connect). Telegram issues a
-      short-lived{' '}
-      <code>id_token</code>. The website keeps that token in <code>sessionStorage</code> and sends it only to the bot API.
-      It is not put in the URL, in logs, or in <code>localStorage</code>.
+      After email registration, group moments use OpenID Connect login from the messaging app you choose under
+      Connections. That provider issues a short-lived <code>id_token</code>. The website keeps that token in{' '}
+      <code>sessionStorage</code> and sends it only to the bot API. It is not put in the URL, in logs, or in{' '}
+      <code>localStorage</code>.
     </p>
 
     <h2>Artificial intelligence (OpenAI)</h2>
@@ -74,7 +74,7 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <ul>
       <li>Neon — account, consent, and website family records (<code>eu-central-1</code>).</li>
       <li>Vercel Blob — files you upload (<code>fra1</code>).</li>
-      <li>Telegram — group chat, private messages, and Telegram Login.</li>
+      <li>Connected messaging providers — group chat, private messages, and connection login (named under Connections).</li>
       <li>Google Cloud Run (<code>europe-west1</code>) — the Anchor bot.</li>
       <li>Google Cloud Storage — the family record file.</li>
       <li>Vercel — the website.</li>
@@ -85,8 +85,8 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <h2>Retention</h2>
     <p>
       The family record is kept while the family uses Anchor, or until you delete your data from{' '}
-      <a href="/my-data">My data</a>. Messages in Telegram remain in Telegram under Telegram’s own rules. Cached OpenAI
-      answers on the bot filesystem are ephemeral operational caches.
+      <a href="/my-data">My data</a>. Messages already in the family’s messaging app remain there under that provider’s
+      rules. Cached OpenAI answers on the bot filesystem are ephemeral operational caches.
     </p>
 
     <h2>Your rights</h2>

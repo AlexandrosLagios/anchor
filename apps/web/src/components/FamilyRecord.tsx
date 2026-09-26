@@ -8,7 +8,6 @@ import {
   watchAccountAuth,
   type AccountFamily,
 } from '../lib/account';
-import { botOpenLink } from '../lib/config';
 import {
   BotAuthError,
   fetchMe,
@@ -21,10 +20,10 @@ import {
   type MeResult,
   watchTelegramAuth,
 } from '../lib/telegram';
+import { ChannelConnections } from './ChannelConnections';
 import { FamilyChat } from './FamilyChat';
 import { MemoryUpload } from './MemoryUpload';
 import { RegisterFlow } from './RegisterFlow';
-import { TelegramLogin } from './TelegramLogin';
 import './FamilyRecord.css';
 import './RegisterFlow.css';
 
@@ -181,9 +180,9 @@ export function FamilyRecord() {
       setMoments(list);
     } catch (err) {
       if (err instanceof BotAuthError && err.status === 401) {
-        setError('Sign in with Telegram again.');
+        setError('Reconnect under Connections, then try again.');
       } else if (err instanceof BotAuthError && err.status === 403) {
-        setError('You are not in this family group anymore. Sign in again after rejoining.');
+        setError('You are not in this family group anymore. Reconnect after rejoining.');
       } else {
         setError(err instanceof Error ? err.message : 'Could not load the family record.');
       }
@@ -218,15 +217,12 @@ export function FamilyRecord() {
         <div>
           <h1>Family record</h1>
           <p className="lede">
-            {`Signed in as ${name}${accountFamily ? ` · ${accountFamily.name}` : ''}. This page is a mirror of the family’s kept moments — not a score. Everyday sharing lives in the group chat; choices and stop live with Anchor in Telegram.`}
+            {`Signed in as ${name}${accountFamily ? ` · ${accountFamily.name}` : ''}. This page is a mirror of the family’s kept moments — not a score. Everyday sharing lives in the group chat; choices and stop live with Anchor there.`}
           </p>
         </div>
         <div className="family-actions">
           <a className="btn btn-secondary" href="/my-data">
             My data
-          </a>
-          <a className="btn btn-secondary" href={botOpenLink}>
-            Open Anchor in Telegram
           </a>
           <button
             className="btn btn-secondary"
@@ -250,52 +246,29 @@ export function FamilyRecord() {
         </p>
       ) : null}
 
-      <MemoryUpload />
-      <FamilyChat />
-
-      {addLink ? (
-        <section className="family-panel" aria-labelledby="add-anchor">
-          <h2 id="add-anchor">Add Anchor to your family group</h2>
-          <p className="lede">
-            Telegram will ask which group to use, then add Anchor as an admin. After that, come back here and we will
-            join you as the first member.
-          </p>
-          <div className="family-actions">
-            <a className="btn btn-primary" href={addLink}>
-              Add Anchor to a family group
-            </a>
-            <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void refresh()}>
-              {busy ? 'Checking…' : 'I added Anchor — continue'}
-            </button>
-            {busy ? (
-              <p className="sr-only" role="status">
-                Checking…
-              </p>
-            ) : null}
-          </div>
-          {error ? (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
-      {!token ? (
-        <section className="family-panel" aria-labelledby="group-moments">
-          <h2 id="group-moments">Group moments</h2>
-          <p className="lede">
-            Optional. Sign in with Telegram only if you want moments from a Telegram family group on this page.
-          </p>
-          <TelegramLogin onSignedIn={() => void refresh()} />
-        </section>
-      ) : null}
+      <ChannelConnections
+        familyMode
+        connected={Boolean(token) && !addLink}
+        addLink={addLink}
+        busy={busy}
+        onConnected={() => void refresh()}
+        onRefresh={() => void refresh()}
+      />
 
       {token && !addLink && error ? (
         <p className="form-error" role="alert">
           {error}
         </p>
       ) : null}
+
+      {addLink && error ? (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <MemoryUpload />
+      <FamilyChat />
 
       {token && !addLink && busy && !moments.length ? (
         <p className="lede" role="status">
@@ -304,7 +277,7 @@ export function FamilyRecord() {
       ) : null}
 
       {token && !addLink && !busy && !error && moments.length === 0 ? (
-        <p className="lede">No moments yet. Share a photo or story in the family group on Telegram.</p>
+        <p className="lede">No moments yet. Share a photo or story in the family group chat.</p>
       ) : null}
 
       {token && !addLink ? (

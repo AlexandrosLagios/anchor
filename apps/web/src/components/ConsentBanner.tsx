@@ -32,7 +32,7 @@ export function ConsentBanner() {
       <div className="consent-inner">
         <h2 id="consent-title">Cookies &amp; privacy</h2>
         <p id="consent-body">
-          We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family
+          We use essential storage for chat connection on this device. Analytics cookies are off by default. The family
           record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see{' '}
           <a href="/privacy">Privacy</a> and <a href="/cookies">Cookies</a>.
         </p>

@@ -6,13 +6,13 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
 
 <BaseLayout
   title="Terms of use"
-  description="Terms of use for the Anchor hackathon prototype and Telegram sign-in."
+  description="Terms of use for the Anchor hackathon prototype."
   currentPath="/terms"
 >
   <article class="prose">
     <h1>Terms of use</h1>
     <p class="lede">
-      These terms govern use of the Anchor website and Telegram bot. Questions:{' '}
+      These terms govern use of the Anchor website and bot. Questions:{' '}
       <a href={`mailto:${privacyEmail}`}>{privacyEmail}</a>.
     </p>
 
@@ -25,8 +25,8 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <h2>Sign-in</h2>
     <p>
       You register with an email and a password, and you accept these Terms and the Privacy policy before adding the bot.
-      You are responsible for activity under that account and, once you add Anchor, under your Telegram identity in the
-      family group.
+      You are responsible for activity under that account and, once you connect a chat, under that connected identity in
+      the family group.
     </p>
 
     <h2>Acceptable use</h2>
