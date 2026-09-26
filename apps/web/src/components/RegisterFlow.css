@@ -51,8 +51,6 @@
 }
 
 .reg-policy {
-  max-height: 16rem;
-  overflow: auto;
   margin: 1rem 0 0.5rem;
   padding: 0.9rem 1rem;
   border: 1px solid var(--line);

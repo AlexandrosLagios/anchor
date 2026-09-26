@@ -21,13 +21,9 @@ import './RegisterFlow.css';
 
 const STEPS = ['Account', 'Bot', 'Family', 'Memory'] as const;
 
-function policyAtEnd(el: HTMLElement): boolean {
-  return el.scrollTop + el.clientHeight >= el.scrollHeight - 12;
-}
-
 export function RegisterFlow() {
   const headingId = useId();
-  const policyRef = useRef<HTMLDivElement>(null);
+  const policyEndRef = useRef<HTMLParagraphElement>(null);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [ready, setReady] = useState(false);
   const [mode, setMode] = useState<'signup' | 'signin'>('signup');
@@ -88,21 +84,28 @@ export function RegisterFlow() {
   }, []);
 
   useEffect(() => {
-    const el = policyRef.current;
-    if (!el || step !== 1) return;
-    if (policyAtEnd(el)) setPolicyRead(true);
-  }, [step, ready]);
+    if (mode !== 'signup' || step !== 1) return;
+    const el = policyEndRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) setPolicyRead(true);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [mode, step, ready]);
 
   async function submitAccount(event: FormEvent) {
     event.preventDefault();
     setError('');
-    if (!policyRead) {
-      setError('Read the privacy policy to the end before continuing.');
-      return;
-    }
-    if (!acceptPrivacy || !acceptTerms) {
-      setError('Accept the Privacy Policy and the Terms to continue.');
-      return;
+    if (mode === 'signup') {
+      if (!policyRead) {
+        setError('Read the privacy policy to the end before continuing.');
+        return;
+      }
+      if (!acceptPrivacy || !acceptTerms) {
+        setError('Accept the Privacy Policy and the Terms to continue.');
+        return;
+      }
     }
     setBusy(true);
     try {
@@ -194,54 +197,52 @@ export function RegisterFlow() {
           <form onSubmit={(event) => void submitAccount(event)}>
             <h1 id={headingId}>{mode === 'signup' ? 'Create your account' : 'Sign in'}</h1>
             <p className="lede">
-              Register with your email and read the privacy policy. Anchor asks for this before the bot, the family, or
-              any memory.
+              {mode === 'signup'
+                ? 'Register with your email and read the privacy policy. Anchor asks for this before the bot, the family, or any memory.'
+                : 'Sign in with the email you used to create your account.'}
             </p>
-            <div
-              className="reg-policy"
-              ref={policyRef}
-              tabIndex={0}
-              role="region"
-              aria-label="Privacy policy"
-              onScroll={(event) => {
-                if (policyAtEnd(event.currentTarget)) setPolicyRead(true);
-              }}
-            >
-              <h2>Privacy policy</h2>
-              <p>
-                Anchor processes your account and family memories for this hackathon prototype. Read this summary to the
-                end. The full policy is on the <a href="/privacy">privacy page</a>.
+            {mode === 'signup' ? (
+              <div className="reg-policy" role="region" aria-label="Privacy policy">
+                <h2>Privacy policy</h2>
+                <p>
+                  Anchor processes your account and family memories for this hackathon prototype. Read this summary to the
+                  end. The full policy is on the <a href="/privacy">privacy page</a>.
+                </p>
+                <h3>What we collect</h3>
+                <ul>
+                  <li>Email address, a password stored only as a hash, and an optional display name.</li>
+                  <li>That you accepted the Terms and this policy.</li>
+                  <li>The family you create, and photos or voice notes you upload.</li>
+                  <li>If you later use Telegram: your Telegram name, the group, and moments shared there.</li>
+                </ul>
+                <h3>Why</h3>
+                <p>
+                  To run the family memory service you asked for, and to record that you read this policy before Anchor
+                  joins a group. Security logs may be kept to protect the service.
+                </p>
+                <h3>Where</h3>
+                <p>
+                  Account and family records are stored in Neon Postgres in the EU (eu-central-1). Uploaded files go to
+                  Vercel Blob (fra1). The Telegram family record, when you add the bot, stays with the bot on Cloud Run in
+                  europe-west1. Text and audio sent for transcription may be processed by OpenAI outside the EU.
+                </p>
+                <h3>Your rights</h3>
+                <p>
+                  You can ask for access, correction, or deletion, and you can export or delete data from My data once you
+                  are signed in. Contact privacy@anchor.com. You may also complain to your local supervisory authority.
+                </p>
+                <p ref={policyEndRef}>
+                  That is the end of this summary. The acceptance box below unlocks after you reach this line.
+                </p>
+              </div>
+            ) : null}
+            {mode === 'signup' ? (
+              <p className="reg-hint" id="policy-hint">
+                {policyRead
+                  ? 'You have reached the end of the privacy policy.'
+                  : 'Scroll to the end of the privacy policy. The acceptance box stays locked until then.'}
               </p>
-              <h3>What we collect</h3>
-              <ul>
-                <li>Email address, a password stored only as a hash, and an optional display name.</li>
-                <li>That you accepted the Terms and this policy.</li>
-                <li>The family you create, and photos or voice notes you upload.</li>
-                <li>If you later use Telegram: your Telegram name, the group, and moments shared there.</li>
-              </ul>
-              <h3>Why</h3>
-              <p>
-                To run the family memory service you asked for, and to record that you read this policy before Anchor
-                joins a group. Security logs may be kept to protect the service.
-              </p>
-              <h3>Where</h3>
-              <p>
-                Account and family records are stored in Neon Postgres in the EU (eu-central-1). Uploaded files go to
-                Vercel Blob (fra1). The Telegram family record, when you add the bot, stays with the bot on Cloud Run in
-                europe-west1. Text and audio sent for transcription may be processed by OpenAI outside the EU.
-              </p>
-              <h3>Your rights</h3>
-              <p>
-                You can ask for access, correction, or deletion, and you can export or delete data from My data once you
-                are signed in. Contact privacy@anchor.com. You may also complain to your local supervisory authority.
-              </p>
-              <p>That is the end of this summary. The acceptance box below unlocks after you reach this line.</p>
-            </div>
-            <p className="reg-hint" id="policy-hint">
-              {policyRead
-                ? 'You have reached the end of the privacy policy.'
-                : 'Scroll the privacy policy to the end. The acceptance box stays locked until then.'}
-            </p>
+            ) : null}
             <label className="reg-field">
               Email
               <input
@@ -278,26 +279,30 @@ export function RegisterFlow() {
               />
             </label>
             {mode === 'signup' ? <p className="reg-hint">At least 8 characters.</p> : null}
-            <label className="reg-check">
-              <input
-                type="checkbox"
-                checked={acceptPrivacy}
-                disabled={!policyRead}
-                onChange={(event) => setAcceptPrivacy(event.target.checked)}
-                aria-describedby="policy-hint"
-              />
-              I have read the Privacy Policy
-            </label>
-            <label className="reg-check">
-              <input
-                type="checkbox"
-                checked={acceptTerms}
-                onChange={(event) => setAcceptTerms(event.target.checked)}
-              />
-              I accept the <a href="/terms">Terms</a>
-            </label>
+            {mode === 'signup' ? (
+              <>
+                <label className="reg-check">
+                  <input
+                    type="checkbox"
+                    checked={acceptPrivacy}
+                    disabled={!policyRead}
+                    onChange={(event) => setAcceptPrivacy(event.target.checked)}
+                    aria-describedby="policy-hint"
+                  />
+                  I have read the Privacy Policy
+                </label>
+                <label className="reg-check">
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(event) => setAcceptTerms(event.target.checked)}
+                  />
+                  I accept the <a href="/terms">Terms</a>
+                </label>
+              </>
+            ) : null}
             <div className="family-actions">
-              <button className="btn btn-primary" type="submit" disabled={busy || !policyRead}>
+              <button className="btn btn-primary" type="submit" disabled={busy || (mode === 'signup' && !policyRead)}>
                 {busy ? 'Saving…' : mode === 'signup' ? 'Create account' : 'Sign in'}
               </button>
             </div>
