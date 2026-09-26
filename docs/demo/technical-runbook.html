@@ -34,7 +34,7 @@
   <h1>Anchor · Technical runbook</h1>
   <p class="sub">Everything the team runs around the demo. The script of the presenters is <a href="script.html">a separate page</a>.</p>
 
-  <div class="status"><b>Live bot:</b> <code>@anchor_family_bot</code> on Cloud Run <code>anchor-bot</code> (<code>europe-west1</code>) runs v2: revision <code>anchor-bot-00013-pqb</code>, commit <code>9206518</code> (deployed 2026-09-26 at 09:40 Athens time, with the batched reminder call, tag collections, and the join check), with <code>ANCHOR_BOT_ONLY=true</code>, the call variables, and <code>--timeout=900</code>. The service is public for calls since 2026-09-26 at 01:00 Athens time: <code>GET /</code> gives 200, and <code>/whatsapp</code> and <code>/api/*</code> give 404. Steps 1 to 4 of the call gate are done. The first call through the live bot rang and held the conversation on 2026-09-26. Before the demo, repeat steps 6 and 7 of the gate with the phone of the teammate who plays Sofia.</div>
+  <div class="status"><b>Live bot:</b> <code>@anchor_family_bot</code> on Cloud Run <code>anchor-bot</code> (<code>europe-west1</code>) runs v2: revision <code>anchor-bot-00014-b98</code>, commit <code>44996ee</code> (deployed 2026-09-26 at 10:08 Athens time, with the batched reminder call, tag collections, the join check, and the warm handoff to Eleni), with <code>ANCHOR_BOT_ONLY=true</code>, the call variables, and <code>--timeout=900</code>. The service is public for calls since 2026-09-26 at 01:00 Athens time: <code>GET /</code> gives 200, and <code>/whatsapp</code> and <code>/api/*</code> give 404. Steps 1 to 4 of the call gate are done. The first call through the live bot rang and held the conversation on 2026-09-26. Before the demo, repeat steps 6 and 7 of the gate with the phone of the teammate who plays Sofia.</div>
 
   <h2>1 · Before the demo</h2>
   <ol class="check">
@@ -52,7 +52,7 @@
     <li><input type="checkbox" id="g3"><label for="g3">Add the <code>allUsers</code> invoker binding, so Twilio reaches <code>/call/stream</code>.</label></li>
     <li><input type="checkbox" id="g4"><label for="g4">Check the guard: <code>GET /</code> returns 200, and <code>POST /whatsapp</code> returns 404.</label></li>
     <li><input type="checkbox" id="g5"><label for="g5">Greece is on in the Twilio voice geo permissions, for low-risk numbers. It is on since 2026-09-25.</label></li>
-    <li><input type="checkbox" id="g6"><label for="g6">Sofia turned on "Call me on the phone", shared her phone number, and saved the "Anchor" contact card.</label></li>
+    <li><input type="checkbox" id="g6"><label for="g6">Sofia turned on "Call me on the phone", shared her phone number, and saved the "Anchor" contact card. Eleni did the same, so Anchor can connect Sofia to her.</label></li>
     <li><input type="checkbox" id="g7"><label for="g7">After the last deploy, "Anchor, call me" rang her phone once.</label></li>
   </ol>
   <p><code>pnpm deploy:bot</code> keeps the binding, the variables, and the timeout. A full <code>gcloud run deploy</code> with the flags of "Deploy" closes the service again. To close the service on purpose, remove the <code>allUsers</code> binding.</p>
