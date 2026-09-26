@@ -1,0 +1,128 @@
+{
+  "standard": "WCAG 2.1 Level A and Level AA",
+  "auditedAt": "2026-09-26",
+  "commit": "0f6dfe73522e44e37c88ba99262c6d3ff9fcd51b",
+  "app": "apps/web",
+  "build": "astro build + astro preview",
+  "engine": "axe-core 4.13.0",
+  "runner": "Playwright Chromium headless",
+  "tags": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+  "gate": {
+    "command": "pnpm a11y:web",
+    "script": "apps/web/scripts/a11y-check.mjs",
+    "result": "pass",
+    "violations": 0,
+    "note": "The gate ignores axe incomplete results, so the 1:1 prose buttons do not fail it."
+  },
+  "verdict": "does-not-pass",
+  "findings": [
+    {
+      "id": "HC-CONTRAST",
+      "status": "fail",
+      "criteria": ["1.4.3"],
+      "level": "AA",
+      "impact": "serious",
+      "summary": "High contrast mode fails contrast on all 10 public routes (173 nodes).",
+      "pairs": [
+        { "foreground": "#443dff", "background": "#050316", "ratio": 3.25, "required": 4.5, "nodes": 155, "note": "Links use --primary on the swapped dark --background." },
+        { "foreground": "#050316", "background": "#443dff", "ratio": 3.25, "required": 4.5, "nodes": 7, "note": "Primary button labels follow swapped --background." },
+        { "foreground": "#f3f2fe", "background": "#dddbff", "ratio": 1.21, "required": 4.5, "nodes": 10, "routes": ["/app"], "note": "Demo step chips." },
+        { "foreground": "#fbfbfe", "background": "#dddbff", "ratio": 1.29, "required": 4.5, "nodes": 1, "routes": ["/family"], "note": "Secondary Sign in button." }
+      ],
+      "extraWhenPanelOpen": {
+        "selector": ".a11y-widget-scale > button:nth-child(2)",
+        "text": "Larger",
+        "foreground": "#fbfbfe",
+        "background": "#dddbff",
+        "ratio": 1.29,
+        "required": 4.5
+      },
+      "files": ["apps/web/src/styles/tokens.css", "apps/web/src/components/AccessibilityWidget.css", "apps/web/src/components/MvpDemo.css"]
+    },
+    {
+      "id": "PROSE-PRIMARY-BUTTON",
+      "status": "fail",
+      "criteria": ["1.4.3"],
+      "level": "AA",
+      "impact": "serious",
+      "axeClassification": "incomplete",
+      "summary": "Primary buttons inside .prose are purple on purple (1:1).",
+      "ratio": 1,
+      "required": 4.5,
+      "foreground": "#443dff",
+      "background": "#443dff",
+      "routes": ["/how-it-works", "/404"],
+      "selectors": ["a.btn-primary"],
+      "cause": ".prose a outranks .btn-primary",
+      "files": ["apps/web/src/styles/tokens.css", "apps/web/src/pages/how-it-works.astro", "apps/web/src/pages/404.astro"],
+      "watch": {
+        "note": "Secondary buttons on the same pages inherit the link color and pass at 4.66:1.",
+        "ratio": 4.66,
+        "required": 4.5
+      }
+    },
+    {
+      "id": "DEMO-SAMPLE-LINE",
+      "status": "fail",
+      "criteria": ["1.4.3", "2.1.1"],
+      "level": "A and AA",
+      "summary": "After Use a sample line, the voice tag fails contrast and the private chat log is not keyboard scrollable.",
+      "route": "/app",
+      "steps": ["Send the photo", "Yes, I’ll take part", "A little later — bring it back", "Use a sample line"],
+      "nodes": [
+        {
+          "rule": "color-contrast",
+          "selector": ".voice-tag",
+          "foreground": "#443dff",
+          "background": "#cbc8ff",
+          "ratio": 3.94,
+          "required": 4.5
+        },
+        {
+          "rule": "scrollable-region-focusable",
+          "selector": ".chat-log[role=log]",
+          "note": "Private log. Group log uses the same overflow:auto and will fail once it overflows."
+        }
+      ],
+      "files": ["apps/web/src/components/MvpDemo.css", "apps/web/src/components/MvpDemo.tsx"]
+    },
+    {
+      "id": "DESIGN-INK-INDEX",
+      "status": "fail",
+      "criteria": ["1.4.3"],
+      "level": "AA",
+      "summary": "Ink design study index numbers are 4.42:1 because of opacity 0.55.",
+      "route": "/designs/ink",
+      "selector": ".ink-action-index",
+      "ratio": 4.42,
+      "required": 4.5,
+      "inSitemap": false,
+      "files": ["apps/web/src/components/designs/ink/ink.css"]
+    },
+    {
+      "id": "DESIGN-SLATE-REFLOW",
+      "status": "fail",
+      "criteria": ["1.4.10"],
+      "level": "AA",
+      "summary": "Slate design study overflows at 320px.",
+      "route": "/designs/slate",
+      "scrollWidth": 352,
+      "clientWidth": 320,
+      "element": "main.slate-main",
+      "elementWidth": 344,
+      "inSitemap": false
+    }
+  ],
+  "passedNotes": [
+    "Default theme public routes: 0 axe violations at 1280 and 320, consent open and dismissed, and with the accessibility panel open on /.",
+    "Consent banner text blends to about 8.64:1. Axe marks it incomplete because the banner overlaps the page.",
+    "Public routes do not overflow horizontally at 320px.",
+    "Homepage tab sample: skip link first, 2px solid focus ring."
+  ],
+  "notTested": [
+    "Signed-in family record and my-data",
+    "Full keyboard audit, screen reader, 400% zoom",
+    "Telegram login window",
+    "Text scale, grayscale, and other accessibility toggles besides high contrast"
+  ]
+}
