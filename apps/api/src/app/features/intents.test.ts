@@ -293,6 +293,18 @@ test('group: a memory of a name posts the album of every moment the model picks,
   expect(transport.sent[0].message.text).toContain('Lucy');
 });
 
+test('group: "send me photos of Lucy" names a subject, so it goes to the model and not to the fixed sendMe', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  family.moments.push(moment({ id: 'l1', tags: ['Lucy'], photo: { id: 'photo-l1' } }), moment({ id: 'l2', tags: ['Lucy'], photo: { id: 'photo-l2' } }));
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'none', momentIds: ['l1', 'l2'] });
+
+  await router.route({ ...groupEvent, text: 'Anchor, send me photos of Lucy' });
+
+  expect(model.ask).toHaveBeenCalledTimes(1);
+  expect(transport.sent[0].message.album).toHaveLength(2);
+});
+
 test('group: a nxt:memory tap posts a memory with no model call', async () => {
   const { transport, family, router } = setup();
   family.moments.push(moment());

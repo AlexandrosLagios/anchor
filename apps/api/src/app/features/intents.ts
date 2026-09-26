@@ -19,9 +19,9 @@ type Intent = (typeof INTENTS)[number];
 
 // section 6.7: one line per intent, with one example each; the demo phrases carry the wording
 const INTENT_EXAMPLES: Partial<Record<Intent, string>> = {
-  memory: '"Anchor, show us a memory" or "I want a memory of Lucy" asks Anchor to post a family memory now.',
+  memory: '"Anchor, show us a memory", "I want a memory of Lucy", or "photos of Lucy" asks Anchor to post a family memory now.',
   find: '"Anchor, when did Maria start school?" asks Anchor to find a moment and answer with it.',
-  sendMe: '"Anchor, can you send me the family photos?" or "Send me a moment" asks Anchor to send a moment in private. Never memory.',
+  sendMe: '"Anchor, can you send me the family photos?" or "Send me a moment" asks Anchor to send a moment in private, and names no person, pet, or place. Never memory.',
   missed: '"What did I miss?" asks for the moments the family shared since the person last talked to Anchor.',
   settings: '"Anchor, settings" asks to see or change what Anchor sends.',
   stop: '"stop" asks Anchor to stop sending anything.',
@@ -50,7 +50,8 @@ function buildPrompt(chat: 'group' | 'private', text: string, hasVoice: boolean,
     'Pick the intent that best matches the message:',
     ...Object.entries(INTENT_EXAMPLES).map(([intent, example]) => `- ${intent}: ${example}`),
     'Pick the id of the moment the message names or asks about, or "none" when it names none.',
-    'For memory, when the message names a person, a pet, a place, or an activity, list in momentIds every moment about it, from the titles and the tags. Otherwise, momentIds is empty.',
+    'For memory, when the message names a person, a pet, a place, or an activity, list in momentIds every moment about it, from the titles and the tags. ' +
+      'Include a moment that names the same person or pet only by a general word, such as a "dog" moment when another moment shows that the family dog is Lucy. Otherwise, momentIds is empty.',
     ...moments.map(choiceLine),
   ].join('\n');
 }
@@ -152,7 +153,9 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
   if (isNew) ctx.store.save();
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
-  const fixed = event.voice ? undefined : fixedIntent(question);
+  const phrase = event.voice ? undefined : fixedIntent(question);
+  // "send me photos of Lucy" names a subject, so the model decides between sendMe and a memory of Lucy (4.16)
+  const fixed = phrase === 'sendMe' && /\bof\b/i.test(question) ? undefined : phrase;
   const { intent, momentId, momentIds } = fixed
     ? { intent: fixed, momentId: undefined, momentIds: [] }
     : await readIntent(family, event, 'group', question, moments, ctx);
