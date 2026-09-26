@@ -11,7 +11,7 @@
 }
 
 body.consent-open .a11y-widget {
-  bottom: calc(11.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
 }
 
 .a11y-widget-toggle {

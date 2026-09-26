@@ -7,20 +7,18 @@ const description =
 
 <BaseLayout title="Anchor" description={description} currentPath="/">
   <section class="slate-hero" aria-labelledby="slate-title">
-    <p class="slate-brand font-display" aria-hidden="true">Anchor</p>
-    <h1 id="slate-title" class="slate-line font-display">Memories That Live On</h1>
-    <p class="slate-support">
-      Transform your family chat into a personalized, living memory assistant, no new apps needed.
-    </p>
-    <ul class="slate-list slate-hero-points">
-      <li>Seamlessly integrates with your family's chat.</li>
-      <li>Gentle memory exercises, no pressure.</li>
-      <li>Relive cherished moments, narrated for you.</li>
-    </ul>
-    <div class="slate-actions">
-      <a class="slate-btn slate-btn-primary" href="/family">Start Remembering Together</a>
-      <a class="slate-btn slate-btn-ghost" href="/app">Try the demo</a>
-      <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
+    <div class="slate-hero-plane" aria-hidden="true"></div>
+    <div class="slate-hero-inner">
+      <p class="slate-brand">Anchor</p>
+      <h1 id="slate-title" class="slate-line">Memories That Live On</h1>
+      <p class="slate-support">
+        Transform your family chat into a living memory assistant. No new apps.
+      </p>
+      <div class="slate-actions">
+        <a class="slate-btn slate-btn-primary" href="/family">Start Remembering Together</a>
+        <a class="slate-text-link" href="/app">Try the demo</a>
+        <a class="slate-text-link" href="/how-it-works">How it works</a>
+      </div>
     </div>
   </section>
 
@@ -29,12 +27,16 @@ const description =
     <ol class="slate-steps">
       <li>
         <span class="slate-step-num" aria-hidden="true">1</span>
-        <p>Share as you already do. Photos, voice notes, the silly Tuesday lunch. Anchor keeps them in the chat you already live in.</p>
+        <p>
+          Share as you already do. Photos, voice notes, the silly Tuesday lunch. Anchor keeps them in the chat you
+          already live in.
+        </p>
       </li>
       <li>
         <span class="slate-step-num" aria-hidden="true">2</span>
         <p>
-          Ask later. "Remind me what Maria did yesterday." Photos, video, and a spoken narration come back when it matters.
+          Ask later. "Remind me what Maria did yesterday." Photos, video, and a spoken narration come back when it
+          matters.
         </p>
       </li>
       <li>
@@ -85,8 +87,8 @@ const description =
     </p>
     <div class="slate-actions">
       <a class="slate-btn slate-btn-primary" href="/family">Start Remembering Together</a>
-      <a class="slate-btn slate-btn-ghost" href="/app">Try the demo</a>
-      <a class="slate-btn slate-btn-ghost" href="/how-it-works">How it works</a>
+      <a class="slate-text-link" href="/app">Try the demo</a>
+      <a class="slate-text-link" href="/how-it-works">How it works</a>
     </div>
   </section>
 </BaseLayout>
