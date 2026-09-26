@@ -9,12 +9,15 @@ interface Props {
   title: string;
   description?: string;
   currentPath?: string;
+  /** Wider main column for experimental content-flow demos */
+  wide?: boolean;
 }
 
 const {
   title,
   description = 'Anchor brings family memories back in the group chat — spaced retrieval, gentle cues, no new app to learn.',
   currentPath = '/',
+  wide = false,
 } = Astro.props;
 
 const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : `${title} · Anchor`;
@@ -74,7 +77,7 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
       </nav>
     </header>
 
-    <main id="main" class="slate-main">
+    <main id="main" class:list={['slate-main', { 'slate-main-wide': wide }]}>
       <slot />
     </main>
 
@@ -89,6 +92,14 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
         <a href="/terms">Terms</a>
         <a href="/cookies">Cookies</a>
         <a href="/sitemap">Sitemap</a>
+      </nav>
+      <nav class="slate-footer-flows" aria-label="Content flow demos">
+        <a href="/flows">All flows</a>
+        <a href="/flows/chapters">Chapters</a>
+        <a href="/flows/strip">Strip</a>
+        <a href="/flows/timeline">Timeline</a>
+        <a href="/flows/split">Split</a>
+        <a href="/flows/cascade">Cascade</a>
       </nav>
       <p class="a11y-note">
         Accessibility: this site aims for WCAG 2.1 Level AA. Use the Accessibility button for personal display settings

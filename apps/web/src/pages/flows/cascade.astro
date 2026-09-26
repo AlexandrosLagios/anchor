@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CascadeFlow } from '../../components/flows/CascadeFlow';
+import '../../components/flows/flows.css';
+---
+
+<BaseLayout
+  title="Beat cascade"
+  description="Stacked card cascade for guided Anchor demo beats."
+  currentPath="/flows/cascade"
+  wide
+>
+  <section class="flow-intro">
+    <p class="flow-kicker">Flow 5 · Cascade</p>
+    <h1>Beat cascade</h1>
+    <p>
+      A card stack that advances one beat at a time. Familiar from product demos and awarded portfolio walkthroughs —
+      here used as a guided family journey.
+    </p>
+  </section>
+  <CascadeFlow client:load />
+</BaseLayout>

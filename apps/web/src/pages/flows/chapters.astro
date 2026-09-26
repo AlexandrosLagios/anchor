@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { ChaptersFlow } from '../../components/flows/ChaptersFlow';
+import '../../components/flows/flows.css';
+---
+
+<BaseLayout
+  title="Scroll chapters"
+  description="Sticky chapter rail content flow for Anchor’s memory journey."
+  currentPath="/flows/chapters"
+  wide
+>
+  <section class="flow-intro">
+    <p class="flow-kicker">Flow 1 · Chapters</p>
+    <h1>Scroll chapters</h1>
+    <p>
+      Full-height story beats with a sticky progress rail. The active chapter updates as you scroll — a pattern common
+      on awarded long-form sites, here used for spaced retrieval.
+    </p>
+  </section>
+  <ChaptersFlow client:load />
+</BaseLayout>

@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../components/flows/flows.css';
+
+const items = [
+  {
+    mark: '1',
+    title: 'Morning share',
+    when: 'Day 0',
+    body: 'Sofia shares Maria’s first day. Anchor keeps the caption exactly as written.',
+  },
+  {
+    mark: '2',
+    title: 'Quiet save',
+    when: 'Same day',
+    body: 'The moment joins the family record. Sensitive notes stay out of the public website view.',
+  },
+  {
+    mark: '3',
+    title: 'Gentle return',
+    when: 'A few days later',
+    body: 'Anchor asks Athina a question that brings the day back without giving the answer away.',
+  },
+  {
+    mark: '4',
+    title: 'Private help',
+    when: 'If needed',
+    body: 'A cue can arrive in private. The family does not watch a scoreboard.',
+  },
+  {
+    mark: '5',
+    title: 'Her place',
+    when: 'Ongoing',
+    body: 'She answers in Telegram. The website only shows the record when she and her family choose.',
+  },
+];
+---
+
+<BaseLayout
+  title="Expand timeline"
+  description="Expandable timeline content flow for Anchor’s spaced retrieval beats."
+  currentPath="/flows/timeline"
+  wide
+>
+  <section class="flow-intro">
+    <p class="flow-kicker">Flow 3 · Timeline</p>
+    <h1>Expand timeline</h1>
+    <p>
+      Progressive disclosure: open one beat at a time. Good for denser legal or journey copy without forcing a long
+      scroll.
+    </p>
+  </section>
+  <ul class="timeline">
+    {
+      items.map((item) => (
+        <li>
+          <details>
+            <summary>
+              <span class="timeline-mark" aria-hidden="true">
+                {item.mark}
+              </span>
+              <span>{item.title}</span>
+              <span class="timeline-when">{item.when}</span>
+            </summary>
+            <p class="timeline-body">{item.body}</p>
+          </details>
+        </li>
+      ))
+    }
+  </ul>
+</BaseLayout>

@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SplitFlow } from '../../components/flows/SplitFlow';
+import '../../components/flows/flows.css';
+---
+
+<BaseLayout
+  title="Split reveal"
+  description="Split-pane synced storytelling for family chat and Athina."
+  currentPath="/flows/split"
+  wide
+>
+  <section class="flow-intro">
+    <p class="flow-kicker">Flow 4 · Split</p>
+    <h1>Split reveal</h1>
+    <p>
+      One sticky summary pane, one scrolling beat list. As each beat enters view, the family and Athina sides update
+      together — dual narrative without tab switching.
+    </p>
+  </section>
+  <SplitFlow client:load />
+</BaseLayout>
