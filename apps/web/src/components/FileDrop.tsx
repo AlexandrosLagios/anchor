@@ -12,16 +12,23 @@ export type DroppedFile = {
   createdAt: string;
 };
 
+const MAX_BYTES = Math.floor(4.5 * 1024 * 1024);
+
 async function filesApi<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getIdToken();
   if (!token) throw new Error('Sign in required');
-  const response = await fetch(apiUrl(`/api/files${path}`), {
-    ...init,
-    headers: {
-      authorization: `Bearer ${token}`,
-      ...(init?.headers ?? {}),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(apiUrl(`/api/files${path}`), {
+      ...init,
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new Error('Cannot reach the Anchor API. Start it with pnpm dev:api, or check PUBLIC_API_URL.');
+  }
   if (!response.ok) throw new Error(await parseApiError(response));
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
@@ -52,21 +59,35 @@ export function FileDrop() {
     });
   }, [refresh]);
 
-  async function upload(file: File) {
+  async function uploadAll(incoming: FileList | File[]) {
+    const batch = Array.from(incoming);
+    if (!batch.length || busy) return;
     setError('');
     setStatus('');
     setBusy(true);
+    const failed: string[] = [];
+    let sent = 0;
     try {
-      if (file.size > Math.floor(4.5 * 1024 * 1024)) {
-        throw new Error('File must be under 4.5 MB');
+      for (let index = 0; index < batch.length; index += 1) {
+        const file = batch[index];
+        setStatus(`Uploading ${index + 1} of ${batch.length} — ${file.name}`);
+        if (file.size > MAX_BYTES) {
+          failed.push(`${file.name} (over 4.5 MB)`);
+          continue;
+        }
+        try {
+          const body = new FormData();
+          body.append('file', file, file.name);
+          await filesApi<DroppedFile>('', { method: 'POST', body });
+          sent += 1;
+        } catch (err) {
+          failed.push(`${file.name} (${err instanceof Error ? err.message : 'Upload failed'})`);
+        }
       }
-      const body = new FormData();
-      body.append('file', file);
-      await filesApi<DroppedFile>('', { method: 'POST', body });
-      setStatus(`Uploaded ${file.name}`);
       await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed.');
+      const summary = sent === 1 ? 'Uploaded 1 file.' : `Uploaded ${sent} files.`;
+      setStatus(failed.length ? `${summary} ${failed.length} failed.` : summary);
+      if (failed.length) setError(failed.join(' '));
     } finally {
       setBusy(false);
     }
@@ -75,8 +96,7 @@ export function FileDrop() {
   function onDrop(event: DragEvent) {
     event.preventDefault();
     setDragging(false);
-    const file = event.dataTransfer.files?.[0];
-    if (file) void upload(file);
+    void uploadAll(event.dataTransfer.files);
   }
 
   async function openFile(file: DroppedFile) {
@@ -115,7 +135,8 @@ export function FileDrop() {
     <section className="file-drop" aria-labelledby="file-drop-heading">
       <h2 id="file-drop-heading">File drop</h2>
       <p className="lede">
-        Private media in Vercel Blob (<code>fra1</code>), scoped to your account. Max 4.5&nbsp;MB per file.
+        Drop or choose files to upload them now. Each stays private in Vercel Blob (<code>fra1</code>), under
+        4.5&nbsp;MB.
       </p>
 
       <div
@@ -131,23 +152,18 @@ export function FileDrop() {
         }}
         onDrop={onDrop}
       >
-        <p>{busy ? 'Uploading…' : 'Drop a file here, or choose one'}</p>
-        <button
-          className="btn btn-secondary"
-          type="button"
-          disabled={busy}
-          onClick={() => inputRef.current?.click()}
-        >
-          Choose file
+        <p>{busy ? 'Uploading…' : 'Drop files here, or choose them'}</p>
+        <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => inputRef.current?.click()}>
+          Choose files
         </button>
         <input
           ref={inputRef}
           type="file"
+          multiple
           hidden
           onChange={(e) => {
-            const file = e.target.files?.[0];
+            if (e.target.files?.length) void uploadAll(e.target.files);
             e.target.value = '';
-            if (file) void upload(file);
           }}
         />
       </div>
@@ -157,7 +173,11 @@ export function FileDrop() {
           {error}
         </p>
       ) : null}
-      {status ? <p className="file-status">{status}</p> : null}
+      {status ? (
+        <p className="file-status" aria-live="polite">
+          {status}
+        </p>
+      ) : null}
 
       {files.length > 0 ? (
         <ul className="file-list">

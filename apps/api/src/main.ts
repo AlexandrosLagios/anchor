@@ -30,10 +30,10 @@ async function bootstrap() {
       'https://anchor-open26.vercel.app',
       'https://anchor-openhackathon2026.vercel.app',
       'https://anchor-api-teal.vercel.app',
-      ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()) : []),
+      ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean) : []),
     ],
     methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Authorization', 'Content-Type'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
   });
   if (process.env.ANCHOR_BOT_ONLY === 'true') {
     // the public bot answers only its health check over HTTP, so the website API and the WhatsApp webhook stay closed
