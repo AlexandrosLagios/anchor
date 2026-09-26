@@ -16,6 +16,7 @@ export type Incoming = {
   voice?: Media;
   albumId?: string; // Telegram media_group_id: photos of one album share it
   forwarded?: boolean;
+  forwardedFrom?: string; // the account id of the forward origin; unset when Telegram hides the account
   unsupported?: boolean; // sticker, GIF, video note, document, poll, service message
   replyTo?: string;
   replyToSender?: { id: string; name: string }; // the sender of the replied-to message

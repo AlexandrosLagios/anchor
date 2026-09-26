@@ -27,7 +27,7 @@ type Message = {
   voice?: { file_id: string; mime_type?: string };
   contact?: { phone_number: string; user_id?: number };
   media_group_id?: string;
-  forward_origin?: object;
+  forward_origin?: { type: string; sender_user?: User; sender_chat?: Chat; chat?: Chat }; // a hidden_user origin carries a name only
   reply_to_message?: Message;
   migrate_to_chat_id?: number;
   animation?: object;
@@ -60,8 +60,9 @@ function fromMessage(message: Message, username: string): Incoming {
     bot.toLowerCase() === username.toLowerCase() ? name : command,
   );
   const photo = message.photo?.reduce((largest, size) => (size.width * size.height > largest.width * largest.height ? size : largest));
-  const { video, voice, contact, reply_to_message: reply } = message;
+  const { video, voice, contact, reply_to_message: reply, forward_origin: origin } = message;
   const migratedTo = message.migrate_to_chat_id ? String(message.migrate_to_chat_id) : undefined;
+  const account = origin?.sender_user ?? origin?.sender_chat ?? origin?.chat;
   return {
     ...place(message.chat),
     ...identify(message),
@@ -74,7 +75,8 @@ function fromMessage(message: Message, username: string): Incoming {
     voice: voice && { id: voice.file_id, mimeType: voice.mime_type ?? 'audio/ogg' },
     contact: contact && { phone: contact.phone_number, userId: contact.user_id === undefined ? undefined : String(contact.user_id) },
     albumId: message.media_group_id,
-    forwarded: Boolean(message.forward_origin),
+    forwarded: Boolean(origin),
+    forwardedFrom: account && String(account.id),
     unsupported: Boolean(message.animation || message.document || message.audio) || !(text || photo || video || voice || contact || migratedTo),
     replyTo: reply && String(reply.message_id),
     replyToSender: reply?.from && !reply.from.is_bot ? person(reply.from) : undefined,
