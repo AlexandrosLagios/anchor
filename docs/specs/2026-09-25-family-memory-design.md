@@ -124,7 +124,7 @@ v2: this section says storyteller for a member who has `started` and `choices.mo
 
 ### 4.6 Ask Anchor and the intent router (steps 2b and 5)
 
-- A group message that matches `/^anchor\b[,:]?\s+/i` is a question. The `forget` feature runs first, so "Anchor, forget this" never reaches `ask`.
+- A group message that matches `/^(?:anchor|@anchor\w*)\b\s*[,:]?\s+/i` is a question. A mention of the bot, such as "@anchor_family_bot , give me a memory", names Anchor as "Anchor," does. The `forget` feature runs first, so "Anchor, forget this" never reaches `ask`.
 - One Gemini call picks one moment id from an enum of the ids of the family, or `none` (section 6.4). The enum leaves out every sensitive moment.
 - Anchor replies to the question with the video or the photo and the caption `askAnswer(title, date, names)`. The first voice story follows by its media id.
 - `none`, or a failed call, gets `notFound`.
@@ -403,6 +403,9 @@ A group memory brings back several moments about one thing together, as a photo 
   - A message with "of", "about", or "with" can also name the subject with a word of a title or a picture description, so "memories of the dog" finds a Lucy moment whose picture shows a dog. The code skips filler words, such as "the" and "with".
   - An unaddressed `memory` gets an answer only when the intent call picks at least one moment.
   - "Show me" and "show us" count as memory words, so "Show me Lucy" reaches the intent call.
+  - A general request, such as "Give me a memory", "Can we have a memory?", or "any memories?", names no subject but only makes sense to Anchor. The code posts a memory for it, with or without "Anchor,", and without a model call.
+  - A general request is the whole message. It asks with a verb, such as "show us", "tell me", "I want", or "can we have", for a memory or a moment. Without a verb, "a memory", "another memory", or "any memories" also counts.
+  - "Show us some photos", a bare "Memories!", "A moment please", and a reply to a person stay family talk.
 - `family.lastShown` holds the moment ids of the latest group memory. A request with "more", "other", "another", "else", or "different" leaves out those moments. When the intent call picks only moments from `lastShown`, Anchor replies `noMoreMoments`.
   - The prompt tells the model that the message does not name Anchor and that the family may be talking to each other. The model picks `memory` only for a request for family memories, photos, or moments.
   - Anchor answers such a message only when the intent is `memory`. Any other intent gets no answer at all, and the message goes on to `capture`. A fixed phrase never decides for a message without "Anchor,".

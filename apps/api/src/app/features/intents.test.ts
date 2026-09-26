@@ -257,6 +257,20 @@ test('group: "Anchorage was lovely", a bare "anchor", and a forwarded "Anchor, .
   expect(transport.sent).toEqual([]);
 });
 
+test('group: a mention of the bot, such as "@anchor_family_bot , ...", names Anchor', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  family.moments.push(moment());
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'find', momentId: 'm1' });
+
+  await router.route({ ...groupEvent, text: '@anchor_family_bot , when did Maria start school?' });
+  await router.route({ ...groupEvent, text: '@anchor_family_dev_bot: when did Maria start school?' });
+
+  expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('"when did Maria start school?"');
+  expect(vi.mocked(model.ask).mock.calls[0][0]).not.toContain('does not name Anchor');
+  expect(transport.sent).toHaveLength(2);
+});
+
 test('private: a fixed phrase decides the intent in code, and a voice note still goes to the model', async () => {
   const { transport, family, router } = setup();
   const m = member(family);
@@ -370,6 +384,31 @@ test('group: an unaddressed message without a memory word, without a subject the
   await router.route({ ...groupEvent, text: 'Send me the photos of Lucy later', replyTo: 'm-person' });
 
   expect(model.ask).not.toHaveBeenCalled();
+});
+
+test('group: "Give me a memory" names no subject and no "Anchor,", and still posts a memory with no model call', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  family.moments.push(moment());
+  const phrasings = [
+    'Give me a memory',
+    'show us a moment!',
+    'Anchor, give me another memory',
+    'Can you show me some memories?',
+    'Can we have a memory?',
+    'I’d like a family memory please',
+    'any memories?',
+    'Tell us a memory',
+    '@anchor_family_bot , give me a memory',
+  ];
+  const familyTalk = ['Show us some photos', 'Memories!', 'A moment please', 'Send me a moment', 'Such lovely memories'];
+
+  for (const text of phrasings) await router.route({ ...groupEvent, text });
+  await router.route({ ...groupEvent, text: 'Give me a memory', replyTo: 'm-person' });
+  for (const text of familyTalk) await router.route({ ...groupEvent, text });
+
+  expect(model.ask).not.toHaveBeenCalled();
+  expect(transport.sent.filter((s) => s.message.text?.includes(lines.labels.fromRecord))).toHaveLength(phrasings.length);
 });
 
 test('group: a nxt:memory tap posts a memory with no model call', async () => {

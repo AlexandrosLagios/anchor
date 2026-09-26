@@ -20,7 +20,8 @@ export type Bundle = {
 
 export const hasPicture = (event: Incoming) => Boolean(event.photo || event.video);
 
-export const ADDRESS = /^anchor\b[,:]?\s+/i;
+// "Anchor, ..." or a mention of the live or the dev bot, such as "@anchor_family_bot , ..."
+export const ADDRESS = /^(?:anchor|@anchor\w*)\b\s*[,:]?\s+/i;
 
 // v2: these phrases decide an intent in code, before any model call, so the demo phrases never depend on the model
 const FIXED = /^(?:(?:can|could|would|will) you |please )?(send me|another moment|my settings|settings|call me|what did i miss)\b/i;
