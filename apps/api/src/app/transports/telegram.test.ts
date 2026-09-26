@@ -112,6 +112,16 @@ test('toIncoming flags a forwarded message', () => {
   expect(toIncoming(message({ text: 'Look at this', forward_origin }), BOT)?.forwarded).toBe(true);
 });
 
+test('toIncoming maps the account of each forward origin, and leaves it unset when Telegram hides the account', () => {
+  const origin = (forward_origin: object) => toIncoming(message({ text: 'Send me 500 euros now', forward_origin }), BOT);
+  expect(origin({ type: 'user', sender_user: nikos, date })).toMatchObject({ forwarded: true, forwardedFrom: '222' });
+  expect(origin({ type: 'chat', sender_chat: { id: -100555, type: 'group', title: 'Deals' }, date })?.forwardedFrom).toBe('-100555');
+  expect(origin({ type: 'channel', chat: { id: -100777, type: 'channel', title: 'News' }, message_id: 5, date })?.forwardedFrom).toBe('-100777');
+  const hidden = origin({ type: 'hidden_user', sender_user_name: 'Eleni', date });
+  expect(hidden?.forwarded).toBe(true);
+  expect(hidden?.forwardedFrom).toBeUndefined();
+});
+
 test('toIncoming maps a video with its thumbnail', () => {
   const video = { ...file('video-1'), width: 1280, height: 720, duration: 30, mime_type: 'video/mp4', thumbnail: { ...file('thumb-1'), width: 320, height: 180 } };
   expect(toIncoming(message({ video, caption: 'Our trip to Nafplio' }), BOT)).toMatchObject({

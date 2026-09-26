@@ -13,10 +13,12 @@ import { invitations } from './features/invitations';
 import { members } from './features/members';
 import { memories } from './features/memories';
 import { reminders } from './features/reminders/reminders';
+import { scams } from './features/scams';
 import { shares } from './features/shares';
 import { TelegramTransport } from './transports/telegram';
 
-export const FEATURES: Feature[] = [intro, fastforward, forget, reminders, members, invitations, memories, intents, capture, shares, echoes, calls];
+// scams sits before members and invitations, so a forwarded "stop" or a forward during an open invitation reaches the scam check
+export const FEATURES: Feature[] = [intro, fastforward, forget, reminders, scams, members, invitations, memories, intents, capture, shares, echoes, calls];
 
 // v2, section 4.8: restartWindow collapses the running window to empty at the tick that follows the call, never the in-flight one
 export function nextWindow(from: number, to: number, restart: boolean): Window {

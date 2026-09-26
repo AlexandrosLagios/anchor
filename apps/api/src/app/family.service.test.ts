@@ -105,6 +105,7 @@ test('FEATURES keeps the order of spec 5.4', () => {
     'fastforward',
     'forget',
     'reminders',
+    'scams',
     'members',
     'invitations',
     'memories',
