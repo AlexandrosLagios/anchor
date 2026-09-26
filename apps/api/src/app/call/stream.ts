@@ -10,6 +10,7 @@ import { transfer } from './dial';
 export const STREAM_PATH = '/call/stream';
 const MAX_CALL_MS = 10 * 60_000;
 const START_TIMEOUT_MS = 10_000;
+const TRANSFER_CLOSE_MS = 5_000;
 
 export type Script = Pick<BridgeOptions, 'instructions' | 'opener' | 'askShare' | 'goodbye'> & { connectTo?: string };
 interface Expected {
@@ -79,11 +80,15 @@ function run(twilio: WebSocket, start: TwilioEvent, { script: { connectTo, ...sc
       if (!connect || !connectTo || !callSid) return twilio.close();
       // set before the request, because Twilio closes the stream as soon as the new TwiML runs
       call.record.dialed = true;
-      transfer(callSid, connectTo).catch((error) => {
-        call.record.dialed = false;
-        log.warn(`Moving call ${callSid} to the sharer failed: ${error}`);
-        twilio.close();
-      });
+      transfer(callSid, connectTo).then(
+        // the new TwiML already ended the stream, so a socket that Twilio leaves open closes without effect on the call
+        () => setTimeout(() => twilio.close(), TRANSFER_CLOSE_MS),
+        (error) => {
+          call.record.dialed = false;
+          log.warn(`Moving call ${callSid} to the sharer failed: ${error}`);
+          twilio.close();
+        },
+      );
     },
   });
   const limit = setTimeout(() => twilio.close(), MAX_CALL_MS);
