@@ -179,14 +179,14 @@ test('a sensitive moment is never posted', async () => {
 
 const slot18 = { from: at(25, 17, 59), to: at(25, 18, 1) };
 const rex = (id: string, fields: Partial<Moment> = {}) =>
-  moment({ id, subject: 'Rex the dog', photo: { id: `photo-${id}` }, messageIds: [id], text: `Rex ${id}`, ...fields });
+  moment({ id, tags: ['Rex', 'dog'], photo: { id: `photo-${id}` }, messageIds: [id], text: `Rex ${id}`, ...fields });
 
-test('a due moment with a subject posts an album of the same-subject moments, oldest first, and each item belongs to its own moment', async () => {
-  const due = rex('a', { savedAt: daysBefore(at(25, 18), 7) });
-  const older = rex('b', { subject: 'rex THE dog', savedAt: daysBefore(at(25, 18), 20), lookbacks: ['7'], eventDate: '2026-08-01', by: { id: '2', name: 'Eleni' } });
+test('a due moment posts an album of the moments that share its most shared tag, oldest first, and each item belongs to its own moment', async () => {
+  const due = rex('a', { savedAt: daysBefore(at(25, 18), 7), tags: ['beach', 'Rex'] });
+  const older = rex('b', { tags: ['REX'], savedAt: daysBefore(at(25, 18), 20), lookbacks: ['7'], eventDate: '2026-08-01', by: { id: '2', name: 'Eleni' } });
   const newer = rex('c', { savedAt: daysBefore(at(25, 18), 2), photo: undefined, video: { id: 'video-c' } });
-  const other = moment({ id: 'd', subject: 'The beach house', photo: { id: 'photo-d' }, savedAt: daysBefore(at(25, 18), 3) });
-  family.moments.push(due, older, newer, other);
+  const beach = moment({ id: 'd', tags: ['beach'], photo: { id: 'photo-d' }, savedAt: daysBefore(at(25, 18), 3) });
+  family.moments.push(due, older, newer, beach);
 
   await memories.tick?.(family, slot18, ctx);
 
@@ -196,17 +196,17 @@ test('a due moment with a subject posts an album of the same-subject moments, ol
       messageId: 'sent-1',
       message: {
         album: [{ photo: { id: 'photo-b' } }, { photo: { id: 'photo-a' } }, { video: { id: 'video-c' } }],
-        text: lines.collectionCaption(lines.labels['7'], 'Rex the dog', [older, due, newer]),
+        text: lines.collectionCaption(lines.labels['7'], 'Rex', [older, due, newer]),
       },
     },
   ]);
-  expect([older, due, newer, other].map((item) => item.memoryPostIds)).toEqual([['sent-1'], ['sent-1-2'], ['sent-1-3'], []]);
+  expect([older, due, newer, beach].map((item) => item.memoryPostIds)).toEqual([['sent-1'], ['sent-1-2'], ['sent-1-3'], []]);
   expect([older, due, newer].map((item) => item.lookbacks)).toEqual([['7'], ['7'], []]);
 });
 
-test('a collection with fewer than 2 pictures posts the one moment as before, and skips sensitive and wordless partners', async () => {
+test('a collection with fewer than 2 pictures posts the one moment as before, and skips sensitive, pictureless, and untagged partners', async () => {
   const due = rex('a', { savedAt: daysBefore(at(25, 18), 7) });
-  family.moments.push(due, rex('b', { photo: undefined, savedAt: daysBefore(at(25, 18), 2) }), rex('c', { sensitive: true, savedAt: daysBefore(at(25, 18), 3) }));
+  family.moments.push(due, rex('b', { photo: undefined, savedAt: daysBefore(at(25, 18), 2) }), rex('c', { sensitive: true, savedAt: daysBefore(at(25, 18), 3) }), rex('d', { tags: [], savedAt: daysBefore(at(25, 18), 4) }));
 
   await memories.tick?.(family, slot18, ctx);
 
@@ -231,7 +231,7 @@ test('/memory posts a collection too', async () => {
   expect(transport.sent[0].message.album).toHaveLength(2);
 });
 
-test('collectionCaption names the label, the subject, and each sharer, and stays within 1024 characters', () => {
+test('collectionCaption names the label, the tag, and each sharer, and stays within 1024 characters', () => {
   const caption = lines.collectionCaption('A week ago', 'Rex the dog', [
     moment({ text: 'Rex as a puppy', by: { id: '2', name: 'Eleni' } }),
     ...[1, 2, 3, 4, 5].map(() => moment({ text: 'x'.repeat(500) })),

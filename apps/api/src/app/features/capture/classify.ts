@@ -13,7 +13,7 @@ export type Classification = {
   people: string[];
   eventDate?: string;
   title: string;
-  subject?: string;
+  tags: string[];
   transcript: string;
 };
 
@@ -25,11 +25,16 @@ const SCHEMA = {
     people: { type: 'array', items: { type: 'string' } },
     eventDate: { type: 'string' },
     title: { type: 'string' },
-    subject: { type: 'string' },
+    tags: { type: 'array', items: { type: 'string' } },
     transcript: { type: 'string' },
   },
-  required: ['verdict', 'salience', 'people', 'eventDate', 'title', 'subject', 'transcript'],
+  required: ['verdict', 'salience', 'people', 'eventDate', 'title', 'tags', 'transcript'],
 };
+
+// each tag once, whatever the case
+const unique = (tags: string[]) => tags.filter((tag, index) => tags.findIndex((other) => other.toLowerCase() === tag.toLowerCase()) === index);
+
+const tagsOf = (raw: unknown) => unique(valid.strings(raw).map((tag) => cut(tag.trim(), 40)).filter(Boolean)).slice(0, 5);
 
 export function validate(raw: unknown): Classification | undefined {
   if (typeof raw !== 'object' || raw === null) return undefined;
@@ -44,13 +49,14 @@ export function validate(raw: unknown): Classification | undefined {
     people: valid.strings(record.people),
     eventDate: valid.date(record.eventDate),
     title,
-    subject: valid.text(record.subject) || undefined,
+    tags: tagsOf(record.tags),
     transcript: valid.text(record.transcript),
   };
 }
 
 function prompt(bundle: Bundle): string {
-  const subjects = [...new Set(bundle.family.moments.map((moment) => moment.subject).filter(Boolean))];
+  // ponytail: every tag of the family goes into the prompt; keep the most used ones when a record reaches thousands of tags
+  const tags = unique(bundle.family.moments.flatMap((moment) => moment.tags ?? []));
   return [
     "Anchor keeps the family's shared photos and stories, and quotes each moment in the words of the person who shared it. Anchor is never a person.",
     `${bundle.sender.name} shared this in the family chat:`,
@@ -65,10 +71,10 @@ function prompt(bundle: Bundle): string {
     '- small_talk: chatter, jokes, reactions, and arguments.',
     '',
     'Return: verdict; salience from 1 to 5; people, the names in the moment; eventDate as YYYY-MM-DD, or empty when unknown; ' +
-      'title, a short phrase for the family record, at most 100 characters; subject, the one recurring thing the moment is about, ' +
-      'such as a pet, a person, a place, or an activity, for example "Rex the dog", or empty when there is no clear subject; ' +
+      'title, a short phrase for the family record, at most 100 characters; tags, up to 5 short tags for what the moment is about: ' +
+      'the names of people and pets, places, events, and activities, for example ["Lucy", "dog", "park"], never generic words such as family, photo, or happy; ' +
       'and transcript, the words spoken in the voice note, or empty.',
-    ...(subjects.length ? [`Subjects the family already has: ${subjects.join('; ')}. Reuse one of them, word for word, when the moment is about the same thing.`] : []),
+    ...(tags.length ? [`Tags the family already uses: ${tags.join('; ')}. Reuse a tag word for word when it means the same thing.`] : []),
   ].join('\n');
 }
 

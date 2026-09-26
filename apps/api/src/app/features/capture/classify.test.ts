@@ -32,6 +32,7 @@ const valid = {
   people: ['Maria'],
   eventDate: '2026-09-01',
   title: "Maria's first day at school",
+  tags: ['Maria', 'school'],
   transcript: '',
 };
 
@@ -139,25 +140,23 @@ test('classify sends a bare photo, and the prompt says the moment may have no wo
   expect(options.media).toEqual([{ data: Buffer.from('photo'), mimeType: 'image/jpeg' }]);
 });
 
-test('validate keeps a trimmed subject, and turns a missing or empty subject into undefined', () => {
-  expect(validate({ ...valid, subject: '  Rex the dog ' })?.subject).toBe('Rex the dog');
-  expect(validate({ ...valid, subject: '' })?.subject).toBeUndefined();
-  expect(validate(valid)?.subject).toBeUndefined();
+test('validate keeps up to 5 trimmed tags, once each whatever the case, and turns a missing list into an empty one', () => {
+  expect(validate({ ...valid, tags: [' Lucy ', 'dog', 'lucy', 'park', 'ball', 'summer', 'beach'] })?.tags).toEqual(['Lucy', 'dog', 'park', 'ball', 'summer']);
+  expect(validate({ ...valid, tags: undefined })?.tags).toEqual([]);
 });
 
-test('classify lists the subjects the family already holds, once each, so the model reuses them', async () => {
-  const withSubjects: Family = {
+test('classify lists the tags the family already uses, once each, so the model reuses them', async () => {
+  const tagged: Family = {
     ...family,
-    moments: [{ subject: 'Bella the cat' }, { subject: 'Bella the cat' }, { subject: 'The beach house' }, {}] as Family['moments'],
+    moments: [{ tags: ['Bella', 'cat'] }, { tags: ['bella'] }, { tags: ['The beach house'] }, {}] as Family['moments'],
   };
   (ask as Mock).mockResolvedValue(valid);
 
-  await classify({ family: withSubjects, sender, events: [event({ text: 'Bella on the sofa' })] }, new FakeTransport());
+  await classify({ family: tagged, sender, events: [event({ text: 'Bella on the sofa' })] }, new FakeTransport());
 
   const [prompt, schema] = (ask as Mock).mock.calls[0];
-  expect(prompt).toContain('Subjects the family already has: Bella the cat; The beach house');
-  expect(prompt.match(/Bella the cat/g)).toHaveLength(1);
-  expect(schema.properties.subject).toEqual({ type: 'string' });
+  expect(prompt).toContain('Tags the family already uses: Bella; cat; The beach house');
+  expect(schema.properties.tags).toEqual({ type: 'array', items: { type: 'string' } });
 });
 
 test('classify returns validate(raw)', async () => {

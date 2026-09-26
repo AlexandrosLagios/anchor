@@ -39,23 +39,30 @@ function firstDue(moments: Moment[], now: number) {
 
 const eventTime = (moment: Moment) => (moment.eventDate ? new Date(`${moment.eventDate}T12:00`).getTime() : moment.savedAt);
 
-// section 4.16: the picked moment and up to 5 same-subject moments with a picture, oldest first
-function collectionOf(family: Family, picked: Moment): Moment[] {
-  const subject = picked.subject?.toLowerCase();
-  if (!subject || !pictureOf(picked)) return [picked];
-  const others = family.moments
-    .filter((moment) => moment !== picked && !moment.sensitive && moment.subject?.toLowerCase() === subject && pictureOf(moment))
+const hasTag = (moment: Moment, tag: string) => (moment.tags ?? []).some((item) => item.toLowerCase() === tag.toLowerCase());
+
+/**
+ * Section 4.16: the picked moment and up to 5 other moments with a picture, oldest first. The others share the picked
+ * moment's most shared tag, or, for a named request, come from the moments that the intent call picked.
+ */
+function collectionOf(family: Family, picked: Moment, asked?: Moment[]): { moments: Moment[]; tag: string } {
+  const pool = (asked ?? family.moments).filter((moment) => moment !== picked && !moment.sensitive && pictureOf(moment));
+  const shared = (tag: string) => pool.filter((moment) => hasTag(moment, tag)).length;
+  const tag = [...(picked.tags ?? [])].sort((a, b) => shared(b) - shared(a))[0];
+  const others = pool
+    .filter((moment) => asked || (tag !== undefined && hasTag(moment, tag)))
     .sort((a, b) => b.salience - a.salience)
     .slice(0, 5);
-  return [picked, ...others].sort((a, b) => eventTime(a) - eventTime(b));
+  if (!pictureOf(picked) || others.length === 0) return { moments: [picked], tag: picked.title };
+  return { moments: [picked, ...others].sort((a, b) => eventTime(a) - eventTime(b)), tag: tag ?? picked.title };
 }
 
-async function post(family: Family, moment: Moment, label: string, keys: string[], ctx: Context) {
+async function post(family: Family, moment: Moment, label: string, keys: string[], ctx: Context, asked?: Moment[]) {
   moment.lookbacks.push(...keys);
-  const collection = collectionOf(family, moment);
+  const { moments: collection, tag } = collectionOf(family, moment, asked);
   const message =
     collection.length > 1
-      ? { album: collection.flatMap((item) => pictureOf(item) ?? []), text: lines.collectionCaption(label, moment.subject ?? '', collection) }
+      ? { album: collection.flatMap((item) => pictureOf(item) ?? []), text: lines.collectionCaption(label, tag, collection) }
       : { ...pictureOf(moment), text: lines.memoryCaption(label, moment) };
   try {
     const sent = await ctx.transport(family.id).send(family.chatId, message);
@@ -68,8 +75,10 @@ async function post(family: Family, moment: Moment, label: string, keys: string[
   ctx.store.save();
 }
 
-// section 4.3: posts a group memory now, as /memory and the `memory` intent both do
-export async function postMemoryNow(family: Family, ctx: Context): Promise<void> {
+// section 4.3: posts a group memory now, as /memory and the `memory` intent both do; a named request brings back the moments it names (4.16)
+export async function postMemoryNow(family: Family, ctx: Context, asked: Moment[] = []): Promise<void> {
+  const lead = asked.find((moment) => pictureOf(moment)) ?? asked[0];
+  if (lead) return post(family, lead, lines.labels.fromRecord, [], ctx, asked);
   const shareable = family.moments.filter((moment) => !moment.sensitive);
   if (shareable.length === 0) {
     await ctx.transport(family.id).send(family.chatId, { text: lines.nothingToShare });

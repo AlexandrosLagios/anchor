@@ -172,7 +172,7 @@ async function close(bundle: Bundle, family: Family, ctx: Context) {
     returns: {},
   };
   if (!words) moment.wordless = true;
-  if (classification.subject) moment.subject = classification.subject;
+  if (classification.tags.length) moment.tags = classification.tags;
   family.moments.push(moment);
   ctx.store.save();
   await react(ctx, family, family.chatId, bundle.events[0].messageId, '\u2764');
