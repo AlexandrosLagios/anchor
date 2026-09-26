@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import './MvpDemo.css';
 
 type From = 'sofia' | 'nikos' | 'anchor';
@@ -78,17 +78,43 @@ export function MvpDemo() {
   const [listening, setListening] = useState(false);
   const [micNote, setMicNote] = useState('');
   const [mobilePane, setMobilePane] = useState<Pane>('group');
-  const groupRef = useRef<HTMLUListElement>(null);
-  const privateRef = useRef<HTMLUListElement>(null);
+  const groupRef = useRef<HTMLDivElement>(null);
+  const privateRef = useRef<HTMLDivElement>(null);
   const liveRef = useRef('');
   const [live, setLive] = useState('');
   const captionId = useId();
+  const groupPanelId = useId();
+  const privatePanelId = useId();
+  const tabGroupId = useId();
+  const tabPrivateId = useId();
 
   function say(message: string) {
     if (message !== liveRef.current) {
       liveRef.current = message;
       setLive(message);
     }
+  }
+
+  useEffect(() => {
+    if (micNote) say(micNote);
+  }, [micNote]);
+
+  function onTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Home' && event.key !== 'End') {
+      return;
+    }
+    event.preventDefault();
+    const next: Pane =
+      event.key === 'Home'
+        ? 'group'
+        : event.key === 'End'
+          ? 'private'
+          : mobilePane === 'group'
+            ? 'private'
+            : 'group';
+    setMobilePane(next);
+    const targetId = next === 'group' ? tabGroupId : tabPrivateId;
+    requestAnimationFrame(() => document.getElementById(targetId)?.focus());
   }
 
   function push(line: Omit<Line, 'id'>) {
@@ -272,25 +298,66 @@ export function MvpDemo() {
       </header>
 
       <ol className="mvp-rail" aria-label="Demo progress">
-        <li className={kept ? 'done' : ''}>Kept in her words</li>
-        <li className={agreed ? 'done' : ''}>He agrees himself</li>
-        <li className={returned ? 'done' : ''}>It comes back</li>
-        <li className={helped ? 'done' : ''}>Gentle help stays private</li>
-        <li className={asked ? 'done' : ''}>He can just ask</li>
-        <li className={voiceText ? 'done' : ''}>He answers by voice</li>
+        <li className={kept ? 'done' : ''}>
+          {kept ? <span className="mvp-rail-mark" aria-hidden="true">✓ </span> : null}
+          <span>{kept ? 'Done: ' : ''}Kept in her words</span>
+        </li>
+        <li className={agreed ? 'done' : ''}>
+          {agreed ? <span className="mvp-rail-mark" aria-hidden="true">✓ </span> : null}
+          <span>{agreed ? 'Done: ' : ''}He agrees himself</span>
+        </li>
+        <li className={returned ? 'done' : ''}>
+          {returned ? <span className="mvp-rail-mark" aria-hidden="true">✓ </span> : null}
+          <span>{returned ? 'Done: ' : ''}It comes back</span>
+        </li>
+        <li className={helped ? 'done' : ''}>
+          {helped ? <span className="mvp-rail-mark" aria-hidden="true">✓ </span> : null}
+          <span>{helped ? 'Done: ' : ''}Gentle help stays private</span>
+        </li>
+        <li className={asked ? 'done' : ''}>
+          {asked ? <span className="mvp-rail-mark" aria-hidden="true">✓ </span> : null}
+          <span>{asked ? 'Done: ' : ''}He can just ask</span>
+        </li>
+        <li className={voiceText ? 'done' : ''}>
+          {voiceText ? <span className="mvp-rail-mark" aria-hidden="true">✓ </span> : null}
+          <span>{voiceText ? 'Done: ' : ''}He answers by voice</span>
+        </li>
       </ol>
 
       <div className="mvp-panes">
         <div className="mvp-switch" role="tablist" aria-label="Which chat">
-          <button type="button" role="tab" aria-selected={mobilePane === 'group'} onClick={() => setMobilePane('group')}>
+          <button
+            type="button"
+            id={tabGroupId}
+            role="tab"
+            aria-selected={mobilePane === 'group'}
+            aria-controls={groupPanelId}
+            tabIndex={mobilePane === 'group' ? 0 : -1}
+            onClick={() => setMobilePane('group')}
+            onKeyDown={onTabKeyDown}
+          >
             Family group
           </button>
-          <button type="button" role="tab" aria-selected={mobilePane === 'private'} onClick={() => setMobilePane('private')}>
+          <button
+            type="button"
+            id={tabPrivateId}
+            role="tab"
+            aria-selected={mobilePane === 'private'}
+            aria-controls={privatePanelId}
+            tabIndex={mobilePane === 'private' ? 0 : -1}
+            onClick={() => setMobilePane('private')}
+            onKeyDown={onTabKeyDown}
+          >
             Nikos, in private
           </button>
         </div>
 
-        <section className={`panel chat-shell ${mobilePane === 'group' ? 'is-active' : ''}`} aria-labelledby="group-heading">
+        <section
+          id={groupPanelId}
+          role="tabpanel"
+          aria-labelledby="group-heading"
+          className={`panel chat-shell ${mobilePane === 'group' ? 'is-active' : ''}`}
+        >
           <h2 className="panel-heading" id="group-heading">
             Family group
           </h2>
@@ -298,16 +365,16 @@ export function MvpDemo() {
             <h3>Sofia, Nikos, and Anchor</h3>
             <p>What everyone sees. Hesitation never lands here.</p>
           </div>
-          <ul className="chat-log" ref={groupRef} role="log" aria-live="polite" aria-relevant="additions">
+          <div className="chat-log" ref={groupRef} role="log" aria-live="polite" aria-relevant="additions">
             {lines.every((line) => line.pane !== 'group') ? (
-              <li className="empty">The chat is quiet. Sofia is about to send a photo.</li>
+              <p className="empty">The chat is quiet. Sofia is about to send a photo.</p>
             ) : null}
             {lines
               .filter((line) => line.pane === 'group')
               .map((line) => (
                 <Bubble key={line.id} line={line} />
               ))}
-          </ul>
+          </div>
           {phase === 'share' ? (
             <div className="composer">
               <p id={captionId} className="composer-caption">
@@ -322,7 +389,12 @@ export function MvpDemo() {
           )}
         </section>
 
-        <section className={`panel chat-shell ${mobilePane === 'private' ? 'is-active' : ''}`} aria-labelledby="private-heading">
+        <section
+          id={privatePanelId}
+          role="tabpanel"
+          aria-labelledby="private-heading"
+          className={`panel chat-shell ${mobilePane === 'private' ? 'is-active' : ''}`}
+        >
           <h2 className="panel-heading" id="private-heading">
             Nikos, in private
           </h2>
@@ -330,19 +402,19 @@ export function MvpDemo() {
             <h3>Only Nikos and Anchor</h3>
             <p>He joins as a member of the family. He can stop at any time.</p>
           </div>
-          <ul className="chat-log" ref={privateRef} role="log" aria-live="polite" aria-relevant="additions">
-            {phase === 'share' ? <li className="empty">Nothing comes back until he has agreed.</li> : null}
+          <div className="chat-log" ref={privateRef} role="log" aria-live="polite" aria-relevant="additions">
+            {phase === 'share' ? <p className="empty">Nothing comes back until he has agreed.</p> : null}
             {phase === 'consent' && lines.every((line) => line.pane !== 'private') ? (
-              <li className="invite-card">
+              <div className="invite-card">
                 <p>{WELCOME}</p>
-              </li>
+              </div>
             ) : null}
             {lines
               .filter((line) => line.pane === 'private')
               .map((line) => (
                 <Bubble key={line.id} line={line} />
               ))}
-          </ul>
+          </div>
           <div className="composer">
             {phase === 'consent' ? (
               <div className="action-row">
@@ -439,12 +511,12 @@ export function MvpDemo() {
 
 function Bubble({ line }: { line: Line }) {
   return (
-    <li className={`bubble ${line.from}`}>
+    <div className={`bubble ${line.from}`}>
       <span className="who">{names[line.from]}</span>
       {line.photo ? <SchoolPhoto /> : null}
       <span className="text">{line.text}</span>
       {line.voice ? <span className="voice-tag">Voice note</span> : null}
       {line.heart ? <span className="heart">Anchor kept this</span> : null}
-    </li>
+    </div>
   );
 }

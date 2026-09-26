@@ -8,9 +8,10 @@ export function AuthNav() {
 
   if (token || getIdToken()) {
     const name = tokenDisplayName(token || getIdToken());
+    const label = name ? `Family record, ${name}` : 'Family record';
     return (
-      <a href="/family" className="auth-nav-link" title={name ?? 'Family'}>
-        {name || 'Family'}
+      <a href="/family" className="auth-nav-link">
+        {label}
       </a>
     );
   }

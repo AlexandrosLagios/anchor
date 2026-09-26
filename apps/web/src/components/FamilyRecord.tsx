@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { botOpenLink } from '../lib/config';
 import {
   BotAuthError,
@@ -27,6 +27,7 @@ function MomentCard({ moment }: { moment: FamilyMoment }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
   const [mediaError, setMediaError] = useState('');
+  const transcriptId = useId();
 
   useEffect(() => {
     let photo: string | null = null;
@@ -64,12 +65,29 @@ function MomentCard({ moment }: { moment: FamilyMoment }) {
           {moment.eventDate ? ` · about ${moment.eventDate}` : ''}
         </p>
       </header>
-      {moment.text ? <p className="family-moment-text">{moment.text}</p> : null}
+      {moment.text ? (
+        <p id={transcriptId} className="family-moment-text">
+          {moment.hasVoice ? <strong className="family-transcript-label">Transcript. </strong> : null}
+          {moment.text}
+        </p>
+      ) : null}
       {photoUrl ? <img src={photoUrl} alt={`Photo from ${moment.by.name}: ${moment.title}`} /> : null}
       {voiceUrl ? (
-        <audio controls src={voiceUrl}>
-          Voice note from {moment.by.name}
-        </audio>
+        <div className="family-voice">
+          <audio
+            controls
+            src={voiceUrl}
+            aria-label={`Voice note from ${moment.by.name}`}
+            aria-describedby={moment.text ? transcriptId : undefined}
+          >
+            Voice note from {moment.by.name}
+          </audio>
+          {!moment.text ? (
+            <p className="family-voice-note">
+              Voice note from {moment.by.name}. No transcript is available for this recording.
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {mediaError ? (
         <p className="form-error" role="alert">
@@ -163,6 +181,11 @@ export function FamilyRecord() {
             <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void refresh()}>
               {busy ? 'Checking…' : 'I added Anchor — continue'}
             </button>
+            {busy ? (
+              <p className="sr-only" role="status">
+                Checking…
+              </p>
+            ) : null}
           </div>
           {error ? (
             <p className="form-error" role="alert">
@@ -216,7 +239,11 @@ export function FamilyRecord() {
         </p>
       ) : null}
 
-      {busy && !moments.length ? <p className="lede">Loading the family record…</p> : null}
+      {busy && !moments.length ? (
+        <p className="lede" role="status">
+          Loading the family record…
+        </p>
+      ) : null}
 
       {!busy && !error && moments.length === 0 ? (
         <p className="lede">No moments yet. Share a photo or story in the family group on Telegram.</p>

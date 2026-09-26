@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Sitemap"
+  description="A list of pages on the Anchor website."
+  currentPath="/sitemap"
+>
+  <article class="prose">
+    <h1>Sitemap</h1>
+    <p class="lede">Every public page on this site, in one place.</p>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/how-it-works">How it works</a></li>
+      <li><a href="/app">Try the demo</a></li>
+      <li><a href="/family">Family</a></li>
+      <li><a href="/my-data">My data</a></li>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="/terms">Terms</a></li>
+      <li><a href="/cookies">Cookies</a></li>
+      <li><a href="/sitemap">Sitemap</a></li>
+    </ul>
+    <h2>Accessibility</h2>
+    <p>
+      This site aims for WCAG 2.1 Level AA. Telegram’s own login window is outside our control; we only provide the
+      button that opens it.
+    </p>
+  </article>
+</BaseLayout>

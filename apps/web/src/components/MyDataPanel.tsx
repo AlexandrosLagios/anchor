@@ -93,7 +93,11 @@ export function MyDataPanel() {
             Back to family
           </a>
         </div>
-        {status ? <p className="file-status">{status}</p> : null}
+        {status ? (
+          <p className="file-status" role="status">
+            {status}
+          </p>
+        ) : null}
         {error ? (
           <p className="form-error" role="alert">
             {error}

@@ -1,13 +1,15 @@
 .mvp {
   display: grid;
   gap: var(--space);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .panel {
   background: var(--bg-elevated);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .panel-heading {
@@ -40,7 +42,6 @@
 }
 
 .chat-log {
-  list-style: none;
   margin: 0;
   padding: 0.75rem 1rem 1rem;
   display: flex;
@@ -66,15 +67,15 @@
 }
 
 .sofia .who {
-  color: #8a3d00;
+  color: #6e3000;
 }
 
 .nikos .who {
-  color: #00507a;
+  color: #003f61;
 }
 
 .anchor .who {
-  color: #0b5a52;
+  color: #084740;
 }
 
 .sofia {
@@ -129,6 +130,11 @@
 .mvp-rail li.done {
   background: var(--ok-bg);
   color: var(--ok-ink);
+  border: 1px solid #14532d;
+}
+
+.mvp-rail-mark {
+  font-weight: 700;
 }
 
 .mvp-panes {
@@ -205,10 +211,9 @@
 
 .btn-quiet {
   background: transparent;
-  color: var(--ink-muted);
-  border-color: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
   justify-content: flex-start;
-  padding-left: 0;
 }
 
 .memory {

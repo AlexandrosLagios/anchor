@@ -1,4 +1,5 @@
 ---
+import '../styles/tokens.css';
 import '../components/designs/slate/slate.css';
 import { AuthNav } from '../components/AuthNav';
 import { ConsentBanner } from '../components/ConsentBanner';
@@ -40,9 +41,9 @@ const description =
     </header>
 
     <main id="main" class="slate-main">
-      <section class="slate-hero" aria-labelledby="slate-brand">
-        <h1 id="slate-brand" class="slate-brand">Anchor</h1>
-        <p class="slate-line">Family memories, returning in the group chat.</p>
+      <section class="slate-hero" aria-labelledby="slate-title">
+        <p class="slate-brand" aria-hidden="true">Anchor</p>
+        <h1 id="slate-title" class="slate-line">Family memories, returning in the group chat.</h1>
         <p class="slate-support">
           Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.
         </p>
@@ -114,9 +115,14 @@ const description =
     <footer class="slate-footer">
       <p>Built on spaced retrieval: the family's own stories, returning gently so Athina keeps her place in family life.</p>
       <nav aria-label="Footer">
+        <a href="/how-it-works">How it works</a>
+        <a href="/app">Try the demo</a>
+        <a href="/family">Family</a>
+        <a href="/my-data">My data</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
         <a href="/cookies">Cookies</a>
+        <a href="/sitemap">Sitemap</a>
       </nav>
     </footer>
 

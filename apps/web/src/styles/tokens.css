@@ -2,7 +2,7 @@
   --bg: #f2f0eb;
   --bg-elevated: #fffcf7;
   --ink: #14201f;
-  --ink-muted: #4a5553;
+  --ink-muted: #3f4a48;
   --brand: #0f3d3a;
   --brand-soft: #d7ebe7;
   --accent: #c45c26;
@@ -62,6 +62,11 @@ body {
     var(--bg);
 }
 
+body.consent-open {
+  padding-bottom: 11rem;
+  scroll-padding-bottom: 11rem;
+}
+
 a {
   color: var(--brand);
 }
@@ -100,6 +105,18 @@ img {
 
 .skip-link:focus {
   transform: translateY(0.75rem);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .site-header {
@@ -160,6 +177,11 @@ img {
 .site-footer p {
   margin: 0;
   max-width: 40rem;
+}
+
+.site-footer .a11y-note {
+  margin-top: 0.85rem;
+  font-size: 0.875rem;
 }
 
 .site-footer nav {
@@ -243,6 +265,64 @@ img {
   font-size: 1.15rem;
 }
 
+.consent-banner {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 0.75rem clamp(1.25rem, 4vw, 2.5rem) calc(0.75rem + env(safe-area-inset-bottom, 0));
+  background: #111;
+  color: #f2f0eb;
+  border-top: 1px solid #3a3a3a;
+}
+
+.consent-inner {
+  max-width: 46rem;
+}
+
+.consent-banner h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  color: #f2f0eb;
+}
+
+.consent-banner p {
+  margin: 0 0 0.75rem;
+  color: #d6d1c7;
+}
+
+.consent-banner a {
+  color: #e0c49a;
+}
+
+.consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.consent-banner .btn-secondary {
+  background: #2a2a2a;
+  color: #f2f0eb;
+  border-color: #6e6e6e;
+}
+
+.consent-banner .btn-secondary:hover {
+  background: #3a3a3a;
+}
+
+.form-error {
+  margin: 0.75rem 0 0;
+  color: #8b1a1a;
+  font-weight: 600;
+}
+
+.file-status {
+  margin: 0.75rem 0 0;
+  color: var(--ok-ink);
+  font-weight: 600;
+}
+
 @media (forced-colors: active) {
   .btn,
   .site-nav a {
@@ -252,5 +332,9 @@ img {
   .btn-primary {
     background: Highlight;
     color: HighlightText;
+  }
+
+  .consent-banner {
+    border-top: 1px solid CanvasText;
   }
 }

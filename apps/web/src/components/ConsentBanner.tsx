@@ -12,6 +12,14 @@ export function ConsentBanner() {
     setState(saved === 'essential' || saved === 'accepted' ? saved : 'unknown');
   }, []);
 
+  useEffect(() => {
+    const open = state === 'unknown';
+    document.body.classList.toggle('consent-open', open);
+    return () => {
+      document.body.classList.remove('consent-open');
+    };
+  }, [state]);
+
   if (state !== 'unknown') return null;
 
   function save(next: Exclude<ConsentState, 'unknown'>) {
@@ -20,7 +28,7 @@ export function ConsentBanner() {
   }
 
   return (
-    <div className="consent-banner" role="dialog" aria-labelledby="consent-title" aria-describedby="consent-body">
+    <div className="consent-banner" role="region" aria-label="Cookies and privacy">
       <div className="consent-inner">
         <h2 id="consent-title">Cookies &amp; privacy</h2>
         <p id="consent-body">
