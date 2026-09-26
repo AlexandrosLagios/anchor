@@ -482,6 +482,13 @@ test('a fixed phrase while an invitation is open goes to intents, and the invita
   expect(ask).not.toHaveBeenCalled();
 });
 
+test('a long story that names birthdays in passing stays a story', async () => {
+  invite(add());
+  vi.mocked(ask).mockResolvedValue({ transcript: '', kind: 'story' });
+  await receive(fromNikos({ text: 'I remember all the birthdays we had in that garden', voice: { id: 'voice-a' } }));
+  expect(nikos().invitation?.story).toEqual({ text: 'I remember all the birthdays we had in that garden', voice: { id: 'voice-a' } });
+});
+
 test('a request to Anchor while an invitation is open goes to intents, and the invitation stays open', async () => {
   const moment = add();
   const invitation = invite(moment);

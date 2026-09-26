@@ -116,10 +116,12 @@ async function readIntent(
   addressed = true,
 ): Promise<{ intent: Intent; momentId?: string; momentIds: string[]; time?: string; transcript?: string }> {
   const momentIds = moments.map((moment) => moment.id);
-  const schema = schemaFor(momentIds, !!event.voice);
+  // the text holds the transcript of a voice note, so the model hears the clip only when the transcription failed
+  const heard = event.text ? undefined : event.voice;
+  const schema = schemaFor(momentIds, !!heard);
   try {
-    const clip = event.voice ? await ctx.transport(family.id).download(event.voice) : undefined;
-    const prompt = buildPrompt(chat, text, !!event.voice, moments, addressed);
+    const clip = heard ? await ctx.transport(family.id).download(heard) : undefined;
+    const prompt = buildPrompt(chat, text, !!heard, moments, addressed);
     const answer = await model.ask<{ intent?: unknown; momentId?: unknown; momentIds?: unknown; time?: unknown; transcript?: unknown }>(
       prompt,
       schema,
@@ -240,7 +242,7 @@ async function inGroup(event: Incoming, family: Family, ctx: Context): Promise<b
   if (isNew) ctx.store.save();
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
-  const phrase = event.voice || !addressed ? undefined : fixedIntent(question);
+  const phrase = addressed ? fixedIntent(question) : undefined;
   // "send me photos of Lucy" names a subject, so the model decides between sendMe and a memory of Lucy (4.16)
   const fixed = phrase === 'sendMe' && /\bof\b/i.test(question) ? undefined : phrase;
   const { intent, momentId, momentIds } = fixed
@@ -345,7 +347,7 @@ async function inPrivate(event: Incoming, family: Family, ctx: Context): Promise
 
   const moments = family.moments.filter((moment) => !moment.sensitive);
   const text = event.text ?? '';
-  const fixed = event.voice ? undefined : privateIntent(text);
+  const fixed = privateIntent(text);
   const reading: Awaited<ReturnType<typeof readIntent>> = fixed
     ? { intent: fixed, momentIds: [] }
     : await readIntent(family, event, 'private', text, moments, ctx);

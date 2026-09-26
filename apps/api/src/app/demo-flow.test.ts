@@ -139,6 +139,7 @@ test('the v2 demo script: Nikos joins and chooses, a share offer, his voice stor
   // beat 4: the photo and the invitation voice note in private, his voice story, and the story in the group
   const inPrivate = transport.sent.filter(({ chatId }) => chatId === nikos.id).slice(-2).map(({ message }) => message);
   expect(inPrivate).toEqual([{ photo: { id: 'photo-maria' } }, expect.objectContaining({ voice: { wav }, text: lines.invitation(moment) })]);
+  vi.mocked(model.transcribe).mockResolvedValueOnce(nikosStory);
   await whisper(nikos, { voice: { id: 'voice-nikos', mimeType: 'audio/ogg' } });
   expect(transport.sent.at(-1)?.message).toMatchObject({ text: lines.thanks, voice: { wav } });
   await whisper(nikos, { button: `inv:share:${moment.id}` });
@@ -166,6 +167,15 @@ test('the v2 demo script: Nikos joins and chooses, a share offer, his voice stor
   await tick();
   expect(transport.sent.at(-1)).toMatchObject({ chatId: nikos.id, message: { text: lines.reminder('Eleni', pills), voice: { wav } } });
   expect(toGroup()).toHaveLength(seenByGroup);
+});
+
+test('a voice story in the group becomes a family moment with its transcript and its voice', async () => {
+  const { family, say, tick } = setup();
+  vi.mocked(model.transcribe).mockResolvedValueOnce(nikosFirstDay);
+  await say(nikos, { voice: { id: 'voice-nikos', mimeType: 'audio/ogg' } });
+  vi.setSystemTime(Date.now() + 5 * 60_000);
+  await tick();
+  expect(family.moments).toEqual([expect.objectContaining({ text: nikosFirstDay, voice: { id: 'voice-nikos', mimeType: 'audio/ogg' } })]);
 });
 
 test('after stop, settings and a choice tap start Nikos again, and the next share offer reaches him', async () => {

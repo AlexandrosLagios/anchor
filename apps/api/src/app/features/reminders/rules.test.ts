@@ -31,11 +31,14 @@ test.each([
   expect(passesGate(group(text), FRIDAY)).toBe(true);
 });
 
+test('a voice note passes the gate on its transcript', () => {
+  expect(passesGate(group('We meet at 8', { voice: { id: 'v' } }), FRIDAY)).toBe(true);
+});
+
 test.each([
   ['a message with no hint', group('Maria on her first day at school')],
   ['a message to Anchor', group('Anchor, remind me what Maria wore')],
   ['a command', group('/fastforward 08:05')],
-  ['a voice note with a caption', group('remember this', { voice: { id: 'v' } })],
   ['a private message', group('remember the pills', { chat: 'private', familyId: undefined })],
   ['a photo with no caption', group(undefined, { photo: { id: 'p' } })],
   ['a forwarded message', group('Remember your pickup tomorrow', { forwarded: true })],

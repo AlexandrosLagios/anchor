@@ -21,10 +21,10 @@ function namesLaterWeekday(text: string, now: number): boolean {
   return WEEKDAYS.some((day, index) => index !== today && index !== (today + 1) % 7 && new RegExp(`\\b${day}s?\\b`, 'i').test(text));
 }
 
-// a voice note never passes, because a gate on voice costs one transcription per group voice note; the intents feature answers "Anchor, ..."
+// a voice note passes on its transcript; the intents feature answers "Anchor, ..."
 export function groupText(event: Incoming, words: RegExp): boolean {
   const text = event.text ?? '';
-  return event.chat === 'group' && !event.voice && !event.forwarded && !text.startsWith('/') && !ADDRESS.test(text) && words.test(text);
+  return event.chat === 'group' && !event.forwarded && !text.startsWith('/') && !ADDRESS.test(text) && words.test(text);
 }
 
 export const passesGate = (event: Incoming, now: number) => groupText(event, HINT) && !namesLaterWeekday(event.text ?? '', now);
