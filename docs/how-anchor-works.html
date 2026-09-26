@@ -308,7 +308,7 @@
 <h2 id="web">13. Registration on the website</h2>
 
 <div class="callout">
-  <p><strong>Status.</strong> This section follows the design in <code>docs/specs/2026-09-26-website-registration-with-telegram.md</code>. The website side merged in <code>63b19da</code>. The bot side, the <code>/web</code> API, lives in <code>apps/api/src/app/web.ts</code>. The live bot answers 404 to it until a deploy includes it.</p>
+  <p><strong>Status.</strong> This section follows the design in <code>docs/specs/2026-09-26-website-registration-with-telegram.md</code>. The website side merged in <code>63b19da</code>. The bot side, the <code>/web</code> API, lives in <code>apps/api/src/app/web.ts</code>. The live bot serves it since revision <code>anchor-bot-00021-9vn</code>.</p>
 </div>
 
 <p><code>apps/web</code> is an Astro and React site on Vercel. A family member registers there with Telegram, not with an email and a password. The Telegram user id is the only identity. Two registrations meant two identities and two families with different members, so the email accounts left the website. The "Choose what I send you" button in the group stays a way to join.</p>
