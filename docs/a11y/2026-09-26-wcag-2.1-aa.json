@@ -1,0 +1,3331 @@
+{
+  "date": "2026-09-26",
+  "commit": "0f6dfe73522e44e37c88ba99262c6d3ff9fcd51b",
+  "baseUrl": "http://localhost:4321",
+  "standard": "WCAG 2.1 Level A and Level AA",
+  "tool": "axe-core 4.13.0 via Playwright Chromium",
+  "tags": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa"
+  ],
+  "gate": {
+    "routes": [
+      "/",
+      "/how-it-works",
+      "/app",
+      "/family",
+      "/my-data",
+      "/privacy",
+      "/terms",
+      "/cookies",
+      "/sitemap",
+      "/404"
+    ],
+    "states": [
+      "consent-open",
+      "consent-dismissed"
+    ],
+    "viewport": "1280x720",
+    "violationRules": 0,
+    "violationNodes": 0,
+    "pageErrors": 0,
+    "passed": true
+  },
+  "scans": [
+    {
+      "route": "/",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 24,
+      "inapplicable": 38,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 21,
+      "inapplicable": 41,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 21,
+      "inapplicable": 41,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "mobile"
+    },
+    {
+      "route": "/",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-hero > .slate-actions > .slate-btn-primary.slate-btn[href$=\"family\"]"
+              ],
+              "html": "<a class=\"slate-btn slate-btn-primary\" href=\"/family\">Start Remembering Together</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #050316, background color: #443dff, font size: 11.3pt (15px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-link[href$=\"my-data\"]"
+              ],
+              "html": "<a class=\"slate-link\" href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 12.0pt (16px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-link[href$=\"privacy\"]"
+              ],
+              "html": "<a class=\"slate-link\" href=\"/privacy\">privacy page</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 12.0pt (16px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-close > .slate-actions > .slate-btn-primary.slate-btn[href$=\"family\"]"
+              ],
+              "html": "<a class=\"slate-btn slate-btn-primary\" href=\"/family\">Start Remembering Together</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #050316, background color: #443dff, font size: 11.3pt (15px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(1) > .slate-step-num"
+              ],
+              "html": "<span class=\"slate-step-num\" aria-hidden=\"true\">1</span>",
+              "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(2) > .slate-step-num"
+              ],
+              "html": "<span class=\"slate-step-num\" aria-hidden=\"true\">2</span>",
+              "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(3) > .slate-step-num"
+              ],
+              "html": "<span class=\"slate-step-num\" aria-hidden=\"true\">3</span>",
+              "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+            }
+          ]
+        }
+      ],
+      "passes": 21,
+      "inapplicable": 41,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(5, 3, 22)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(5, 3, 22)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "contrast"
+    },
+    {
+      "route": "/how-it-works",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary.btn[href$=\"family\"]"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 22,
+      "inapplicable": 40,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Get started",
+          "color": "rgb(68, 61, 255)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        },
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/how-it-works",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Get started",
+          "color": "rgb(68, 61, 255)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/how-it-works",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Get started",
+          "color": "rgb(68, 61, 255)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        }
+      ],
+      "set": "mobile"
+    },
+    {
+      "route": "/how-it-works",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "a[aria-current=\"page\"]"
+              ],
+              "html": "<a href=\"/how-it-works\" aria-current=\"page\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "p:nth-child(12) > a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #050316, background color: #443dff, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Get started",
+          "color": "rgb(5, 3, 22)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        }
+      ],
+      "set": "contrast"
+    },
+    {
+      "route": "/app",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 24,
+      "inapplicable": 38,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Send the photo",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/app",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 23,
+      "inapplicable": 39,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Send the photo",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/app",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 25,
+      "inapplicable": 37,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Send the photo",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "mobile"
+    },
+    {
+      "route": "/app",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[aria-current=\"page\"]"
+              ],
+              "html": "<a href=\"/app\" aria-current=\"page\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(1) > span"
+              ],
+              "html": "<span>Kept in her words</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 10.2pt (13.6px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(2) > span"
+              ],
+              "html": "<span>He agrees himself</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 10.2pt (13.6px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(3) > span"
+              ],
+              "html": "<span>It comes back</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 10.2pt (13.6px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(4) > span"
+              ],
+              "html": "<span>Gentle help stays private</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 10.2pt (13.6px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(5) > span"
+              ],
+              "html": "<span>He can just ask</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 10.2pt (13.6px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(6) > span"
+              ],
+              "html": "<span>He answers by voice</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 10.2pt (13.6px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "#group-heading"
+              ],
+              "html": "<h2 class=\"panel-heading\" id=\"group-heading\">Family group</h2>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 9.6pt (12.8px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "#_r4R_0H1_ > .chat-log[role=\"log\"][aria-relevant=\"additions\"] > .empty"
+              ],
+              "html": "<p class=\"empty\">The chat is quiet. Sofia is about to send a photo.</p>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 11.4pt (15.2px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".btn"
+              ],
+              "html": "<button class=\"btn btn-primary\" type=\"button\" aria-describedby=\"_r4R_0_\">Send the photo</button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #050316, background color: #443dff, font size: 11.3pt (15px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "#private-heading"
+              ],
+              "html": "<h2 class=\"panel-heading\" id=\"private-heading\">Nikos, in private</h2>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 9.6pt (12.8px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "#_r4R_0H2_ > .chat-log[role=\"log\"][aria-relevant=\"additions\"] > .empty"
+              ],
+              "html": "<p class=\"empty\">Nothing comes back until he has agreed.</p>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #f3f2fe, background color: #dddbff, font size: 11.4pt (15.2px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "#memory-heading"
+              ],
+              "html": "<h2 id=\"memory-heading\">The memory</h2>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.8pt (18.4px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 23,
+      "inapplicable": 39,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Send the photo",
+          "color": "rgb(5, 3, 22)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "contrast"
+    },
+    {
+      "route": "/family",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 24,
+      "inapplicable": 38,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Create an account",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/family",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Create an account",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/family",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Create an account",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "mobile"
+    },
+    {
+      "route": "/family",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[aria-current=\"page\"]"
+              ],
+              "html": "<a href=\"/family\" aria-current=\"page\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li[aria-current=\"step\"]"
+              ],
+              "html": "<li aria-current=\"step\"><span class=\"reg-step-num\" aria-hidden=\"true\">1</span>Account</li>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<button class=\"btn btn-primary\" type=\"button\">Create an account</button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #050316, background color: #443dff, font size: 11.3pt (15px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-secondary"
+              ],
+              "html": "<button class=\"btn btn-secondary\" type=\"button\">Sign in</button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.29 (foreground color: #fbfbfe, background color: #dddbff, font size: 11.3pt (15px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "li[aria-current=\"step\"] > .reg-step-num[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"reg-step-num\" aria-hidden=\"true\">1</span>",
+              "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(2) > .reg-step-num[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"reg-step-num\" aria-hidden=\"true\">2</span>",
+              "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(3) > .reg-step-num[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"reg-step-num\" aria-hidden=\"true\">3</span>",
+              "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+            }
+          ]
+        }
+      ],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Create an account",
+          "color": "rgb(5, 3, 22)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "contrast"
+    },
+    {
+      "route": "/my-data",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 22,
+      "inapplicable": 40,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Sign in with Telegram to manage my data",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/my-data",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Sign in with Telegram to manage my data",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/my-data",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Sign in with Telegram to manage my data",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "mobile"
+    },
+    {
+      "route": "/my-data",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".btn"
+              ],
+              "html": "<button class=\"btn btn-primary\" type=\"button\">Sign in with Telegram to manage my data</button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #050316, background color: #443dff, font size: 11.3pt (15px), font weight: bold). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".tg-accept > a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.4pt (15.2px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".tg-accept > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy Policy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.4pt (15.2px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"anchor_family_bot\"]"
+              ],
+              "html": "<a href=\"https://t.me/anchor_family_bot\">open Anchor in Telegram</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Sign in with Telegram to manage my data",
+          "color": "rgb(5, 3, 22)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "contrast"
+    },
+    {
+      "route": "/privacy",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 23,
+      "inapplicable": 39,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/privacy",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [],
+      "set": "gate"
+    },
+    {
+      "route": "/privacy",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [],
+      "set": "mobile"
+    },
+    {
+      "route": "/privacy",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[aria-current=\"page\"]"
+              ],
+              "html": "<a href=\"/privacy\" aria-current=\"page\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".lede > a[href$=\"mailto:privacy@anchor.com\"]"
+              ],
+              "html": "<a href=\"mailto:privacy@anchor.com\">privacy@anchor.com</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 15.0pt (20px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "p:nth-child(4) > a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "p:nth-child(18) > a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "p:nth-child(20) > a[href$=\"my-data\"]:nth-child(1)"
+              ],
+              "html": "<a href=\"/my-data\">Download my data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"my-data\"]:nth-child(2)"
+              ],
+              "html": "<a href=\"/my-data\">Delete my data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "p:nth-child(26) > a[href$=\"mailto:privacy@anchor.com\"]"
+              ],
+              "html": "<a href=\"mailto:privacy@anchor.com\">privacy@anchor.com</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [],
+      "set": "contrast"
+    },
+    {
+      "route": "/terms",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 23,
+      "inapplicable": 39,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/terms",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [],
+      "set": "gate"
+    },
+    {
+      "route": "/terms",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [],
+      "set": "mobile"
+    },
+    {
+      "route": "/terms",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"mailto:privacy@anchor.com\"]"
+              ],
+              "html": "<a href=\"mailto:privacy@anchor.com\">privacy@anchor.com</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 15.0pt (20px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 20,
+      "inapplicable": 42,
+      "buttons": [],
+      "set": "contrast"
+    },
+    {
+      "route": "/cookies",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 21,
+      "inapplicable": 41,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/cookies",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 18,
+      "inapplicable": 44,
+      "buttons": [],
+      "set": "gate"
+    },
+    {
+      "route": "/cookies",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 18,
+      "inapplicable": 44,
+      "buttons": [],
+      "set": "mobile"
+    },
+    {
+      "route": "/cookies",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"mailto:privacy@anchor.com\"]"
+              ],
+              "html": "<a href=\"mailto:privacy@anchor.com\">privacy@anchor.com</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 15.0pt (20px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 18,
+      "inapplicable": 44,
+      "buttons": [],
+      "set": "contrast"
+    },
+    {
+      "route": "/sitemap",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 23,
+      "inapplicable": 39,
+      "buttons": [
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/sitemap",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [],
+      "set": "gate"
+    },
+    {
+      "route": "/sitemap",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [],
+      "set": "mobile"
+    },
+    {
+      "route": "/sitemap",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(1) > a[href=\"/\"]"
+              ],
+              "html": "<a href=\"/\">Home</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(2) > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(3) > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(4) > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(5) > a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(6) > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(7) > a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(8) > a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "li:nth-child(9) > a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 13.5pt (18px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [],
+      "set": "contrast"
+    },
+    {
+      "route": "/404",
+      "mode": "consent-open",
+      "viewport": "1280x720",
+      "status": 404,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary.btn[href=\"/\"]"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/\">Back to Anchor</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "#consent-body"
+              ],
+              "html": "<p id=\"consent-body\">We use essential storage for Telegram sign-in on this device. Analytics cookies are off by default. The family record stays with the bot in the EU; AI processing via OpenAI may leave the EU — see<!-- --> <a href=\"/privacy\">Privacy</a> and <a href=\"/cookies...",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+            }
+          ]
+        }
+      ],
+      "passes": 21,
+      "inapplicable": 41,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Back to Anchor",
+          "color": "rgb(68, 61, 255)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        },
+        {
+          "tag": "button",
+          "text": "Accept",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/404",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 404,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/\">Back to Anchor</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ],
+      "passes": 17,
+      "inapplicable": 45,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Back to Anchor",
+          "color": "rgb(68, 61, 255)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        }
+      ],
+      "set": "gate"
+    },
+    {
+      "route": "/404",
+      "mode": "consent-dismissed",
+      "viewport": "390x844",
+      "status": 404,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/\">Back to Anchor</a>",
+              "failureSummary": "Fix any of the following:\n  Element has a 1:1 contrast ratio with the background"
+            }
+          ]
+        }
+      ],
+      "passes": 17,
+      "inapplicable": 45,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Back to Anchor",
+          "color": "rgb(68, 61, 255)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        }
+      ],
+      "set": "mobile"
+    },
+    {
+      "route": "/404",
+      "mode": "high-contrast",
+      "viewport": "1280x720",
+      "status": 404,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".slate-nav > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".auth-nav-link"
+              ],
+              "html": "<a href=\"/family\" class=\"auth-nav-link\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".btn-primary"
+              ],
+              "html": "<a class=\"btn btn-primary\" href=\"/\">Back to Anchor</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #050316, background color: #443dff, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Family</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"my-data\"]"
+              ],
+              "html": "<a href=\"/my-data\">My data</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "nav[aria-label=\"Footer\"] > a[href$=\"privacy\"]"
+              ],
+              "html": "<a href=\"/privacy\">Privacy</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"terms\"]"
+              ],
+              "html": "<a href=\"/terms\">Terms</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"cookies\"]"
+              ],
+              "html": "<a href=\"/cookies\">Cookies</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"sitemap\"]"
+              ],
+              "html": "<a href=\"/sitemap\">Sitemap</a>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.25 (foreground color: #443dff, background color: #050316, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 17,
+      "inapplicable": 45,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Back to Anchor",
+          "color": "rgb(5, 3, 22)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "600"
+        }
+      ],
+      "set": "contrast"
+    },
+    {
+      "route": "/",
+      "mode": "a11y-panel",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 27,
+      "inapplicable": 35,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        },
+        {
+          "tag": "a",
+          "text": "Start Remembering Together",
+          "color": "rgb(251, 251, 254)",
+          "backgroundColor": "rgb(68, 61, 255)",
+          "fontSize": "15px",
+          "fontWeight": "700"
+        }
+      ],
+      "set": "extra"
+    },
+    {
+      "route": "/designs/slate",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 14,
+      "inapplicable": 48,
+      "buttons": [
+        {
+          "tag": "a",
+          "text": "Try the demo",
+          "color": "rgb(0, 0, 238)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "fontSize": "16px",
+          "fontWeight": "400"
+        }
+      ],
+      "set": "design"
+    },
+    {
+      "route": "/designs/linen",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 14,
+      "inapplicable": 48,
+      "buttons": [],
+      "set": "design"
+    },
+    {
+      "route": "/designs/ink",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                ".ink-action[href$=\"app\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">01</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".ink-action[href$=\"how-it-works\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">02</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".ink-action[href$=\"family\"] > .ink-action-index[aria-hidden=\"true\"]"
+              ],
+              "html": "<span class=\"ink-action-index\" aria-hidden=\"true\">03</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.41 (foreground color: #787878, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ],
+      "incomplete": [],
+      "passes": 19,
+      "inapplicable": 43,
+      "buttons": [],
+      "set": "design"
+    },
+    {
+      "route": "/designs/quiet",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=axeAPI",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ],
+          "wcag": [
+            "1.4.3"
+          ],
+          "nodes": [
+            {
+              "impact": "serious",
+              "target": [
+                "h1"
+              ],
+              "html": "<h1 class=\"quiet-brand\">Anchor</h1>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".quiet-line"
+              ],
+              "html": "<p class=\"quiet-line\">Family memories, returning in the group chat.</p>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                ".quiet-support"
+              ],
+              "html": "<p class=\"quiet-support\">Spaced retrieval for Athina — gentle cues at the right time, without a new app to learn.</p>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"app\"]"
+              ],
+              "html": "<a href=\"/app\">Try the demo</a>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"how-it-works\"]"
+              ],
+              "html": "<a href=\"/how-it-works\">How it works</a>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "impact": "serious",
+              "target": [
+                "a[href$=\"family\"]"
+              ],
+              "html": "<a href=\"/family\">Get started</a>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            }
+          ]
+        }
+      ],
+      "passes": 10,
+      "inapplicable": 51,
+      "buttons": [],
+      "set": "design"
+    },
+    {
+      "route": "/designs/mist",
+      "mode": "consent-dismissed",
+      "viewport": "1280x720",
+      "status": 200,
+      "error": null,
+      "violations": [],
+      "incomplete": [],
+      "passes": 13,
+      "inapplicable": 49,
+      "buttons": [],
+      "set": "design"
+    }
+  ],
+  "followUps": {
+    "highContrastNodes": 173,
+    "oneToOneIncomplete": 6,
+    "sameColorButtons": 6
+  }
+}
