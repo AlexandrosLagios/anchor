@@ -20,7 +20,8 @@ const privacyEmail = import.meta.env.PUBLIC_PRIVACY_EMAIL?.trim() || 'privacy@an
     <p>
       Telegram Login keeps a short-lived <code>id_token</code> in <code>sessionStorage</code> as{' '}
       <code>anchor_telegram_id_token</code> while this browser tab is open. The consent banner preference is stored under{' '}
-      <code>anchor-consent-v1</code> in <code>localStorage</code>.
+      <code>anchor-consent-v1</code> in <code>localStorage</code>. Accessibility display settings from the Accessibility
+      button are stored under <code>anchor-a11y-prefs-v1</code> in <code>localStorage</code> on this device only.
     </p>
 
     <h2>Analytics / marketing</h2>

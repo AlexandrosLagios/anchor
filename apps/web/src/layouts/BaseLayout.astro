@@ -3,6 +3,7 @@ import '../styles/tokens.css';
 import '../components/designs/slate/slate.css';
 import { AuthNav } from '../components/AuthNav';
 import { ConsentBanner } from '../components/ConsentBanner';
+import { AccessibilityWidget } from '../components/AccessibilityWidget';
 
 interface Props {
   title: string;
@@ -30,10 +31,31 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <title>{fullTitle}</title>
+    <script is:inline>
+      (function () {
+        try {
+          var raw = localStorage.getItem('anchor-a11y-prefs-v1');
+          if (!raw) return;
+          var p = JSON.parse(raw);
+          var root = document.documentElement;
+          var classes = [];
+          if (p.textScale === 125 || p.textScale === 150) classes.push('a11y-text-' + p.textScale);
+          if (p.spacing) classes.push('a11y-spacing');
+          if (p.highContrast) classes.push('a11y-contrast');
+          if (p.underlineLinks) classes.push('a11y-underline-links');
+          if (p.readableFont) classes.push('a11y-readable-font');
+          if (p.reduceMotion) classes.push('a11y-reduce-motion');
+          if (p.bigCursor) classes.push('a11y-big-cursor');
+          if (p.grayscale) classes.push('a11y-grayscale');
+          if (p.hideImages) classes.push('a11y-hide-images');
+          if (classes.length) root.classList.add.apply(root.classList, classes);
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Figtree:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Figtree:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
     <slot name="head" />
@@ -69,11 +91,12 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
         <a href="/sitemap">Sitemap</a>
       </nav>
       <p class="a11y-note">
-        Accessibility: this site aims for WCAG 2.1 Level AA. Telegram’s own login window is outside our control; we only
-        provide the button that opens it.
+        Accessibility: this site aims for WCAG 2.1 Level AA. Use the Accessibility button for personal display settings
+        on this device. Telegram’s own login window is outside our control; we only provide the button that opens it.
       </p>
     </footer>
 
+    <AccessibilityWidget client:load />
     <ConsentBanner client:load />
   </body>
 </html>

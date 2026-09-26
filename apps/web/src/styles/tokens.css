@@ -352,6 +352,114 @@ img {
   color: var(--ink-muted);
 }
 
+/* Accessibility widget preferences (classes applied to <html>) */
+html.a11y-text-125 {
+  font-size: 112.5%;
+}
+
+html.a11y-text-150 {
+  font-size: 125%;
+}
+
+html.a11y-spacing body {
+  letter-spacing: 0.04em;
+  word-spacing: 0.08em;
+  line-height: 1.75;
+}
+
+html.a11y-underline-links a {
+  text-decoration: underline !important;
+  text-underline-offset: 0.18em;
+}
+
+html.a11y-readable-font,
+html.a11y-readable-font body,
+html.a11y-readable-font button,
+html.a11y-readable-font input,
+html.a11y-readable-font textarea,
+html.a11y-readable-font select {
+  font-family: "Atkinson Hyperlegible", Figtree, ui-sans-serif, system-ui, sans-serif !important;
+}
+
+html.a11y-contrast {
+  --bg: #000000;
+  --bg-elevated: #000000;
+  --ink: #ffffff;
+  --ink-muted: #f2f2f2;
+  --brand: #ffff00;
+  --brand-soft: #1a1a00;
+  --accent: #ffff00;
+  --line: #ffffff;
+  --focus: #ffff00;
+  --chat-bg: #000000;
+  --bubble-family: #001a00;
+  --bubble-athina: #1a1000;
+  --bubble-anchor: #111111;
+  --ok-bg: #001a00;
+  --ok-ink: #ffffff;
+  --cue-bg: #1a1000;
+  --cue-ink: #ffff00;
+  --soft-bg: #111111;
+  --soft-ink: #ffffff;
+  --slate-bg: #000000;
+  --slate-text: #ffffff;
+  --slate-muted: #f2f2f2;
+  --slate-sand: #ffff00;
+  --slate-sand-text: #000000;
+  --slate-focus: #ffff00;
+  --slate-border: #ffffff;
+  color-scheme: dark;
+}
+
+html.a11y-contrast body,
+html.a11y-contrast .slate {
+  background: #000000;
+  color: #ffffff;
+}
+
+html.a11y-contrast a,
+html.a11y-contrast .slate-nav a,
+html.a11y-contrast .slate-footer a,
+html.a11y-contrast .auth-nav-link {
+  color: #ffff00;
+}
+
+html.a11y-contrast .btn-primary,
+html.a11y-contrast .slate-btn-primary {
+  background: #ffff00;
+  color: #000000;
+  border-color: #ffff00;
+}
+
+html.a11y-contrast :focus-visible {
+  outline-color: #ffff00;
+}
+
+html.a11y-reduce-motion,
+html.a11y-reduce-motion * {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+html.a11y-big-cursor,
+html.a11y-big-cursor * {
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath fill='%23fff' stroke='%23000' stroke-width='2' d='M10 4v34l8-8 4 14 6-2-4-14 12-2z'/%3E%3C/svg%3E")
+      4 4,
+    auto !important;
+}
+
+html.a11y-grayscale {
+  filter: grayscale(1);
+}
+
+html.a11y-hide-images img,
+html.a11y-hide-images svg.school-photo,
+html.a11y-hide-images .school-photo {
+  visibility: hidden !important;
+}
+
 @media (forced-colors: active) {
   .btn,
   .site-nav a,
