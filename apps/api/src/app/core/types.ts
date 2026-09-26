@@ -105,6 +105,7 @@ export type Choices = { moments: boolean; reminders: boolean; shares: boolean; v
 
 export type Member = Person & {
   started: boolean;
+  talk?: Array<{ from: 'member' | 'anchor'; text: string }>; // the latest turns of the private chat with Anchor
   choices: Choices; // v2
   nudged?: boolean; // v2: the one join nudge went out
   phone?: string; // v2: E.164, from the one-tap contact share
@@ -133,7 +134,12 @@ export type Reminder = { // v2, section 4.13
   due?: number; // demo-clock ms, set with status 'set'
   status: 'offered' | 'waiting' | 'set' | 'sent'; // waiting: the member picked a time and has not tapped Start
   sentAt?: number; // demo-clock ms of the delivery
+  birthday?: string; // the name of the person, for a birthday reminder
 };
+
+export type Birthday = { name: string; date: string; from: Person }; // date: MM-DD, from a group message that mentions it
+
+export type ChatLine = { id: string; by: string; text: string; at: number }; // a group message; at in demo-clock ms
 
 export type Family = {
   id: string; // the group chat id on the transport
@@ -142,6 +148,8 @@ export type Family = {
   moments: Moment[];
   offers: Offer[]; // v2
   reminders: Reminder[]; // v2
+  birthdays?: Birthday[];
+  chat?: ChatLine[]; // the latest group messages, the context of a private chat with Anchor
   lastMemoryDay?: number;
   counters: Record<string, number>;
 };

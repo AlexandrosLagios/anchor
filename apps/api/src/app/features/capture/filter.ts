@@ -40,6 +40,16 @@ export function fixedIntent(text: string | undefined): (typeof FIXED_INTENTS)[ke
   return match ? FIXED_INTENTS[match] : undefined;
 }
 
+// in private, "birthdays" and "settings" anywhere in the text decide the intent in code, so neither a talk nor an open invitation swallows them
+const BIRTHDAYS = /\bbirthdays\b/i;
+const SETTINGS = /\b(?:settings|preferences|choices)\b/i;
+
+export function privateIntent(text: string | undefined): ReturnType<typeof fixedIntent> | 'birthdays' {
+  if (BIRTHDAYS.test(text ?? '')) return 'birthdays';
+  if (SETTINGS.test(text ?? '')) return 'settings';
+  return fixedIntent(text);
+}
+
 export const isCommand = (text: string | undefined, command: string) => text === command || !!text?.startsWith(`${command} `);
 
 export function pictureOf(moment: Moment): { photo: Media } | { video: Media } | undefined {

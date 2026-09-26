@@ -1,5 +1,10 @@
-import type { Incoming } from '../../core/types';
+import { lines } from '../../core/lines';
+import type { Button, Incoming, Reminder } from '../../core/types';
 import { ADDRESS } from '../capture/filter';
+
+export const who = (reminder: Reminder) => (reminder.from.id === reminder.to ? 'You' : reminder.from.name);
+export const data = (id: string, action: string) => `rem:${id}:${action}`;
+export const noThanks = (id: string): Button => ({ label: lines.buttons.noThanks, data: data(id, 'no') });
 
 // section 4.13: the words and clock times that let a group message reach the offer call
 const HINT = /\b(remember|don['’]?t forget|do not forget|remind|when we leave|in the morning|tonight|tomorrow)|\b\d{1,2}:\d{2}\b|\b\d{1,2}\s?[ap]m\b|\bat \d{1,2}\b|o['’]clock/i;
@@ -16,19 +21,13 @@ function namesLaterWeekday(text: string, now: number): boolean {
   return WEEKDAYS.some((day, index) => index !== today && index !== (today + 1) % 7 && new RegExp(`\\b${day}s?\\b`, 'i').test(text));
 }
 
-// a voice note never passes, because a gate on voice costs one transcription per group voice note
-export function passesGate(event: Incoming, now: number): boolean {
+// a voice note never passes, because a gate on voice costs one transcription per group voice note; the intents feature answers "Anchor, ..."
+export function groupText(event: Incoming, words: RegExp): boolean {
   const text = event.text ?? '';
-  return (
-    event.chat === 'group' &&
-    !event.voice &&
-    !event.forwarded &&
-    !text.startsWith('/') &&
-    !ADDRESS.test(text) &&
-    HINT.test(text) &&
-    !namesLaterWeekday(text, now)
-  );
+  return event.chat === 'group' && !event.voice && !event.forwarded && !text.startsWith('/') && !ADDRESS.test(text) && words.test(text);
 }
+
+export const passesGate = (event: Incoming, now: number) => groupText(event, HINT) && !namesLaterWeekday(event.text ?? '', now);
 
 /** The next local `HH:MM` after `now`. */
 export function nextLocal(now: number, time: string): number {

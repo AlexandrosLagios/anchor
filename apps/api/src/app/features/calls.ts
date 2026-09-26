@@ -38,11 +38,16 @@ export const newestMoment = (family: Family, member: Member) =>
     .filter((moment) => moment.by.id !== member.id && !moment.sensitive && !moment.stories.some((story) => story.by.id === member.id))
     .sort((a, b) => b.savedAt - a.savedAt)[0];
 
+const reminderLine = (reminder: Reminder) =>
+  reminder.birthday ? lines.birthdayToday(reminder.birthday) : lines.reminder(reminder.from.name, reminder.text);
+const readReminder = (reminder: Reminder) =>
+  reminder.birthday ? `read the reminder «${spoken(reminderLine(reminder))}»` : `read a reminder that ${reminder.from.name} wrote: «${spoken(reminder.text)}»`;
+
 function reminderInstructions(member: Member, reminder: Reminder) {
   return [
     `You are Anchor, the family's record keeper, on a phone call with ${member.name}, a member of the family.`,
     'You are not a person. Never claim feelings or a shared past of your own.',
-    `You have already said the opening line, and read a reminder that ${reminder.from.name} wrote: «${spoken(reminder.text)}»`,
+    `You have already said the opening line, and ${readReminder(reminder)}`,
     `Answer a short question about the reminder if ${member.name} asks one, in one short sentence.`,
     `Then say out loud: "${spoken(lines.call.goodbye(member.name))}" Then call end_call with share no and tell_sender false.`,
     'Speak slowly and clearly, in simple English.',
@@ -54,7 +59,7 @@ function instructions(member: Member, moment: Moment, connect: boolean, reminder
   return [
     `You are Anchor, the family's record keeper, on a phone call with ${member.name}, a member of the family.`,
     'You are not a person. Never claim feelings or a shared past of your own.',
-    `You have already said the opening line.${reminder ? ` It read a reminder that ${reminder.from.name} wrote: «${spoken(reminder.text)}» If ${member.name} asks about the reminder, answer in one short sentence, then go back to the moment.` : ''} It quoted a moment that ${moment.by.name} shared in the family chat, and asked what it reminds ${member.name} of: ${spoken(lines.sharedBy(moment))}`,
+    `You have already said the opening line.${reminder ? ` It ${readReminder(reminder)} If ${member.name} asks about the reminder, answer in one short sentence, then go back to the moment.` : ''} It quoted a moment that ${moment.by.name} shared in the family chat, and asked what it reminds ${member.name} of: ${spoken(lines.sharedBy(moment))}`,
     "Take one step per turn, and wait for the person's answer before the next step:",
     `1. Listen, and let ${member.name} talk as long as they like. Answer warmly in one short sentence. Ask at most one short follow-up question about what they told you, or skip it when they have said enough. The follow-up invites and never tests: ask how it felt or who was there, and never ask for a name, a date, or a fact. When ${member.name} does not remember something, say that it does not matter, and move on.`,
     `2. Ask: "${lines.call.askShare}"`,
@@ -112,7 +117,7 @@ export async function callMember(family: Family, member: Member, ctx: Context, r
   if (!member.phone || !process.env.TWILIO_FROM || !base || (!reminder && !moment)) return false;
   const connectTo = moment && family.members.find((other) => other.id === moment.by.id)?.phone;
   const goodbye = spoken(lines.call.goodbye(member.name));
-  const opener = [lines.call.opening(member.name), reminder && lines.reminder(reminder.from.name, reminder.text), moment && lines.spokenInvitation(moment)]
+  const opener = [lines.call.opening(member.name), reminder && reminderLine(reminder), moment && lines.spokenInvitation(moment)]
     .filter(Boolean)
     .map(spoken)
     .join(' ');

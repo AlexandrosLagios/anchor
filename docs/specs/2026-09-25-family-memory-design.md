@@ -134,7 +134,8 @@ v2: the `intents` feature takes the position of `ask` and reads every phrase. No
 - `intents` reads each group message that matches the ask pattern. `intents` also reads each private message that no earlier feature owns. An open invitation still owns the replies to the invitation (section 4.5).
 - In the private chat, no "Anchor" prefix is needed. A private voice note goes to the model as audio.
 - The code decides the fixed phrases before any model call: "send me", "settings", "my settings", "call me", "what did I miss", "another moment", and "stop". In the group, the check reads the text after the ask pattern, and in private, the whole text. The same check lets these phrases pass an open invitation, so the invitation never reads them as a reply. Every other text goes to the model.
-- One model call returns `{ intent, momentId }` (section 6.7). The code acts on the intent:
+- In private, the code also decides two words anywhere in the text. "Birthdays" is `birthdays`. "Settings", "preferences", or "choices" is `settings`, so "I want to change my settings" shows the choices screen. An open invitation lets these words pass too.
+- One model call returns `{ intent, momentId, momentIds, time, transcript }` (section 6.7). `time` is the suggested time of a `remind`. `transcript` holds the words of a voice note. The code acts on the intent:
 
 | Intent | Group | Private |
 | --- | --- | --- |
@@ -146,7 +147,10 @@ v2: the `intents` feature takes the position of `ask` and reads every phrase. No
 | `stop` | Sends the member the ephemeral `nudge`. | Acts like the word "stop" (section 4.7). |
 | `callMe` | Acts like the private intent when the member started. | Calls `callMember` (section 4.15). A `false` result gets `callFailed`. |
 | `forget`, `quiet` | Acts like "Anchor, forget this" or "Anchor, don't bring this back" on the replied-to message. | Acts like `unclear`. |
-| `unclear` | Replies `unclear` with the group next-step buttons. | Sends `unclear` with the private next-step buttons. |
+| `remind` | Runs the reminder offer (section 4.13) on the text after the ask pattern. No offer gets `unclear`. | Sends a reminder offer in private (section 4.13). |
+| `birthdays` | Acts like the private intent when the member started. | Sends this month's birthdays, and sets a reminder for each one still to come (section 4.13). |
+| `talk` | The group prompt does not offer `talk`. Acts like `unclear`. | Answers in words (section 4.17). |
+| `unclear` | Replies `unclear` with the group next-step buttons. | Answers in words (section 4.17). A failed talk call sends `unclear` with the private next-step buttons. |
 
 - The `forget` feature still runs first with its exact patterns. `intents` handles the looser wordings through a function that `capture.ts` exports.
 - `missed` with no `seenAt` counts the moments of the last 7 demo-clock days.
@@ -323,6 +327,7 @@ These additions put journey steps 2 and 5 on stage, and they let the live demo r
 
 The `reminders` feature reads a group message before `capture`, and returns `false`, so `capture` still sees the message. A reminder never enters the family record, so memories, Ask Anchor, and then and now never see a reminder.
 
+- The offer call gives an offer to a direct request, such as "remind me about my pills", also with no time. An empty time shows the four default times.
 - The gate: a group text or caption that does not match the ask pattern, and that matches the code word filter. The filter matches remember, don't forget, remind, a clock time, "when we leave", "in the morning", "tonight", and "tomorrow". A voice note never passes the gate, because a gate on voice costs one transcription per group voice note.
 - The offer call (section 6.8) returns `{ offer, who, time }`. `offer` is false by default. `who` is a member id or `unknown`, and `unknown` makes no offer, because a reminder for a person who is not a member must never land on the sender.
 - A message that names a day after tomorrow (a weekday, a date, or "next week") makes no offer, because a reminder has a time and no date. The code checks the weekday names, so the rule does not depend on the model.
@@ -336,6 +341,20 @@ The `reminders` feature reads a group message before `capture`, and returns `fal
 - The sender and the family see only the ✍ reaction. The reminder text shows to the recipient only.
 - Fading: `core/offers.ts` removes each unanswered offer 10 demo-clock minutes after the send, for share offers and reminder offers. A faded reminder offer deletes its reminder when the `status` is `offered` or `waiting`.
 - A tap on an offer that faded or closed removes the tapped message, and changes nothing.
+
+Private reminder offers:
+
+- A private `remind` intent sends `privateReminderOffer(text)` in private, with the time buttons and "No thanks". The offer has no stop button and never fades.
+- The button data holds the reminder id. A time tap sets the reminder, turns `choices.reminders` on, removes the buttons, and sends `reminderConfirmed(time)`.
+
+Birthdays:
+
+- A group message that holds "birthday" or "bday", and no ask pattern, goes to one fast call that returns every birthday of the message as a name and `MM-DD`.
+- The code saves each birthday in `family.birthdays`. A birthday message gets no reminder offer, so "remind me about Maria's birthday" gets one offer only.
+- Each member who started and has `choices.reminders` gets `birthdayOffer` in private, with "Yes, remind me" and "No thanks". The person of the birthday gets no offer.
+- The same name with the same day gets no second offer. A birthday of today, or a birthday that just passed, gets no offer.
+- "Yes, remind me" sets a reminder at 09:00 on the day. The delivery line is `birthdayToday(name)`, in private and on a call.
+- "Remind me about this month's birthdays" in private sends `birthdaysThisMonth`, and sets a 09:00 reminder for each birthday still to come. With no birthday this month, `noBirthdays` names the next known birthday.
 
 ### 4.14 Voice both ways (v2, step 5)
 
@@ -380,6 +399,8 @@ A group memory brings back several moments about one thing together, as a photo 
 - "Photos of Lucy" is a memory, not `sendMe`. The fixed `send me` phrase (section 4.6) skips a question that holds the word "of", such as "send me photos of Lucy", so the intent call decides. The demo phrase of beat 1 holds no "of" and stays fixed.
 - A memory request needs no "Anchor," in the group, but Anchor must never become annoying (section 1):
   - A message without "Anchor," reaches the intent call only when it holds a memory word (memory, memories, photo, picture, pics, moment, or album) and names a subject that the record knows: a tag or a person of a moment that is not sensitive. A reply to another message and a forwarded message never do.
+  - A message with "of", "about", or "with" can also name the subject with a word of a title or a picture description, so "memories of the dog" finds a Lucy moment whose picture shows a dog. The code skips filler words, such as "the" and "with".
+  - An unaddressed `memory` gets an answer only when the intent call picks at least one moment.
   - The prompt tells the model that the message does not name Anchor and that the family may be talking to each other. The model picks `memory` only for a request for family memories, photos, or moments.
   - Anchor answers such a message only when the intent is `memory`. Any other intent gets no answer at all, and the message goes on to `capture`. A fixed phrase never decides for a message without "Anchor,".
   - In a replay on the live family record on 2026-09-26, 6 requests and 7 ordinary messages ran twice each through every feature. 10 of the 12 request runs posted the album. None of the 14 ordinary runs got an answer, among them photo questions to a person, such as "Can you send me the photos from yesterday?". "A memory of Lucy, without mentioning your name?" got no answer.
@@ -390,6 +411,16 @@ A group memory brings back several moments about one thing together, as a photo 
 - The code marks the due keys on the lead moment only. The code adds the message id of each album item to `memoryPostIds` of its own moment, so a reply to one photo adds a story to that photo's moment (section 4.4).
 - The 18:00 slot, `/memory`, and the `memory` intent ("Anchor, show us a memory") all post a collection when one exists.
 - The place of collections in the demo waits for the build. After the deploy, the team adds a beat, replaces a beat, or mentions collections in the close only.
+
+### 4.17 Talk in private
+
+A private message that asks for nothing Anchor can do gets an answer in words: the `talk` and `unclear` intents, and a `find` with no moment.
+
+- The `talk` feature runs first and keeps the last 50 group texts and captions in `family.chat`. Commands, forwards, and taps stay out.
+- The talk call gets every moment that is not sensitive, the saved birthdays, the group lines, and the last 10 turns of the private chat.
+- The prompt leaves out the group lines of a sensitive moment. A forgotten moment also leaves `family.chat`.
+- The answer has one to three sentences. The answer never invents a fact, never gives an opinion, and never promises to do something later.
+- The answer goes out through `tell`, so a member with the voice choice hears the answer.
 
 ## 5. Architecture
 

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Logger } from '@nestjs/common';
 import { lines } from '../../core/lines';
 import type { Context, Family, Feature, Incoming, Moment } from '../../core/types';
+import { unlog } from '../talk';
 import { classify } from './classify';
 import type { Classification } from './classify';
 import { BUNDLE_GAP_MS, hasPicture, isClosed, passesRules, typedText, worthClassifying } from './filter';
@@ -67,6 +68,7 @@ export async function actOnReply(event: Incoming, family: Family, ctx: Context, 
     const moment = findMoment(family, replyTo);
     if (moment) {
       family.moments.splice(family.moments.indexOf(moment), 1);
+      unlog(family, moment.messageIds);
       changed = true;
     } else {
       const momentOfStory = findMomentOfStory(family, replyTo);
@@ -99,6 +101,7 @@ export const forget: Feature = {
       if (!moment) return true;
       if (tapped[1] === 'fgt') {
         family.moments.splice(family.moments.indexOf(moment), 1);
+        unlog(family, moment.messageIds);
         ctx.store.save();
       } else if (!moment.sensitive) {
         moment.sensitive = true;

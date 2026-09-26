@@ -14,7 +14,8 @@ import { forget } from './capture/capture';
 import { callMember } from './calls';
 import { intents } from './intents';
 import { memories } from './memories';
-import { groupNextSteps, nextSteps } from './members';
+import { choiceButtons, groupNextSteps, nextSteps } from './members';
+import { talk } from './talk';
 
 vi.mock('../model/model', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../model/model')>()),
@@ -319,6 +320,32 @@ test('group: a memory request needs no "Anchor," in many phrasings, and the inte
   expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('The message does not name Anchor');
 });
 
+test('group: "memories of the dog" reaches the model through a title or picture word, and the prompt shows the picture', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  const lucy = (id: string, extra: Partial<Moment>) => moment({ id, tags: ['Lucy'], people: [], photo: { id: `photo-${id}` }, ...extra });
+  family.moments.push(
+    lucy('l1', { title: 'Lucy resting on the tiles', description: 'The photo shows a light-colored dog lying on a tiled floor.' }),
+    lucy('l2', { title: 'Light-colored dog by the sofa' }),
+  );
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'none', momentIds: ['l1', 'l2'] });
+
+  await router.route({ ...groupEvent, text: 'memories of the dog' });
+
+  expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('picture: The photo shows a light-colored dog');
+  expect(transport.sent[0].message.album).toHaveLength(2);
+});
+
+test('group: an unaddressed memory request that the model matches to no moment gets no answer', async () => {
+  const { transport, family, ctx } = setup();
+  member(family);
+  family.moments.push(moment({ tags: ['Lucy'] }));
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'none', momentIds: [] });
+
+  expect(await intents.handle?.({ ...groupEvent, text: 'photos of Lucy at the beach?' }, family, ctx)).toBe(false);
+  expect(transport.sent).toEqual([]);
+});
+
 test('group: an unaddressed message that the intent call does not read as a memory request gets no answer at all', async () => {
   const { transport, family, ctx } = setup();
   member(family);
@@ -521,6 +548,16 @@ test('private: settings shows the choices screen', async () => {
   expect(transport.sent).toEqual([expect.objectContaining({ chatId: m.id, message: expect.objectContaining({ text: lines.choicesScreen }) })]);
 });
 
+test('private: "I want to change my settings" shows the choice buttons with no model call', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+
+  await router.route({ ...privateEvent, text: 'I want to change my settings' });
+
+  expect(model.ask).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([{ chatId: m.id, messageId: 'sent-1', message: { text: lines.choicesScreen, buttons: choiceButtons(m) } }]);
+});
+
 test('private: stop acts like stopMember', async () => {
   const { family, router } = setup();
   const m = member(family, { started: true, choices: { ...DEFAULT_CHOICES, moments: true } });
@@ -614,7 +651,7 @@ test('private: find sends the first voice story after the moment', async () => {
   expect(transport.sent.some((s) => s.message.voice)).toBe(true);
 });
 
-test('private: find with none gets notFound with nextSteps', async () => {
+test('private: find with none, when the talk call gives no answer, gets notFound with nextSteps', async () => {
   const { transport, family, router } = setup();
   const m = member(family, { started: true });
   family.moments.push(moment());
@@ -676,7 +713,7 @@ test('private: missed with nothing new sends nothingNew with nextSteps', async (
   ]);
 });
 
-test('private: forget, quiet, and unclear all tell unclear with nextSteps', async () => {
+test('private: forget, quiet, and an unclear message whose talk call fails all tell unclear with nextSteps', async () => {
   const { transport, family, router } = setup();
   const m = member(family, { started: true });
   vi.mocked(model.ask).mockResolvedValueOnce({ intent: 'forget', momentId: 'none' });
@@ -748,4 +785,129 @@ test('private: a failed model call counts as unclear', async () => {
   expect(transport.sent).toEqual([
     expect.objectContaining({ chatId: m.id, message: expect.objectContaining({ text: lines.unclear, buttons: nextSteps(m) }) }),
   ]);
+});
+
+test('private: "remind me about my pills" gets a reminder offer in private with the default times', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'remind', momentId: 'none', momentIds: [], time: '', transcript: 'remind me about my pills' });
+
+  await router.route({ ...privateEvent, text: 'remind me about my pills' });
+
+  expect(transport.sent).toHaveLength(1);
+  expect(transport.sent[0]).toMatchObject({ chatId: m.id, message: { text: lines.privateReminderOffer('remind me about my pills') } });
+  expect(transport.sent[0].message.buttons).toHaveLength(5);
+  expect(family.reminders).toEqual([expect.objectContaining({ to: m.id, text: 'remind me about my pills', time: '', status: 'offered' })]);
+});
+
+test('private: a voice note that asks for a reminder quotes its transcript, and a time from the model goes on the first button', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  transport.files.set('clip-1', { data: Buffer.from('remind me tonight'), mimeType: 'audio/ogg' });
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'remind', momentId: 'none', momentIds: [], time: '20:00', transcript: 'Remind me to water the plants tonight' });
+
+  await router.route({ ...privateEvent, text: undefined, voice: { id: 'clip-1', mimeType: 'audio/ogg' } });
+
+  expect(transport.sent[0].message.text).toBe(lines.privateReminderOffer('Remind me to water the plants tonight'));
+  expect(transport.sent[0].message.buttons?.[0].label).toBe('Yes, at 20:00');
+});
+
+test("private: \"remind me about this month's birthdays\" answers in code with no model call", async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+
+  await router.route({ ...privateEvent, text: "Remind me about this month's birthdays" });
+
+  expect(model.ask).not.toHaveBeenCalled();
+  expect(transport.sent).toEqual([expect.objectContaining({ chatId: m.id, message: expect.objectContaining({ text: lines.noBirthdays() }) })]);
+});
+
+test('group: "Anchor, remind me about my pills" goes to the reminder offer', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+  vi.mocked(model.ask)
+    .mockResolvedValueOnce({ intent: 'remind', momentId: 'none', momentIds: [], time: '', transcript: '' })
+    .mockResolvedValueOnce({ offer: true, who: m.id, time: '' });
+
+  await router.route({ ...groupEvent, text: 'Anchor, remind me about my pills' });
+
+  expect(vi.mocked(model.ask).mock.calls[1][0]).toContain('The message: "remind me about my pills"');
+  expect(transport.sent[0].message).toMatchObject({ text: lines.reminderOffer('You', 'remind me about my pills'), onlyFor: m.id });
+});
+
+test('private: a message that asks for nothing Anchor can do gets an answer from the record and the group chat', async () => {
+  const { transport, family, ctx, router } = setup();
+  const m = member(family);
+  family.moments.push(moment({ sensitive: true, messageIds: ['g-sad'] }));
+  await talk.handle?.({ ...groupEvent, messageId: 'g-lunch', sender: { id: 'u2', name: 'Eleni' }, text: 'Lunch at Mum’s on Sunday, 13:00' }, family, ctx);
+  await talk.handle?.({ ...groupEvent, messageId: 'g-sad', sender: { id: 'u2', name: 'Eleni' }, text: 'We said goodbye to Rex today' }, family, ctx);
+  vi.mocked(model.ask)
+    .mockResolvedValueOnce({ intent: 'unclear', momentId: 'none', momentIds: [], time: '', transcript: '' })
+    .mockResolvedValueOnce({ answer: 'Eleni wrote that lunch is at Mum’s on Sunday at 13:00 🙂' });
+
+  await router.route({ ...privateEvent, text: 'When is lunch on Sunday?' });
+
+  const prompt = vi.mocked(model.ask).mock.calls[1][0];
+  expect(prompt).toContain('Eleni: Lunch at Mum’s on Sunday, 13:00');
+  expect(prompt).not.toContain('Rex');
+  expect(prompt).toContain('Nikos: When is lunch on Sunday?');
+  expect(transport.sent).toEqual([{ chatId: m.id, messageId: 'sent-1', message: { text: 'Eleni wrote that lunch is at Mum’s on Sunday at 13:00 🙂' } }]);
+  expect(m.talk).toEqual([
+    { from: 'member', text: 'When is lunch on Sunday?' },
+    { from: 'anchor', text: 'Eleni wrote that lunch is at Mum’s on Sunday at 13:00 🙂' },
+  ]);
+});
+
+test('group: the talk log keeps the latest 50 text messages and skips commands, forwards, and taps', async () => {
+  const { family, ctx } = setup();
+  for (let index = 0; index < 52; index++) await talk.handle?.({ ...groupEvent, messageId: `g${index}`, text: `line ${index}` }, family, ctx);
+  for (const extra of [{ text: '/memory' }, { forwarded: true }, { button: 'nxt:memory' }]) await talk.handle?.({ ...groupEvent, ...extra }, family, ctx);
+
+  expect(family.chat).toHaveLength(50);
+  expect(family.chat?.[0]).toMatchObject({ id: 'g2', by: 'Nikos', text: 'line 2' });
+  expect(family.chat?.at(-1)?.text).toBe('line 51');
+});
+
+test('private: a talk, or a find with no moment, gets the answer in words; in the group the prompt offers no talk', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  for (const intent of ['talk', 'find']) {
+    vi.mocked(model.ask)
+      .mockResolvedValueOnce({ intent, momentId: 'none', momentIds: [], time: '', transcript: '' })
+      .mockResolvedValueOnce({ answer: `answer to ${intent}` });
+    await router.route({ ...privateEvent, text: 'Tell me about Lucy' });
+  }
+  expect(transport.sent.map((sent) => sent.message.text)).toEqual(['answer to talk', 'answer to find']);
+  expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('- talk:');
+
+  vi.mocked(model.ask).mockReset();
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'talk', momentId: 'none', momentIds: [] });
+  await router.route({ ...groupEvent, text: 'Anchor, tell me about Lucy' });
+  expect(vi.mocked(model.ask).mock.calls[0][0]).not.toContain('- talk:');
+  expect(transport.sent.at(-1)?.message).toMatchObject({ text: lines.unclear, replyTo: 'g1' });
+});
+
+test('group: an addressed reminder request that gets no offer gets the unclear reply', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  vi.mocked(model.ask)
+    .mockResolvedValueOnce({ intent: 'remind', momentId: 'none', momentIds: [], time: '', transcript: '' })
+    .mockResolvedValueOnce({ offer: false, who: 'unknown', time: '' });
+
+  await router.route({ ...groupEvent, text: 'Anchor, remind me on Monday to call the doctor' });
+
+  expect(transport.sent).toEqual([expect.objectContaining({ message: expect.objectContaining({ text: lines.unclear, replyTo: 'g1' }) })]);
+});
+
+test('group: a title word counts only in a request about a subject', async () => {
+  const { family, router } = setup();
+  member(family);
+  family.moments.push(moment({ title: 'Mapo tofu at home', people: [] }));
+
+  await router.route({ ...groupEvent, text: "I'll send the photos when I get home" });
+  expect(model.ask).not.toHaveBeenCalled();
+
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'unclear', momentId: 'none', momentIds: [] });
+  await router.route({ ...groupEvent, text: 'photos of the tofu?' });
+  expect(model.ask).toHaveBeenCalledTimes(1);
 });

@@ -20,7 +20,7 @@ import {
 } from '../core/types';
 import { ask, speak, valid } from '../model/model';
 import { react } from './capture/capture';
-import { fixedIntent, pictureOf, wordCount } from './capture/filter';
+import { pictureOf, privateIntent, wordCount } from './capture/filter';
 import { nextSteps } from './members';
 
 export const GAP_DAYS = [1, 2, 4, 8, 16, 32];
@@ -157,7 +157,7 @@ async function inPrivate(event: Incoming, family: Family, member: Member, ctx: C
   const [, action, momentId] = event.button?.match(BUTTON) ?? [];
   if ((event.button && !action) || event.text?.startsWith('/')) return false;
   // a fixed phrase such as "settings" or "what did I miss?" goes to intents, and the open invitation stays open
-  if (!action && !event.voice && fixedIntent(event.text)) return false;
+  if (!action && !event.voice && privateIntent(event.text)) return false;
   if (action === 'never') {
     const moment = family.moments.find((item) => item.id === momentId);
     let changed = false;
