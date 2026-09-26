@@ -253,6 +253,21 @@ test('the model writes the caption of a collection from the words of each sharer
   expect(options).toEqual({ fast: true });
 });
 
+test('a caption may quote a story, and a caption with a quote or a name that the moments do not hold falls back to collectionCaption', async () => {
+  vi.mocked(ask)
+    .mockResolvedValueOnce({ caption: 'Rex, in photos Sofia shared, and Eleni remembers «he stole the bread».' })
+    .mockResolvedValueOnce({ caption: 'Rex at the beach in Crete, in photos Sofia shared.' });
+  const story = { id: 's1', by: { id: '2', name: 'Eleni' }, at: now, text: 'Every Sunday he stole the bread', messageIds: ['9'] };
+  family.moments.push(rex('a', { savedAt: daysBefore(now, 7), stories: [story] }), rex('b', { savedAt: daysBefore(now, 2) }));
+
+  await memories.handle?.(groupEvent({ text: '/memory' }), family, ctx);
+  await memories.handle?.(groupEvent({ text: '/memory' }), family, ctx);
+
+  expect(transport.sent[0].message.text).toBe(`Rex, in photos Sofia shared, and Eleni remembers «he stole the bread».\n${lines.collectionReply}`);
+  expect(vi.mocked(ask).mock.calls[0][0]).toContain('Stories: Eleni: «Every Sunday he stole the bread»');
+  expect(transport.sent[1].message.text).toBe(lines.collectionCaption(lines.labels.fromRecord, 'Rex', [family.moments[0], family.moments[1]]));
+});
+
 test('a failed or empty caption call falls back to collectionCaption', async () => {
   vi.mocked(ask).mockRejectedValueOnce(new Error('timeout')).mockResolvedValueOnce({ caption: '  ' });
   const pair = () => [rex('a', { savedAt: daysBefore(now, 7) }), rex('b', { savedAt: daysBefore(now, 2) })];

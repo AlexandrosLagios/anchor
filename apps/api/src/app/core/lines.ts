@@ -127,6 +127,9 @@ export const lines = {
   askAnswer: (title: string, date: string, names: string[]) =>
     `${title} · ${date} 💛${names.length ? `\nStories from ${names.join(', ')}` : ''}`,
   notFound: "I couldn't find that in the family record yet.",
+  // an answer that fails the check against its sources gives way to this line and the moment itself
+  recordSays: 'Here is what the family record says 💛',
+  source: (moment: Moment) => `${sharedBy(moment)}\n${dateOf(moment)}`,
   pointer: "Hi! I keep your family's record. Talk to me in your family group 🙂",
   notInGroup: 'Hi! I talk only with the members of the family group. Ask your family to add you to the group, then tap the button again 🙂',
   // the scam shield: Anchor never says that a message is certainly a scam or certainly safe

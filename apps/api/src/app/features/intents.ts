@@ -14,7 +14,7 @@ import { birthdaysThisMonth } from './reminders/birthdays';
 import { TIME_RULE } from './reminders/offer';
 import { makeOffer, offerInPrivate } from './reminders/reminders';
 import { TIME } from './reminders/rules';
-import { answerTalk } from './talk';
+import { answer, answerTalk, remember } from './talk';
 
 const logger = new Logger('Intents');
 const SEVEN_DAYS_MS = 7 * 86_400_000;
@@ -188,7 +188,7 @@ async function groupAction(
         await ctx.transport(family.id).send(event.chatId, { text: lines.notFound, replyTo: event.messageId });
         return true;
       }
-      await answerInGroup(family, moment, event.messageId, ctx);
+      await answerInGroup(family, moment, event.messageId, ctx, member, (event.text ?? '').replace(ADDRESS, ''));
       return true;
     }
     case 'sendMe':
@@ -256,19 +256,27 @@ async function unclearPrivate(family: Family, member: Member, ctx: Context): Pro
   return true;
 }
 
-async function privateFind(momentId: string | undefined, family: Family, member: Member, ctx: Context): Promise<void> {
+// a question gets the answer in words first, then the moment as its source; a failed or unchecked answer leaves the moment with askAnswer
+async function privateFind(momentId: string | undefined, family: Family, member: Member, ctx: Context, question?: string): Promise<void> {
   const moment = findAsked(family, momentId);
   if (!moment) {
     await tell(family, member, { text: lines.notFound, buttons: nextSteps(member, 'find') }, ctx);
     return;
   }
-  const names = [...new Set(moment.stories.map((story) => story.by.name))];
-  await tell(
-    family,
-    member,
-    { ...pictureOf(moment), text: lines.askAnswer(moment.title, dateOf(moment), names), buttons: nextSteps(member, 'find') },
-    ctx,
-  );
+  const reply = question ? await answer(family, member, question, ctx, 'private', moment) : undefined;
+  if (question && reply?.grounded) {
+    remember(member, question, reply.text);
+    await tell(family, member, { text: reply.text }, ctx);
+    await tell(family, member, { ...pictureOf(moment), text: lines.source(moment), buttons: nextSteps(member, 'find') }, ctx);
+  } else {
+    const names = [...new Set(moment.stories.map((story) => story.by.name))];
+    await tell(
+      family,
+      member,
+      { ...pictureOf(moment), text: lines.askAnswer(moment.title, dateOf(moment), names), buttons: nextSteps(member, 'find') },
+      ctx,
+    );
+  }
   const voiceStory = moment.stories.find((story) => story.voice);
   if (voiceStory) await tell(family, member, { voice: voiceStory.voice }, ctx);
   if (moment.savedAt > (member.seenAt ?? 0)) member.seenAt = moment.savedAt;
@@ -364,6 +372,10 @@ async function inPrivate(event: Incoming, family: Family, ctx: Context): Promise
   // a question with no moment to show, or a message that asks for nothing Anchor can do, gets an answer in words, with the group chat as the context
   const talks = reading.intent === 'talk' || reading.intent === 'unclear' || (reading.intent === 'find' && !findAsked(family, reading.momentId));
   if (talks && said && (await answerTalk(family, member, said, ctx))) return true;
+  if (reading.intent === 'find') {
+    await privateFind(reading.momentId, family, member, ctx, said);
+    return true;
+  }
   return privateAction(reading.intent, reading.momentId, family, member, ctx, event.messageId);
 }
 

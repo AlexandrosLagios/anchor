@@ -126,7 +126,7 @@ v2: this section says storyteller for a member who has `started` and `choices.mo
 
 - A group message that matches `/^(?:anchor|@anchor\w*)\b\s*[,:]?\s+/i` is a question. A mention of the bot, such as "@anchor_family_bot , give me a memory", names Anchor as "Anchor," does. The `forget` feature runs first, so "Anchor, forget this" never reaches `ask`.
 - One Gemini call picks one moment id from an enum of the ids of the family, or `none` (section 6.4). The enum leaves out every sensitive moment.
-- Anchor replies to the question with the video or the photo and the caption `askAnswer(title, date, names)`. The first voice story follows by its media id.
+- Anchor replies to the question with the video or the photo of the moment. The caption is the checked answer of section 4.17 to the question, plus "Stories from {names}" when the moment has stories. When the answer call fails or the check fails, the caption is `askAnswer(title, date, names)`. The first voice story follows by its media id.
 - `none`, or a failed call, gets `notFound`.
 
 v2: the `intents` feature takes the position of `ask` and reads every phrase. No member learns a fixed phrase.
@@ -141,7 +141,7 @@ v2: the `intents` feature takes the position of `ask` and reads every phrase. No
 | Intent | Group | Private |
 | --- | --- | --- |
 | `memory` | Posts a group memory now, like `/memory`. `/memory` stays. | Sends the first picked moment with a picture, like `find`. With no picked moment, acts like `sendMe`. |
-| `find` | Ask Anchor with the `momentId` of the same call. | Sends the moment of `momentId` in private, with `askAnswer`. |
+| `find` | Ask Anchor with the `momentId` of the same call. | Sends the checked answer of section 4.17 in private, then the moment of `momentId` with `source(moment)`. When the answer call fails or the check fails, sends the moment with `askAnswer`. |
 | `sendMe` | Sends an invitation in private when the member started. Otherwise sends the member the ephemeral `nudge`. | Sends an invitation now (section 4.5). |
 | `missed` | Acts like `sendMe`. | Sends up to 3 moments with a `savedAt` after `member.seenAt`, with `missed(count)` first. With no such moment, sends `nothingNew`. |
 | `settings` | Sends the member the ephemeral `nudge`. | Sends the choices screen (section 4.11). |
@@ -221,6 +221,8 @@ v2 changes to this section:
 | `fastforwardUsage` | Send /fastforward and a number of days, for example /fastforward 7. |
 | `askAnswer(title, date, names)` | {title} · {date} 💛 plus "Stories from {names}" when the moment has stories |
 | `notFound` | I couldn't find that in the family record yet. |
+| `recordSays` | Here is what the family record says 💛 |
+| `source(moment)` | `sharedBy(moment)`, then the date of the moment on its own line |
 | `noInvitation` | Thank you 🙂 I'll bring you a family moment soon. |
 | `pointer` | Hi! I keep your family's record. Talk to me in your family group 🙂 |
 | `adminOnly` | Only a group admin can do that 🙂 |
@@ -414,7 +416,7 @@ A group memory brings back several moments about one thing together, as a photo 
   - The capture call reads a question or a request to Anchor as small talk, so a request that got no answer never becomes a family moment.
 - A collection needs at least 2 moments. Otherwise, the memory posts the one moment as before. A picked moment without a picture never leads a collection.
 - The album holds at most 6 moments. The lead moment always stays in the album. The other places go to the moments with the highest salience. The album orders the moments oldest first, by `eventDate`, or by `savedAt` when a moment has no `eventDate`.
-- The model writes the album caption with one fast call: one or two plain sentences of at most 160 characters that name the sharers, from the words of each moment. The caption never judges a photo, never invents a fact, a feeling, or a memory, and never speaks as a person. The line `collectionReply` follows the caption. When the call fails or returns nothing, the caption is `collectionCaption(label, tag, moments)`: the label, the tag, the count of moments, and the sharers. The words of each moment stay in the record of its photo.
+- The model writes the album caption with one fast call: one or two plain sentences of at most 160 characters that name the sharers, from the words of each moment and its stories. The caption can quote a few words of a sharer or a story in «». The caption never judges a photo, never invents a fact, a feeling, or a memory, and never speaks as a person. The line `collectionReply` follows the caption. When the call fails, returns nothing, or fails the check of section 4.17 against the moments, the caption is `collectionCaption(label, tag, moments)`: the label, the tag, the count of moments, and the sharers. The words of each moment stay in the record of its photo.
 - The code marks the due keys on the lead moment only. The code adds the message id of each album item to `memoryPostIds` of its own moment, so a reply to one photo adds a story to that photo's moment (section 4.4).
 - The 18:00 slot, `/memory`, and the `memory` intent ("Anchor, show us a memory") all post a collection when one exists.
 - The place of collections in the demo waits for the build. After the deploy, the team adds a beat, replaces a beat, or mentions collections in the close only.
@@ -424,10 +426,16 @@ A group memory brings back several moments about one thing together, as a photo 
 A private message that asks for nothing Anchor can do gets an answer in words: the `talk` and `unclear` intents, and a `find` with no moment.
 
 - The `talk` feature runs first and keeps the last 50 group texts and captions in `family.chat`. Commands, forwards, and taps stay out.
-- The talk call gets every moment that is not sensitive, the saved birthdays, the group lines, and the last 10 turns of the private chat.
+- The talk call gets every moment that is not sensitive, with its id, the saved birthdays, the group lines, and the last 10 turns of the private chat.
+- The prompt labels the date of a moment "happened on" for an `eventDate`, and "shared on" for the save date.
 - The prompt leaves out the group lines of a sensitive moment. A forgotten moment also leaves `family.chat`.
 - The answer has one to three sentences. The answer never invents a fact, never gives an opinion, and never promises to do something later.
-- The answer goes out through `tell`, so a member with the voice choice hears the answer.
+- The answer names who shared a moment and when, quotes their words or a story word for word in «», and links two moments that belong together. When the record does not answer the question, the first sentence says so.
+- The call returns the answer and `momentIds`, an enum of the moment ids. The code keeps only real ids.
+- The check (`core/grounded.ts`): every number, every quote, and every capitalised word inside a sentence of the answer must come from the cited moments, the group lines, the birthdays, the member names, the clock, or the words of the member.
+- A checked answer goes out through `tell`, so a member with the voice choice hears the answer. The photo of the first cited moment follows, with `source(moment)` as the caption.
+- An answer that fails the check gives way to `recordSays` and the first cited moment, or to `notFound` when the answer cites no moment.
+- A replay on 2026-09-26 with `gpt-4.1-mini` and a record like the demo record: 10 of 10 answerable questions got a checked answer with a cited moment. 9 of 10 questions that the record does not answer got "The family record doesn't say", and the check stopped the tenth, an invented age.
 
 ## 5. Architecture
 

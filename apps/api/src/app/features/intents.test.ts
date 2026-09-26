@@ -967,6 +967,74 @@ test('private: a talk, or a find with no moment, gets the answer in words; in th
   expect(transport.sent.at(-1)?.message).toMatchObject({ text: lines.unclear, replyTo: 'g1' });
 });
 
+test('private: a checked answer goes out first, then the photo of the moment it cites with the words of the sharer', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+  family.moments.push(moment({ id: 'm1', photo: { id: 'photo-1' }, eventDate: '2026-09-14' }));
+  const said = 'Eleni shared it on 14 September 2026: «she was so proud».';
+  vi.mocked(model.ask)
+    .mockResolvedValueOnce({ intent: 'talk', momentId: 'none', momentIds: [], time: '', transcript: '' })
+    .mockResolvedValueOnce({ answer: said, momentIds: ['m1'] });
+
+  await router.route({ ...privateEvent, text: 'Tell me about Maria' });
+
+  expect(transport.sent.map((sent) => sent.message)).toEqual([{ text: said }, { photo: { id: 'photo-1' }, text: lines.source(family.moments[0]) }]);
+  expect(vi.mocked(model.ask).mock.calls[1][0]).toContain('- id m1: Eleni shared: «Maria\'s first day at school, she was so proud» (happened on 14 September 2026)');
+  expect(m.talk?.at(-1)).toEqual({ from: 'anchor', text: said });
+});
+
+test('private: an answer with a year or a name that its sources do not hold gives way to recordSays and the photo, or to notFound with no cited moment', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+  family.moments.push(moment({ id: 'm1', photo: { id: 'photo-1' } }));
+  vi.mocked(model.ask)
+    .mockResolvedValueOnce({ intent: 'talk', momentId: 'none', momentIds: [], time: '', transcript: '' })
+    .mockResolvedValueOnce({ answer: 'Maria started school in 2019.', momentIds: ['m1'] })
+    .mockResolvedValueOnce({ intent: 'talk', momentId: 'none', momentIds: [], time: '', transcript: '' })
+    .mockResolvedValueOnce({ answer: 'Maria goes to Saint George School.', momentIds: [] });
+
+  await router.route({ ...privateEvent, text: 'When did Maria start school?' });
+  await router.route({ ...privateEvent, text: 'Which school does Maria go to?' });
+
+  expect(transport.sent.map((sent) => sent.message)).toEqual([
+    { text: lines.recordSays },
+    { photo: { id: 'photo-1' }, text: lines.source(family.moments[0]) },
+    { text: lines.notFound },
+  ]);
+  expect(m.talk?.at(-1)).toEqual({ from: 'anchor', text: lines.notFound });
+});
+
+test('private: find with a checked answer says it first, then sends the moment with the words of the sharer', async () => {
+  const { transport, family, router } = setup();
+  const m = member(family);
+  family.moments.push(moment({ id: 'm1', photo: { id: 'photo-1' } }));
+  const said = 'Maria started school on 25 September 2026, and Eleni shared it.';
+  vi.mocked(model.ask)
+    .mockResolvedValueOnce({ intent: 'find', momentId: 'm1', momentIds: [], time: '', transcript: '' })
+    .mockResolvedValueOnce({ answer: said, momentIds: [] });
+
+  await router.route({ ...privateEvent, text: 'when did Maria start school?' });
+
+  expect(transport.sent.map((sent) => sent.message)).toEqual([
+    { text: said },
+    { photo: { id: 'photo-1' }, text: lines.source(family.moments[0]), buttons: nextSteps(m, 'find') },
+  ]);
+  expect(vi.mocked(model.ask).mock.calls[1][0]).toContain('The message asks about the moment with id m1.');
+});
+
+test('group: find with a checked answer puts it in the caption of the moment, with the storytellers', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  family.moments.push(moment({ id: 'm1', photo: { id: 'photo-1' }, stories: [story()] }));
+  const said = 'Eleni shared it on 25 September 2026, and Dimitris added «She was so excited».';
+  vi.mocked(model.ask).mockResolvedValueOnce({ intent: 'find', momentId: 'm1' }).mockResolvedValueOnce({ answer: said, momentIds: ['m1'] });
+
+  await router.route({ ...groupEvent, text: 'Anchor, when did Maria start school?' });
+
+  expect(transport.sent[0].message).toEqual({ photo: { id: 'photo-1' }, text: `${said}\nStories from Dimitris`, replyTo: 'g1' });
+  expect(vi.mocked(model.ask).mock.calls[1][0]).toContain('asks you in the family group');
+});
+
 test('group: an addressed reminder request that gets no offer gets the unclear reply', async () => {
   const { transport, family, router } = setup();
   member(family);
