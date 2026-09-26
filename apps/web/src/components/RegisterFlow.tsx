@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import {
   AccountError,
   accountLabel,
@@ -6,25 +6,22 @@ import {
   createFamily,
   getAccountToken,
   listFamilies,
-  listFiles,
   readProgress,
   setAccountToken,
   signIn,
   signUp,
-  uploadMemory,
   writeProgress,
   type AccountFamily,
-  type AccountFile,
 } from '../lib/account';
 import { botAddLink, botOpenLink, privacyEmail, viberAddLink, whatsappAddLink } from '../lib/config';
 import './RegisterFlow.css';
 
-const STEPS = ['Account', 'Group', 'Family', 'Memory'] as const;
+const STEPS = ['Account', 'Group', 'Family'] as const;
 
 export function RegisterFlow() {
   const headingId = useId();
   const policyEndRef = useRef<HTMLParagraphElement>(null);
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [ready, setReady] = useState(false);
   const [mode, setMode] = useState<'choose' | 'signup' | 'signin'>('choose');
   const [email, setEmail] = useState('');
@@ -35,7 +32,6 @@ export function RegisterFlow() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [familyName, setFamilyName] = useState('');
   const [family, setFamily] = useState<AccountFamily | null>(null);
-  const [uploads, setUploads] = useState<AccountFile[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -64,14 +60,12 @@ export function RegisterFlow() {
         }
         setFamily(families[0]);
         setFamilyName(families[0].name);
-        const files = await listFiles();
-        if (cancelled) return;
-        setUploads(files);
-        setStep(4);
+        completeRegistration();
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Could not resume registration.');
           setStep(3);
+          setReady(true);
         }
       } finally {
         if (!cancelled) setReady(true);
@@ -111,10 +105,17 @@ export function RegisterFlow() {
     try {
       if (mode === 'signup') {
         await signUp({ email, password, displayName });
+        setStep(2);
       } else {
         await signIn(email, password);
+        const families = await listFamilies();
+        if (families.length) {
+          writeProgress({ botAdded: true, complete: false });
+          completeRegistration();
+          return;
+        }
+        setStep(2);
       }
-      setStep(2);
     } catch (err) {
       if (err instanceof AccountError && err.status === 409) {
         setMode('signin');
@@ -139,25 +140,9 @@ export function RegisterFlow() {
     try {
       const created = family ?? (await createFamily(familyName));
       setFamily(created);
-      setStep(4);
+      completeRegistration();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create the family.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    setError('');
-    setBusy(true);
-    try {
-      const saved = await uploadMemory(file);
-      setUploads((current) => [saved, ...current]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not upload that memory.');
     } finally {
       setBusy(false);
     }
@@ -178,7 +163,7 @@ export function RegisterFlow() {
   return (
     <div className="family-shell">
       <section className="family-panel reg" aria-labelledby={headingId}>
-        <p className="reg-kicker">Step {step} of 4</p>
+        <p className="reg-kicker">Step {step} of 3</p>
         <ol className="reg-steps" aria-label="Registration steps">
           {STEPS.map((label, index) => {
             const number = index + 1;
@@ -227,7 +212,7 @@ export function RegisterFlow() {
             <h1 id={headingId}>{mode === 'signup' ? 'Create your account' : 'Sign in'}</h1>
             <p className="lede">
               {mode === 'signup'
-                ? 'Register with your email and read the privacy policy. Anchor asks for this before the bot, the family, or any memory.'
+                ? 'Register with your email and read the privacy policy. Anchor asks for this before the bot or the family.'
                 : 'Sign in with the email you used to create your account.'}
             </p>
             {mode === 'signup' ? (
@@ -549,45 +534,6 @@ export function RegisterFlow() {
               </button>
             </div>
           </form>
-        ) : null}
-
-        {step === 4 ? (
-          <>
-            <h1 id={headingId}>Upload a memory</h1>
-            <p className="lede">
-              {family ? `${family.name}. ` : null}
-              Add a photo or a voice note. Files stay under 4.5 MB.
-            </p>
-            <label className="reg-field">
-              Photo or voice note
-              <input
-                className="reg-file"
-                type="file"
-                accept="image/*,audio/*"
-                disabled={busy}
-                onChange={(event) => void onFile(event)}
-              />
-            </label>
-            {uploads.length ? (
-              <ul className="reg-uploads">
-                {uploads.map((file) => (
-                  <li key={file.id}>{file.originalName || 'Memory'}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="reg-hint">No memory uploaded yet.</p>
-            )}
-            <div className="family-actions">
-              <button
-                className="btn btn-primary"
-                type="button"
-                disabled={busy || uploads.length === 0}
-                onClick={() => completeRegistration()}
-              >
-                Finish
-              </button>
-            </div>
-          </>
         ) : null}
 
         {error ? (

@@ -4,11 +4,9 @@ import {
   getAccountToken,
   isRegistrationComplete,
   listFamilies,
-  listFiles,
   signOut,
   watchAccountAuth,
   type AccountFamily,
-  type AccountFile,
 } from '../lib/account';
 import { botOpenLink } from '../lib/config';
 import {
@@ -23,6 +21,8 @@ import {
   type MeResult,
   watchTelegramAuth,
 } from '../lib/telegram';
+import { FamilyChat } from './FamilyChat';
+import { MemoryUpload } from './MemoryUpload';
 import { RegisterFlow } from './RegisterFlow';
 import { TelegramLogin } from './TelegramLogin';
 import './FamilyRecord.css';
@@ -125,7 +125,6 @@ export function FamilyRecord() {
   const [phase, setPhase] = useState<'loading' | 'register' | 'record'>('loading');
   const [accountToken, setAccountTokenState] = useState<string | null>(null);
   const [accountFamily, setAccountFamily] = useState<AccountFamily | null>(null);
-  const [uploads, setUploads] = useState<AccountFile[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [me, setMe] = useState<MeResult | null>(null);
   const [moments, setMoments] = useState<FamilyMoment[]>([]);
@@ -153,13 +152,6 @@ export function FamilyRecord() {
       })
       .catch(() => {
         if (!cancelled) setAccountFamily(null);
-      });
-    void listFiles()
-      .then((files) => {
-        if (!cancelled) setUploads(files);
-      })
-      .catch(() => {
-        if (!cancelled) setUploads([]);
       });
     return () => {
       cancelled = true;
@@ -217,38 +209,6 @@ export function FamilyRecord() {
 
   if (phase === 'register') return <RegisterFlow />;
 
-  if (addLink) {
-    return (
-      <div className="family-shell">
-        <section className="family-panel" aria-labelledby="add-anchor">
-          <h1 id="add-anchor">Add Anchor to your family group</h1>
-          <p className="lede">
-            Telegram will ask which group to use, then add Anchor as an admin. After that, come back here and we will
-            join you as the first member.
-          </p>
-          <div className="family-actions">
-            <a className="btn btn-primary" href={addLink}>
-              Add Anchor to a family group
-            </a>
-            <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void refresh()}>
-              {busy ? 'Checking…' : 'I added Anchor — continue'}
-            </button>
-            {busy ? (
-              <p className="sr-only" role="status">
-                Checking…
-              </p>
-            ) : null}
-          </div>
-          {error ? (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </section>
-      </div>
-    );
-  }
-
   const name =
     me?.member.name || tokenDisplayName(token) || accountLabel(accountToken || getAccountToken()) || 'You';
 
@@ -258,7 +218,7 @@ export function FamilyRecord() {
         <div>
           <h1>Family record</h1>
           <p className="lede">
-            {`Signed in as ${name}${accountFamily ? ` · ${accountFamily.name}` : ''}. Choices and admin tools stay in Telegram.`}
+            {`Signed in as ${name}${accountFamily ? ` · ${accountFamily.name}` : ''}. Upload memories here, ask Anchor what it knows, or keep sharing in the group chat.`}
           </p>
         </div>
         <div className="family-actions">
@@ -290,14 +250,34 @@ export function FamilyRecord() {
         </p>
       ) : null}
 
-      {uploads.length ? (
-        <section className="family-panel" aria-labelledby="uploaded-memories">
-          <h2 id="uploaded-memories">Memories you uploaded</h2>
-          <ul className="reg-uploads">
-            {uploads.map((file) => (
-              <li key={file.id}>{file.originalName || 'Memory'}</li>
-            ))}
-          </ul>
+      <MemoryUpload />
+      <FamilyChat />
+
+      {addLink ? (
+        <section className="family-panel" aria-labelledby="add-anchor">
+          <h2 id="add-anchor">Add Anchor to your family group</h2>
+          <p className="lede">
+            Telegram will ask which group to use, then add Anchor as an admin. After that, come back here and we will
+            join you as the first member.
+          </p>
+          <div className="family-actions">
+            <a className="btn btn-primary" href={addLink}>
+              Add Anchor to a family group
+            </a>
+            <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void refresh()}>
+              {busy ? 'Checking…' : 'I added Anchor — continue'}
+            </button>
+            {busy ? (
+              <p className="sr-only" role="status">
+                Checking…
+              </p>
+            ) : null}
+          </div>
+          {error ? (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          ) : null}
         </section>
       ) : null}
 
@@ -311,23 +291,23 @@ export function FamilyRecord() {
         </section>
       ) : null}
 
-      {token && error ? (
+      {token && !addLink && error ? (
         <p className="form-error" role="alert">
           {error}
         </p>
       ) : null}
 
-      {token && busy && !moments.length ? (
+      {token && !addLink && busy && !moments.length ? (
         <p className="lede" role="status">
           Loading the family record…
         </p>
       ) : null}
 
-      {token && !busy && !error && moments.length === 0 ? (
+      {token && !addLink && !busy && !error && moments.length === 0 ? (
         <p className="lede">No moments yet. Share a photo or story in the family group on Telegram.</p>
       ) : null}
 
-      {token ? (
+      {token && !addLink ? (
         <div className="family-moments">
           {moments.map((moment) => (
             <MomentCard key={moment.id} moment={moment} />

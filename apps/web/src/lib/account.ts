@@ -197,3 +197,44 @@ export async function uploadMemory(file: File): Promise<AccountFile> {
   const response = await accountFetch('/api/files', { method: 'POST', body });
   return (await response.json()) as AccountFile;
 }
+
+export type ChatTurn = { role: 'user' | 'anchor'; text: string };
+
+export type ChatCite = {
+  id: string;
+  label: string;
+};
+
+export type ChatReply = {
+  reply: string;
+  moments: ChatCite[];
+  files: ChatCite[];
+};
+
+/** Ask Anchor what it knows from this account’s saved memories and uploads. */
+export async function askChat(messages: ChatTurn[]): Promise<ChatReply> {
+  const response = await accountFetch('/api/chat', {
+    method: 'POST',
+    body: JSON.stringify({ messages }),
+  });
+  const body = (await response.json()) as {
+    reply?: string;
+    moments?: { id?: string; what?: string; memory?: string }[];
+    files?: { id?: string; name?: string }[];
+  };
+  return {
+    reply: typeof body.reply === 'string' ? body.reply : 'I could not answer that from what is saved.',
+    moments: (body.moments ?? [])
+      .filter((item): item is { id: string; what?: string; memory?: string } => typeof item?.id === 'string')
+      .map((item) => ({
+        id: item.id,
+        label: (item.memory || item.what || 'Memory').trim(),
+      })),
+    files: (body.files ?? [])
+      .filter((item): item is { id: string; name?: string } => typeof item?.id === 'string')
+      .map((item) => ({
+        id: item.id,
+        label: (item.name || 'Upload').trim(),
+      })),
+  };
+}
