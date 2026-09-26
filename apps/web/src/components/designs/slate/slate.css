@@ -21,30 +21,6 @@
   width: 100%;
 }
 
-.slate-main-wide {
-  max-width: 72rem;
-}
-
-.slate-footer-flows {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem 1rem;
-  margin-top: 0.35rem;
-}
-
-.slate-footer-flows a {
-  color: var(--brand-mid);
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.slate-footer-flows a:hover {
-  color: var(--brand);
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
 .slate-hero {
   width: 100%;
   min-height: calc(100dvh - 6rem);

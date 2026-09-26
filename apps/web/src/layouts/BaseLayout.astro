@@ -9,15 +9,12 @@ interface Props {
   title: string;
   description?: string;
   currentPath?: string;
-  /** Wider main column for experimental content-flow demos */
-  wide?: boolean;
 }
 
 const {
   title,
-  description = 'Anchor brings family memories back in the group chat — spaced retrieval, gentle cues, no new app to learn.',
+  description = 'A keeper of the memories your family already shares in its group chat — so they can come back, in your own voices.',
   currentPath = '/',
-  wide = false,
 } = Astro.props;
 
 const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : `${title} · Anchor`;
@@ -77,12 +74,15 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
       </nav>
     </header>
 
-    <main id="main" class:list={['slate-main', { 'slate-main-wide': wide }]}>
+    <main id="main" class="slate-main">
       <slot />
     </main>
 
     <footer class="slate-footer">
-      <p>Built on spaced retrieval: the family's own stories, returning gently so Athina keeps her place in family life.</p>
+      <p>
+        A keeper of the family’s own stories — returning gently so Nikos keeps his place in family life. Success is the
+        contact those moments create, not time spent with Anchor.
+      </p>
       <nav aria-label="Footer">
         <a href="/how-it-works">How it works</a>
         <a href="/app">Try the demo</a>
@@ -92,14 +92,6 @@ const fullTitle = title === 'Anchor' ? 'Anchor · family memories, returning' : 
         <a href="/terms">Terms</a>
         <a href="/cookies">Cookies</a>
         <a href="/sitemap">Sitemap</a>
-      </nav>
-      <nav class="slate-footer-flows" aria-label="Content flow demos">
-        <a href="/flows">All flows</a>
-        <a href="/flows/chapters">Chapters</a>
-        <a href="/flows/strip">Strip</a>
-        <a href="/flows/timeline">Timeline</a>
-        <a href="/flows/split">Split</a>
-        <a href="/flows/cascade">Cascade</a>
       </nav>
       <p class="a11y-note">
         Accessibility: this site aims for WCAG 2.1 Level AA. Use the Accessibility button for personal display settings
