@@ -1,0 +1,70 @@
+{
+  "standard": "WCAG 2.1 Level AA",
+  "generatedAt": "2026-09-26",
+  "commit": "dcaf997341dae50a23816281b167ad7476a51e35",
+  "axeVersion": "4.13.0",
+  "tags": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+  "build": "astro preview of astro build",
+  "gate": {
+    "script": "apps/web/scripts/a11y-check.mjs",
+    "publishedRoutesAt1280": "0 axe violations (both consent states)",
+    "wouldPass": true,
+    "misses": [
+      "color-contrast results filed as incomplete",
+      "viewports below 52rem"
+    ]
+  },
+  "publishedFailures": [
+    {
+      "criterion": "1.4.3",
+      "impact": "serious",
+      "ratio": 1,
+      "needed": 4.5,
+      "pages": ["/how-it-works", "/404"],
+      "selectors": ["a.btn.btn-primary"],
+      "labels": ["Get started", "Back to Anchor"],
+      "colors": { "foreground": "#c9a77a", "background": "#c9a77a" },
+      "axe": "incomplete",
+      "fix": {
+        "file": "apps/web/src/styles/tokens.css",
+        "note": ".prose a overrides .btn-primary color. Restore #1a1a1a on .prose a.btn-primary."
+      }
+    },
+    {
+      "criterion": "1.4.3",
+      "impact": "serious",
+      "ratio": 2.21,
+      "needed": 4.5,
+      "pages": ["/app"],
+      "viewport": "max-width 52rem (confirmed at 320px)",
+      "selectors": [".mvp-switch button[aria-selected='true']"],
+      "labels": ["Family group"],
+      "colors": { "foreground": "#f4fffc", "background": "#c9a77a" },
+      "axe": "violation",
+      "fix": {
+        "file": "apps/web/src/components/MvpDemo.css",
+        "note": "Selected tab label should be #1a1a1a on var(--brand)."
+      }
+    }
+  ],
+  "designStudyFailures": [
+    {
+      "page": "/designs/slate",
+      "criteria": ["1.4.3", "1.4.10"],
+      "note": "Light slate text on a white canvas because tokens.css is not loaded, plus 54px horizontal overflow at 320px."
+    },
+    {
+      "page": "/designs/ink",
+      "criteria": ["1.4.3"],
+      "ratio": 4.41,
+      "needed": 4.5,
+      "selectors": [".ink-action-index"],
+      "note": "opacity: 0.55 on the 01/02/03 labels."
+    }
+  ],
+  "passedNotes": [
+    "Published routes at 320px do not overflow, except the /app tab contrast.",
+    "/family signup form and the Telegram/WhatsApp/Viber group step had 0 violations.",
+    "/designs/linen, /designs/mist, and /designs/quiet had 0 axe violations. Quiet gradient contrast is incomplete in axe; declared colors pass."
+  ]
+}
