@@ -15,6 +15,7 @@ export type Classification = {
   title: string;
   tags: string[];
   transcript: string;
+  description?: string; // Anchor's own sentence about the photo or the video frame, for a member who cannot see it well
 };
 
 const SCHEMA = {
@@ -27,8 +28,9 @@ const SCHEMA = {
     title: { type: 'string' },
     tags: { type: 'array', items: { type: 'string' } },
     transcript: { type: 'string' },
+    description: { type: 'string' },
   },
-  required: ['verdict', 'salience', 'people', 'eventDate', 'title', 'tags', 'transcript'],
+  required: ['verdict', 'salience', 'people', 'eventDate', 'title', 'tags', 'transcript', 'description'],
 };
 
 // each tag once, whatever the case
@@ -51,10 +53,13 @@ export function validate(raw: unknown): Classification | undefined {
     title,
     tags: tagsOf(record.tags),
     transcript: valid.text(record.transcript),
+    description: valid.text(record.description, 200) || undefined,
   };
 }
 
-function prompt(bundle: Bundle): string {
+type Picture = 'photo' | 'video';
+
+function prompt(bundle: Bundle, picture: Picture | undefined): string {
   // ponytail: every tag of the family goes into the prompt; keep the most used ones when a record reaches thousands of tags
   const tags = unique(bundle.family.moments.flatMap((moment) => moment.tags ?? []));
   return [
@@ -73,7 +78,18 @@ function prompt(bundle: Bundle): string {
     'Return: verdict; salience from 1 to 5; people, the names in the moment; eventDate as YYYY-MM-DD, or empty when unknown; ' +
       'title, a short phrase for the family record, at most 100 characters; tags, up to 5 short tags for what the moment is about: ' +
       'the names of people and pets, places, events, and activities, for example ["Lucy", "dog", "park"], never generic words such as family, photo, or happy; ' +
-      'and transcript, the words spoken in the voice note, or empty.',
+      'transcript, the words spoken in the voice note, or empty; ' +
+      (picture
+        ? `and description, one plain sentence of at most 20 words that starts with "The ${picture} shows" and says what is visible: ` +
+          `the people, the animals, the place, and what happens, for example "The ${picture} shows a girl with a red backpack at a school gate."`
+        : 'and description, empty.'),
+    ...(picture
+      ? [
+          'The description is for a family member who cannot see the picture well, so it is short and says only what the picture shows. ' +
+            'The description never names a person or a pet, even when the words name one: it says "a girl" or "a small dog" instead. The title and the tags still use the names. ' +
+            'The description never guesses an age, a feeling, or a relation, and never judges the picture with words such as beautiful, lovely, cute, happy, or special.',
+        ]
+      : []),
     ...(tags.length ? [`Tags the family already uses: ${tags.join('; ')}. Reuse a tag word for word when it means the same thing.`] : []),
   ].join('\n');
 }
@@ -86,6 +102,9 @@ export async function classify(bundle: Bundle, transport: Transport): Promise<Cl
   const picture = photoEvent?.photo ?? (videoEvent ? videoEvent.thumbnail : undefined);
   const media = await Promise.all([picture, voiceEvent?.voice].filter(Boolean).map((item) => transport.download(item)));
 
-  const raw = await ask<unknown>(prompt(bundle), SCHEMA, { media });
-  return validate(raw);
+  const kind: Picture | undefined = photoEvent ? 'photo' : videoEvent ? 'video' : undefined;
+  const result = validate(await ask<unknown>(prompt(bundle, kind), SCHEMA, { media }));
+  // a description needs a picture that the model saw, and it reads as Anchor's words only when it opens with the picture words
+  if (result?.description && !(kind && result.description.startsWith(`The ${kind} shows `))) result.description = undefined;
+  return result;
 }

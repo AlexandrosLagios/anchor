@@ -79,7 +79,8 @@ export type Moment = {
   eventDate?: string; // YYYY-MM-DD
   title: string;
   tags?: string[]; // section 4.16: up to 5 names, pets, places, events, or activities, such as ["Lucy", "dog"]
-  invitationVoice?: Media; // the TTS clip of invitation(sender, text)
+  description?: string; // Anchor's own sentence about the picture, such as "The photo shows a girl at a school gate."; only the voice says it
+  invitationVoice?: Media; // the TTS clip of spokenInvitation(moment)
   stories: Story[];
   lookbacks: string[]; // '7', '30', '365', 'anniversary-2027'
   memoryPostIds: string[];

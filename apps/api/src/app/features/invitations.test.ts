@@ -187,6 +187,20 @@ test('the 11:00 tick sends the photo, then the invitation voice with both button
   expect(save).not.toHaveBeenCalled();
 });
 
+test("the invitation voice says the description of the photo after the sharer's words, and the caption stays the same", async () => {
+  add({ description: 'The photo shows a girl with a red backpack at a school gate.' });
+  await tickAt(at(25, 11));
+
+  expect(speak).toHaveBeenCalledWith(
+    'Sofia shared: «Maria on her first day at school»\nThe photo shows a girl with a red backpack at a school gate.\nWhat does it remind you of?',
+    'warm, calm and slow, like a kind family friend talking to a grandparent',
+  );
+  expect(messages()).toEqual([
+    ['7', { photo: { id: 'photo-57' } }],
+    ['7', { voice: { wav }, text: invitationText, buttons: inviteButtons('m1') }],
+  ]);
+});
+
 test('an invitation of a wordless photo speaks and captions the photo by its title, never as a quote', async () => {
   add({ text: "Maria's first day at school", wordless: true });
   await tickAt(at(25, 11));
