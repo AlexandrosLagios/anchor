@@ -67,7 +67,7 @@
 <main>
 
 <h1>How Anchor works</h1>
-<p class="meta">A 10-minute technical read. Written from the code on <code>main</code> at commit <code>40fb18a</code>, 26 September 2026. The live bot runs revision <code>anchor-bot-00016-xdv</code> (commit <code>c7e3b96</code>), which holds every change described here.</p>
+<p class="meta">A 15-minute technical read. Written from the code on <code>main</code> at commit <code>40fb18a</code>, 26 September 2026. The live bot runs revision <code>anchor-bot-00016-xdv</code> (commit <code>c7e3b96</code>), which holds every change described here.</p>
 
 <div class="callout">
   <p><strong>In one breath.</strong> Anchor is a Telegram bot that lives in a family's group chat. When someone shares a moment worth keeping, Anchor saves it in that person's own words and reacts with ❤. Later it brings moments back: to the whole group at 18:00, and in private at 11:00 to each member who asked for them. People talk to it in plain language, can hear every answer as a voice note, get reminders offered from the family's own messages, can forward a suspicious message for a second opinion, and can take a phone call in which Anchor reads them a moment, records their story, and connects them to the person who shared it. Underneath, it is one Node process on Cloud Run: a Telegram long poll, a 2-second timer, thirteen feature modules, one JSON file as the database, and OpenAI for every judgement call.</p>
@@ -87,7 +87,7 @@
     <li><a href="#model">The model layer</a></li>
     <li><a href="#telegram">Telegram lessons</a></li>
     <li><a href="#ship">Shipping it</a></li>
-    <li><a href="#web">The website and the old prototype</a></li>
+    <li><a href="#web">The website</a></li>
     <li><a href="#shortcuts">Shortcuts taken on purpose</a></li>
     <li><a href="#map">Where to start reading</a></li>
   </ol>
@@ -150,15 +150,31 @@
 </figure>
 
 <p><code>anchor-bot</code> pulls updates from Telegram with a long poll, so Telegram never needs to reach it. The service opens to the internet for one purpose: the audio stream that Twilio sends during a phone call.</p>
-<p>The website and its API share the repository with the bot, and the same Nest codebase, but they run elsewhere and store their data elsewhere. Section 13 covers them briefly.</p>
+<p>The website and its API share the repository with the bot, and the same Nest codebase, but they run on Vercel and keep their data in Neon Postgres and Vercel Blob. Section 13 covers them.</p>
 
 <h2 id="loops">2. Two loops and a router</h2>
 
 <p>Two loops drive the bot. <code>family.service.ts</code> starts both when <code>TELEGRAM_BOT_TOKEN</code> is set.</p>
 <ul>
-  <li><strong>The poll.</strong> A <code>getUpdates</code> long poll that takes one update at a time, so a restart repeats at most the update in flight. Each update becomes one normalized <code>Incoming</code> event (a text, a photo, a voice note, a button tap) and goes to the router.</li>
+  <li><strong>The poll.</strong> A Telegram long poll, described below. Each update becomes one normalized <code>Incoming</code> event (a text, a photo, a voice note, a button tap) and goes to the router.</li>
   <li><strong>The tick.</strong> Every 2 seconds, each feature of each family gets the demo-clock window since the previous tick. Everything scheduled happens here: closing a bundle of messages, the 18:00 memory, a due reminder, fading an old offer. Each feature runs in its own try/catch, so one failure never stops the rest.</li>
 </ul>
+
+<h3>How the long poll works</h3>
+<p>Telegram gives a bot two ways to receive messages: a webhook, where Telegram calls the bot, or <code>getUpdates</code>, where the bot calls Telegram. Anchor calls <code>getUpdates</code> with a 30-second timeout, which turns each call into a long poll:</p>
+<ol>
+  <li><strong>Ask and wait.</strong> The bot calls <code>getUpdates</code> with <code>timeout: 30</code>, <code>limit: 1</code>, and an <code>offset</code>. Telegram holds the request open. When a message, a button tap, or a membership change arrives, Telegram answers at once with that one update. After 30 quiet seconds it answers with an empty list, and the bot asks again. A message reaches Anchor within one round trip, and an idle bot makes two requests a minute.</li>
+  <li><strong>Handle.</strong> The bot awaits the router before it asks for the next update. A button tap first gets <code>answerCallbackQuery</code>, sent without waiting, so the spinner on the button stops.</li>
+  <li><strong>Confirm.</strong> The next call carries <code>offset = update_id + 1</code>, which tells Telegram to forget every update up to that one. Telegram keeps unconfirmed updates for up to 24 hours, and the bot keeps the offset in memory only. After a restart, the first call has no offset, so Telegram sends the oldest unconfirmed update again. With <code>limit: 1</code>, that is at most the update that was in flight.</li>
+  <li><strong>Recover.</strong> The client gives up on a call after 40 seconds (the 30-second hold plus slack) or on shutdown. Any error logs, waits 5 seconds, and retries, so the loop never stops.</li>
+</ol>
+<p>Three details matter in practice:</p>
+<ul>
+  <li><strong>One poller per token.</strong> Telegram serves <code>getUpdates</code> to one caller per token and answers a second one with 409 Conflict. That is why Cloud Run keeps one instance, why the live bot and the dev bot have separate tokens, and why a few 409 lines appear during a rollout, while the old and the new revision both poll.</li>
+  <li><strong>Its own connection.</strong> While the long poll waited, every other Bot API call through Node's global <code>fetch</code> queued behind it, and <code>getMe</code> took 28.2 seconds. The poll now runs on its own keep-alive HTTPS agent (<code>transports/poll-fetch.ts</code>), and the other calls take 0.06 to 0.23 seconds.</li>
+  <li><strong>One update at a time.</strong> A slow handler holds up the next update for every family. So the slow work stays out of the handlers: capture only adds a message to a bundle and classifies the bundle on the tick, and a phone call returns as soon as Twilio accepts it, with the conversation in the background.</li>
+</ul>
+<p>The long poll needs no public URL, so <code>anchor-bot</code> stayed private until the phone call needed an ingress, and a laptop runs the same code as Cloud Run with the dev token. The price is a process that never sleeps, which a Vercel function cannot be.</p>
 
 <p>The router offers each event to thirteen features in a fixed order, and the first one that returns <code>true</code> owns the event.</p>
 
@@ -291,8 +307,6 @@
 
 <h2 id="telegram">11. Telegram lessons</h2>
 <ul>
-  <li><strong>The 28-second stall.</strong> While the long poll waited, every other Bot API call through Node's global <code>fetch</code> queued behind it. The poll now has its own HTTPS agent, and the same calls take 0.06 to 0.23 seconds.</li>
-  <li><strong>One poller per token.</strong> A second process gets a 409. The live bot and the dev bot have separate tokens, and a few 409 lines during a rollout are normal.</li>
   <li><strong>File ids travel.</strong> A file id belongs to the bot, not to a chat, so a voice note uploaded in private goes to the group without a second upload.</li>
   <li><strong>A known gap.</strong> Promoting a bot that is already in a group sends no "joined" event. To create the family, remove Anchor and add it again.</li>
 </ul>
@@ -304,8 +318,36 @@
   <li><strong>Tests.</strong> <code>pnpm nx test api</code> runs 610 Vitest cases with no network calls, against <code>FakeTransport</code> with the model mocked. <code>demo-flow.test.ts</code> walks the whole demo script. There is no CI.</li>
 </ul>
 
-<h2 id="web">13. The website and the old prototype</h2>
-<p><code>apps/web</code> is an Astro and React site on Vercel with the landing page, sign-up, and an interactive demo. Its API, <code>anchor-api</code>, is the same Nest codebase on Vercel, with JWT auth, Neon Postgres, and Vercel Blob. That API also holds the team's first engine, a WhatsApp flow built around questions and hints. The bot left that framing behind, never touches Postgres, and stays asleep on Vercel, because Vercel never sets the Telegram token.</p>
+<h2 id="web">13. The website</h2>
+<p>The website is what the audience sees before and after the phones: the demo opens on the landing page at <a href="https://anchor-open26.vercel.app">anchor-open26.vercel.app</a>, closes on it, and keeps it on screen for the Q&amp;A. It runs apart from the bot and shares no data with it.</p>
+
+<h3>The site: <code>apps/web</code></h3>
+<p>Astro 7 builds a static site (<code>output: 'static'</code>), with React 19 components that hydrate in the browser (<code>client:load</code>). Vercel hosts it as the project <code>anchor</code>. No server code runs on the site itself: Vercel rewrites <code>/api/*</code> and <code>/whatsapp</code> to <code>anchor-api-teal.vercel.app</code>, and the Astro dev server proxies the same paths to <code>localhost:3000</code>.</p>
+<table>
+  <thead><tr><th>Page</th><th>What it shows</th><th>Calls</th></tr></thead>
+  <tbody>
+    <tr><td><code>/</code>, <code>/how-it-works</code></td><td class="wrap">The landing page, in the "slate" design, and a three-part explainer</td><td>nothing</td></tr>
+    <tr><td><code>/app</code></td><td class="wrap">A scripted walk through the first bot flow: Sofia shares Maria's first day, Nikos agrees, the moment comes back to him, and he answers by voice. The script runs in the browser, and the voice answer uses the browser's own speech recognition.</td><td>nothing</td></tr>
+    <tr><td><code>/signup</code>, <code>/login</code>, <code>/account</code></td><td class="wrap">An account with its consents, and a file drop</td><td class="wrap"><code>/api/auth/*</code>, <code>/api/files</code></td></tr>
+    <tr><td><code>/family</code></td><td class="wrap">A family, with members added by email</td><td><code>/api/families</code></td></tr>
+    <tr><td><code>/chat</code></td><td class="wrap">A chat about saved memories and files</td><td><code>/api/chat</code></td></tr>
+    <tr><td><code>/privacy</code>, <code>/terms</code>, <code>/cookies</code></td><td class="wrap">The legal pages. A consent banner keeps its answer in <code>localStorage</code>.</td><td>nothing</td></tr>
+    <tr><td><code>/designs/*</code></td><td class="wrap">Five alternative visual designs: ink, linen, mist, quiet, and slate</td><td>nothing</td></tr>
+  </tbody>
+</table>
+
+<h3>The API: <code>anchor-api</code></h3>
+<p>The API is the same Nest app as the bot, deployed on Vercel as a serverless function. Vercel never sets <code>TELEGRAM_BOT_TOKEN</code>, so the bot code stays asleep there.</p>
+<ul>
+  <li><strong>Accounts.</strong> Sign-up hashes the password with bcrypt (cost 12), stores the user and the consents (terms, privacy, marketing) in Neon Postgres in <code>eu-central-1</code>, and returns a 7-day HS256 JWT signed with <code>AUTH_JWT_SECRET</code>. The browser keeps the token in <code>localStorage</code> and sends it as a Bearer header. With <code>REQUIRE_AUTH=true</code>, every write needs a valid token, and the family and file routes need one for every request.</li>
+  <li><strong>Families.</strong> An owner creates a family and adds people by email. A person with an account joins at once. For a new person, the owner either creates the account in one transaction, or leaves an invite that becomes a membership when that person signs up. The schema is in <code>apps/api/db/families.sql</code>.</li>
+  <li><strong>Files.</strong> An upload of at most 4.5 MB, the body limit of a Vercel function, goes to Vercel Blob in <code>fra1</code> as a private blob under <code>users/&lt;id&gt;/</code>, with its metadata in <code>user_files</code>. A download streams through the API, which checks the owner.</li>
+  <li><strong>Chat.</strong> <code>/api/chat</code> sends the conversation (at most 16 turns of 2,000 characters), up to 40 saved memories, and the user's file list to one fast model call. The answer cites memory ids and file ids, and code drops every id that is not in the lists, so the chat links only what exists.</li>
+  <li><strong>The first engine.</strong> <code>anchor.service.ts</code> and <code>protocol.ts</code> hold the team's first design: spaced retrieval over WhatsApp for a grandmother named Athina, with a question, one cue, a reveal, and a rating (free, cued, or struggled) that doubles, holds, or resets the gap. Each user's state is a JSON snapshot in <code>user_states</code>. <code>/api/chat</code> reads its memories from this engine. <code>Dashboard.tsx</code>, the control panel of this engine, is no longer on any page.</li>
+</ul>
+
+<h3>Two worlds, no bridge</h3>
+<p>The bot's record (one JSON file on Cloud Storage) and the website's data (Neon and Blob) never meet. A family made on <code>/family</code> is not a Telegram family, and <code>/chat</code> cannot see a moment that the bot kept. The <code>Transport</code> interface of section 2 is where a bridge would go: a website version of the family chat would be one more transport in front of the same features. The landing and explainer copy also comes from the first design: it promises spaced retrieval for Athina in WhatsApp, while the bot never mentions recall, cues, or tests.</p>
 
 <h2 id="shortcuts">14. Shortcuts taken on purpose</h2>
 <p>The code marks each deliberate shortcut with a <code>ponytail:</code> comment that names its limit.</p>
