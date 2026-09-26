@@ -82,6 +82,15 @@ The script does not show the gentle help for a hesitation ("a school?"), the "An
 
 The call in beat 6 reads the due reminder and then the newest moment that Sofia has no story for. When no such moment exists, the call reads only the reminder and says goodbye, so the run ends about 50 seconds earlier. The call skips Maria's moment, because Sofia told her story about it in beat 4. Sofia gives no answer to the reminder, because every word before the share question goes out with her story, and the pills must stay private. A "Yes" posts her words and her voice from the call in the group. "Just the words" posts her words without the voice. A call costs about 0.15 USD per minute, and lasts at most 10 minutes.
 
+## Questions to expect
+
+"Isn't a bot in the family chat annoying?"
+
+- Anchor answers a message that names Anchor. A message without "Anchor," gets an answer only when it asks for memories or photos, and the model agrees that it is a request. When Anchor is unsure, it says nothing. It never answers "I didn't understand" to family talk.
+- A reply between two people never reaches Anchor.
+- In a test on 2026-09-26, 12 of 14 memory requests got the album, and 0 of 10 ordinary messages, such as "Photos of the trip are on Drive", got an answer.
+- Every offer has an easy no, an unanswered offer fades, and "stop" turns Anchor off for one person.
+
 ## If a beat fails
 
 - No answer only for Sofia in beat 1 after 10 seconds: Sofia writes "Anchor, settings". The same button arrives. Both phrases are decided in code, so a miss here points at the bot or the network, not the model.

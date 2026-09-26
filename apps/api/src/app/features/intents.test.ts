@@ -301,8 +301,43 @@ test('group: "send me photos of Lucy" names a subject, so it goes to the model a
 
   await router.route({ ...groupEvent, text: 'Anchor, send me photos of Lucy' });
 
-  expect(model.ask).toHaveBeenCalledTimes(1);
+  expect(model.ask).toHaveBeenCalled();
   expect(transport.sent[0].message.album).toHaveLength(2);
+});
+
+test('group: a memory request needs no "Anchor," in many phrasings, and the intent call learns that the message does not name Anchor', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  family.moments.push(moment({ id: 'l1', tags: ['Lucy'], photo: { id: 'photo-l1' } }), moment({ id: 'l2', tags: ['Lucy'], photo: { id: 'photo-l2' } }));
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'none', momentIds: ['l1', 'l2'] });
+  const phrasings = ['a memory of Lucy?', 'Give me memories of Lucy', 'do you have pictures of Lucy?', 'show us Lucy', 'send me a moment with Lucy'];
+
+  for (const text of phrasings) await router.route({ ...groupEvent, text });
+
+  expect(transport.sent.map((sent) => sent.message.album?.length)).toEqual(phrasings.map(() => 2));
+  expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('The message does not name Anchor');
+});
+
+test('group: an unaddressed message that the intent call does not read as a memory request gets no answer at all', async () => {
+  const { transport, family, ctx } = setup();
+  member(family);
+  family.moments.push(moment());
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'unclear', momentId: 'none', momentIds: [] });
+
+  for (const text of ['Photos of the trip are on Drive', 'I have fond memories of that summer']) {
+    expect(await intents.handle?.({ ...groupEvent, text }, family, ctx)).toBe(false);
+  }
+  expect(transport.sent).toEqual([]);
+});
+
+test('group: an unaddressed message without a memory word, or a reply to a person, never reaches the model', async () => {
+  const { family, router } = setup();
+  member(family);
+
+  await router.route({ ...groupEvent, text: 'See you at lunch tomorrow' });
+  await router.route({ ...groupEvent, text: 'Send me the photos of Lucy later', replyTo: 'm-person' });
+
+  expect(model.ask).not.toHaveBeenCalled();
 });
 
 test('group: a nxt:memory tap posts a memory with no model call', async () => {

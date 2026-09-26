@@ -65,8 +65,10 @@ export const lines = {
   callFailed: "I couldn't ring you just now. Shall I send you a moment here instead?",
   sharedBy,
   invitation: (moment: Moment) => `${sharedBy(moment)}\nWhat does it remind you of?`,
-  collectionCaption: (label: string, subject: string, moments: Moment[]) =>
-    cut(`${label} 💛\n${subject}\n${moments.map((moment) => sharedBy(moment, 100)).join('\n')}\nReply with a story or a voice note to add it to the family record.`, 1024),
+  collectionReply: 'Reply to a photo to add your story.',
+  // section 4.16: the fallback when the model writes no caption
+  collectionCaption: (label: string, tag: string, moments: Moment[]) =>
+    `${label} 💛\n${tag}, in ${moments.length} moments that ${and([...new Set(moments.map((moment) => moment.by.name))])} shared.\nReply to a photo to add your story.`,
   memoryCaption: (label: string, moment: Moment) =>
     `${label} 💛\n${sharedBy(moment)}\nReply with a story or a voice note to add it to the family record.`,
   labels: {
