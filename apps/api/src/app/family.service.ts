@@ -32,6 +32,7 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
   private readonly logger = new Logger(FamilyService.name);
   private readonly stop = new AbortController();
   private timer?: NodeJS.Timeout;
+  web?: { ctx: Context; botId: string; addLink: string }; // set once the bot polls; the website API reads the record through it
 
   onApplicationBootstrap() {
     const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -55,6 +56,7 @@ export class FamilyService implements OnApplicationBootstrap, OnApplicationShutd
     let restart = false;
     const ctx: Context = { now, store, transport: () => telegram, restartWindow: () => (restart = true) };
     const router = createRouter(FEATURES, ctx);
+    this.web = { ctx, botId: token.split(':')[0], addLink: `https://t.me/${telegram.username}?startgroup&admin=delete_messages` };
 
     // ponytail: the first window starts at boot, so a slot that falls while the host is down is skipped; persist the last tick when that matters
     let from = now();

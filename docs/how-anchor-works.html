@@ -277,7 +277,7 @@
   <li><strong>After.</strong> The story is the member's side only, cut before the share question, so "yes, share it" never reaches the clip. Sentences like "I don't remember" drop out, and a story that lost a sentence goes out as words only, because the voice would still say it. The audio becomes a voice note for the member, and the group post reuses its file id.</li>
 </ol>
 <p><strong>The warm handoff.</strong> Every call ends with a way to reach a person. When the sharer has a phone number on file, Anchor asks "Shall I connect you to Eleni now?", says goodbye, and moves the live call to Eleni's phone with a <code>&lt;Dial&gt;</code>, which also takes Anchor out of the call. When Eleni does not pick up within 20 seconds, the group gets "Eleni, Sofia would love a call from you 💛". Without a phone number for the sharer, Anchor asks whether to tell the sharer instead.</p>
-<p><strong>Security.</strong> Twilio's WebSocket needs a public service. <code>ANCHOR_BOT_ONLY=true</code> makes the process answer 404 to every request except <code>GET /</code> and the stream upgrade, so the old prototype routes stay unreachable.</p>
+<p><strong>Security.</strong> Twilio's WebSocket needs a public service. <code>ANCHOR_BOT_ONLY=true</code> makes the process answer 404 to every request except <code>GET /</code>, the stream upgrade, and the <code>/web/*</code> API of the website, so the old prototype routes stay unreachable.</p>
 
 <h2 id="model">10. The model layer</h2>
 

@@ -749,7 +749,7 @@ Step 1 adds these lines to `apps/api/.env.example`.
 | `TWILIO_FROM` | unset | v2: the Twilio number that Anchor calls from, in E.164. When the variable is unset, the choices screen hides "Call me". |
 | `ANCHOR_PUBLIC_URL` | unset | v2: the `https://` base URL of `anchor-bot`. The call stream connects to `wss://` on the same host. |
 | `ANCHOR_REALTIME_MODEL` | `gpt-realtime-2.1` | v2: the OpenAI Realtime model of the call. On a test call, `gpt-realtime-2.1-mini` paraphrased `call.askShare` and skipped the goodbye, so the full model is the default. |
-| `ANCHOR_BOT_ONLY` | unset | v2: `true` on `anchor-bot`. The process then answers only `GET /` over HTTP, and the `/call/stream` upgrade. `/whatsapp` and `/api/*` return 404, because the public service must never run the prototype routes. |
+| `ANCHOR_BOT_ONLY` | unset | v2: `true` on `anchor-bot`. The process then answers only `GET /` and the Telegram-signed `/web/*` API over HTTP, and the `/call/stream` upgrade. `/whatsapp` and `/api/*` return 404, because the public service must never run the prototype routes. |
 
 The call also uses `OPENAI_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY_SID`, and `TWILIO_API_KEY_SECRET`, which `apps/api/.env.example` already holds.
 

@@ -199,7 +199,7 @@ The project gives no account the IAM admin role, and it blocks service-account k
 
 Anchor rings a member through Twilio and talks through OpenAI Realtime (spec section 4.15). Twilio opens a WebSocket to `/call/stream` on `anchor-bot`, so the service must accept requests without IAM. The call stream accepts a stream only with the one-time token that Anchor issued for that call.
 
-Caution: set `ANCHOR_BOT_ONLY=true` before you open the service. Without the variable, a public `anchor-bot` serves the website API and the WhatsApp webhook. The webhook sends the Twilio key to any media URL in a request, because `TWILIO_AUTH_TOKEN` is empty. With `ANCHOR_BOT_ONLY=true`, the service answers only `GET /` and the call stream.
+Caution: set `ANCHOR_BOT_ONLY=true` before you open the service. Without the variable, a public `anchor-bot` serves the website API and the WhatsApp webhook. The webhook sends the Twilio key to any media URL in a request, because `TWILIO_AUTH_TOKEN` is empty. With `ANCHOR_BOT_ONLY=true`, the service answers only `GET /`, the call stream, and `/web/*`. Each `/web/*` request must carry a Telegram Login `id_token` that the bot verifies.
 
 Each step changes the live service, so each step needs the user's go.
 
