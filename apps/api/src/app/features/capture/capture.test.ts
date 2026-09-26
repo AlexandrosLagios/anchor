@@ -198,6 +198,22 @@ test('a captured moment keeps the subject from the model', async () => {
   expect(family.moments[0].subject).toBe('Rex the dog');
 });
 
+test('a moment that names a listed subject renames that subject on every earlier moment', async () => {
+  family.moments.push(
+    { id: 'e1', subject: 'The family dog' } as Moment,
+    { id: 'e2', subject: 'the FAMILY dog' } as Moment,
+    { id: 'e3', subject: 'The beach house' } as Moment,
+  );
+  (ask as Mock).mockResolvedValue({ ...classification, subject: 'Lucy the dog', replaces: 'The family dog' });
+  transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });
+  await capture.handle(event({ photo: { id: 'photo-1' }, text: 'Lucy loves the park' }), family, ctx);
+
+  advance(BUNDLE_GAP_MS);
+  await tick();
+
+  expect(family.moments.map((moment) => moment.subject)).toEqual(['Lucy the dog', 'Lucy the dog', 'The beach house', 'Lucy the dog']);
+});
+
 test('a bare photo becomes a wordless moment 5 minutes later: ask gets the photo, the text is the title, and it gets a heart', async () => {
   (ask as Mock).mockResolvedValue(classification);
   transport.files.set('photo-1', { data: Buffer.from('x'), mimeType: 'image/jpeg' });

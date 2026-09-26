@@ -173,6 +173,9 @@ async function close(bundle: Bundle, family: Family, ctx: Context) {
   };
   if (!words) moment.wordless = true;
   if (classification.subject) moment.subject = classification.subject;
+  // section 4.16: a moment that names a listed subject renames it on every earlier moment, so "The family dog" becomes "Lucy the dog"
+  const replaced = classification.subject && classification.replaces?.toLowerCase();
+  if (replaced) for (const earlier of family.moments) if (earlier.subject?.toLowerCase() === replaced) earlier.subject = classification.subject;
   family.moments.push(moment);
   ctx.store.save();
   await react(ctx, family, family.chatId, bundle.events[0].messageId, '\u2764');

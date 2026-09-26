@@ -68,8 +68,9 @@ async function post(family: Family, moment: Moment, label: string, keys: string[
   ctx.store.save();
 }
 
-// section 4.3: posts a group memory now, as /memory and the `memory` intent both do
-export async function postMemoryNow(family: Family, ctx: Context): Promise<void> {
+// section 4.3: posts a group memory now, as /memory and the `memory` intent both do; a named moment brings back its subject (4.16)
+export async function postMemoryNow(family: Family, ctx: Context, asked?: Moment): Promise<void> {
+  if (asked) return post(family, asked, lines.labels.fromRecord, [], ctx);
   const shareable = family.moments.filter((moment) => !moment.sensitive);
   if (shareable.length === 0) {
     await ctx.transport(family.id).send(family.chatId, { text: lines.nothingToShare });

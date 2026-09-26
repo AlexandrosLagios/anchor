@@ -279,6 +279,20 @@ test('group: memory posts a memory now, like /memory', async () => {
   expect(transport.sent.some((s) => s.message.text?.includes(lines.labels.fromRecord))).toBe(true);
 });
 
+test('group: a memory of a named subject posts the album of that subject, and the prompt lists each subject', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  const lucy = (id: string, savedAt: number) => moment({ id, subject: 'Lucy the dog', title: `Lucy ${id}`, photo: { id: `photo-${id}` }, savedAt });
+  family.moments.push(moment({ id: 'due', photo: { id: 'photo-due' }, savedAt: NOW - 7 * 86_400_000 }), lucy('l1', NOW - 2 * 86_400_000), lucy('l2', NOW));
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'memory', momentId: 'l2' });
+
+  await router.route({ ...groupEvent, text: 'Anchor, I want a memory of Lucy' });
+
+  expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('subject: Lucy the dog');
+  expect(transport.sent[0].message.album).toEqual([{ photo: { id: 'photo-l1' } }, { photo: { id: 'photo-l2' } }]);
+  expect(transport.sent[0].message.text).toContain('Lucy the dog');
+});
+
 test('group: a nxt:memory tap posts a memory with no model call', async () => {
   const { transport, family, router } = setup();
   family.moments.push(moment());

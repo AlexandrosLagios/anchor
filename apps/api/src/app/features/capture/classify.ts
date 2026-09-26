@@ -14,6 +14,7 @@ export type Classification = {
   eventDate?: string;
   title: string;
   subject?: string;
+  replaces?: string; // a listed subject that this moment names more precisely, such as "The family dog" for "Lucy the dog"
   transcript: string;
 };
 
@@ -26,9 +27,10 @@ const SCHEMA = {
     eventDate: { type: 'string' },
     title: { type: 'string' },
     subject: { type: 'string' },
+    replaces: { type: 'string' },
     transcript: { type: 'string' },
   },
-  required: ['verdict', 'salience', 'people', 'eventDate', 'title', 'subject', 'transcript'],
+  required: ['verdict', 'salience', 'people', 'eventDate', 'title', 'subject', 'replaces', 'transcript'],
 };
 
 export function validate(raw: unknown): Classification | undefined {
@@ -45,6 +47,7 @@ export function validate(raw: unknown): Classification | undefined {
     eventDate: valid.date(record.eventDate),
     title,
     subject: valid.text(record.subject) || undefined,
+    replaces: valid.text(record.replaces) || undefined,
     transcript: valid.text(record.transcript),
   };
 }
@@ -68,7 +71,13 @@ function prompt(bundle: Bundle): string {
       'title, a short phrase for the family record, at most 100 characters; subject, the one recurring thing the moment is about, ' +
       'such as a pet, a person, a place, or an activity, for example "Rex the dog", or empty when there is no clear subject; ' +
       'and transcript, the words spoken in the voice note, or empty.',
-    ...(subjects.length ? [`Subjects the family already has: ${subjects.join('; ')}. Reuse one of them, word for word, when the moment is about the same thing.`] : []),
+    ...(subjects.length
+      ? [
+          `Subjects the family already has: ${subjects.join('; ')}. Reuse one of them, word for word, when the moment is about the same thing.`,
+          'When the moment names a listed subject more precisely, for example the dog in "The family dog" is called Lucy, ' +
+            'return the new name as subject, such as "Lucy the dog", and the listed subject word for word as replaces. Otherwise, replaces is empty.',
+        ]
+      : []),
   ].join('\n');
 }
 

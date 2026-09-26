@@ -6,7 +6,7 @@ import { pictureOf } from './capture/filter';
 export function choiceLine(moment: Moment) {
   const stories = moment.stories.map((story) => cut(story.text, 200)).join(' | ');
   const people = moment.people.join(', ');
-  return `- id ${moment.id}: "${moment.title}", ${dateOf(moment)}, people: ${people}, stories: ${stories}`;
+  return `- id ${moment.id}: "${moment.title}", ${dateOf(moment)}, people: ${people}, subject: ${moment.subject ?? ''}, stories: ${stories}`;
 }
 
 // answers a group question, or the `find` intent, with a moment: the video or the photo with askAnswer as the caption,

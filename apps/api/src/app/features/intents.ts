@@ -19,7 +19,7 @@ type Intent = (typeof INTENTS)[number];
 
 // section 6.7: one line per intent, with one example each; the demo phrases carry the wording
 const INTENT_EXAMPLES: Partial<Record<Intent, string>> = {
-  memory: '"Anchor, show us a memory" asks Anchor to post a family memory now.',
+  memory: '"Anchor, show us a memory" or "I want a memory of Lucy" asks Anchor to post a family memory now. When it names a person, a pet, or a subject, pick a moment about it.',
   find: '"Anchor, when did Maria start school?" asks Anchor to find a moment and answer with it.',
   sendMe: '"Anchor, can you send me the family photos?" or "Send me a moment" asks Anchor to send a moment in private. Never memory.',
   missed: '"What did I miss?" asks for the moments the family shared since the person last talked to Anchor.',
@@ -99,7 +99,7 @@ async function groupAction(
 ): Promise<boolean> {
   switch (intent) {
     case 'memory':
-      await postMemoryNow(family, ctx);
+      await postMemoryNow(family, ctx, findAsked(family, momentId));
       return true;
     case 'find': {
       const moment = findAsked(family, momentId);

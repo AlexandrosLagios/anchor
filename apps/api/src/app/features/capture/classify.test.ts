@@ -145,6 +145,11 @@ test('validate keeps a trimmed subject, and turns a missing or empty subject int
   expect(validate(valid)?.subject).toBeUndefined();
 });
 
+test('validate keeps the listed subject that the new subject replaces, and turns an empty one into undefined', () => {
+  expect(validate({ ...valid, subject: 'Lucy the dog', replaces: ' The family dog ' })?.replaces).toBe('The family dog');
+  expect(validate({ ...valid, subject: 'Lucy the dog', replaces: '' })?.replaces).toBeUndefined();
+});
+
 test('classify lists the subjects the family already holds, once each, so the model reuses them', async () => {
   const withSubjects: Family = {
     ...family,
