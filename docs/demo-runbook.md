@@ -1,6 +1,6 @@
 # Demo runbook: Anchor v2 live in a family group
 
-The 6-minute presentation is one story: the problem, a day in Sofia's family with Anchor, and the close on the website. The live part shows Anchor v2: no commands, every member chooses what Anchor sends them, a share offer, a reminder offer, voice both ways, and a phone call that brings the reminder and a second family moment.
+The 6-minute presentation is one story: the problem with the website on the screen, a day in Sofia's family with Anchor, and the close back on the website. The live part shows Anchor v2: no commands, every member chooses what Anchor sends them, a share offer, a reminder offer, voice both ways, and a phone call that brings the reminder and a second family moment.
 
 The demo runs against the live bot `@anchor_family_bot` on Cloud Run (`DEPLOY.md`). The rehearsals run against the dev bot `@anchor_family_dev_bot` in its own group, because `/fastforward` moves the clock of the live bot for good. Every line and every staged message is in English.
 
@@ -14,7 +14,7 @@ Five teammates present, and four of them speak.
 | Eleni, the daughter | Teammate 2, a group admin | Phone 1, the family group. Speaks in character. |
 | Sofia, the grandmother | Teammate 3 | Phone 2, the family group, then her private chat with Anchor. Speaks in character. |
 | Closer | Teammate 4 | Closes the story, and takes the Q&A. |
-| Operator | Teammate 5 | Shows both phones side by side, keeps the stopwatch, switches the screen to the website in the close, and plays the recording if two beats fail. Silent. |
+| Operator | Teammate 5 | Shows the website during the problem and the close, shows both phones side by side during the story, keeps the stopwatch, and plays the recording if two beats fail. Silent. |
 
 Anchor takes every name from Telegram. Set the first name of each demo account to its role name before the demo, for example "Eleni" and "Sofia".
 
@@ -40,13 +40,15 @@ Reset and prepare, before the demo and before each rehearsal:
 3. Let Eleni post a second staged photo in the group with the caption "Sunday lunch at the beach with the whole family!". The call in beat 6 reads this moment.
 4. Put a staged photo of a child's first day at school on Eleni's phone.
 5. Keep a screen recording of the best rehearsal ready. Play the recording if the live bot fails.
-6. Open the website https://anchor-open26.vercel.app in a browser tab on the Operator's laptop, next to the phones.
+6. Open the website https://anchor-open26.vercel.app in a browser tab on the Operator's laptop, next to the phones. The screen shows its landing page when the presentation starts.
 
 ## The script
 
 Each beat names the action, the spoken lines, and what the audience sees. The times include about 5 seconds of model latency per beat, so a speaker talks while Anchor works. With the call, the run ends at about 5:35. Without the call, the run ends at about 4:35.
 
 ### The problem (0:00, Narrator)
+
+The screen shows the landing page of the website. On "Meet Anchor", the Operator switches the screen to both phones.
 
 > This is Sofia. She lives on her own, and she likes it that way. By the time she finds her glasses, the photos of her granddaughter are buried under forty new messages in the family chat. She doesn't want to be a burden, so she stops asking. Slowly, she drops out of her own family's story.
 >
