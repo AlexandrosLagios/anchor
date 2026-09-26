@@ -257,6 +257,20 @@ test('group: "Anchorage was lovely", a bare "anchor", and a forwarded "Anchor, .
   expect(transport.sent).toEqual([]);
 });
 
+test('group: a mention of the bot, such as "@anchor_family_bot , ...", names Anchor', async () => {
+  const { transport, family, router } = setup();
+  member(family);
+  family.moments.push(moment());
+  vi.mocked(model.ask).mockResolvedValue({ intent: 'find', momentId: 'm1' });
+
+  await router.route({ ...groupEvent, text: '@anchor_family_bot , when did Maria start school?' });
+  await router.route({ ...groupEvent, text: '@anchor_family_dev_bot: when did Maria start school?' });
+
+  expect(vi.mocked(model.ask).mock.calls[0][0]).toContain('"when did Maria start school?"');
+  expect(vi.mocked(model.ask).mock.calls[0][0]).not.toContain('does not name Anchor');
+  expect(transport.sent).toHaveLength(2);
+});
+
 test('private: a fixed phrase decides the intent in code, and a voice note still goes to the model', async () => {
   const { transport, family, router } = setup();
   const m = member(family);
@@ -385,6 +399,7 @@ test('group: "Give me a memory" names no subject and no "Anchor,", and still pos
     'I’d like a family memory please',
     'any memories?',
     'Tell us a memory',
+    '@anchor_family_bot , give me a memory',
   ];
   const familyTalk = ['Show us some photos', 'Memories!', 'A moment please', 'Send me a moment', 'Such lovely memories'];
 

@@ -124,7 +124,7 @@ v2: this section says storyteller for a member who has `started` and `choices.mo
 
 ### 4.6 Ask Anchor and the intent router (steps 2b and 5)
 
-- A group message that matches `/^anchor\b[,:]?\s+/i` is a question. The `forget` feature runs first, so "Anchor, forget this" never reaches `ask`.
+- A group message that matches `/^(?:anchor|@anchor\w*)\b\s*[,:]?\s+/i` is a question. A mention of the bot, such as "@anchor_family_bot , give me a memory", names Anchor as "Anchor," does. The `forget` feature runs first, so "Anchor, forget this" never reaches `ask`.
 - One Gemini call picks one moment id from an enum of the ids of the family, or `none` (section 6.4). The enum leaves out every sensitive moment.
 - Anchor replies to the question with the video or the photo and the caption `askAnswer(title, date, names)`. The first voice story follows by its media id.
 - `none`, or a failed call, gets `notFound`.
