@@ -113,23 +113,23 @@ export const lines = {
     goodbye: (name: string) => `Thank you, ${name}. Goodbye 💛`,
   },
   wouldLoveCall: (name: string, sender: string) => `${sender}, ${name} would love a call from you 💛`,
+  askAnswer: (title: string, date: string, names: string[]) =>
+    `${title} · ${date} 💛${names.length ? `\nStories from ${names.join(', ')}` : ''}`,
+  notFound: "I couldn't find that in the family record yet.",
+  pointer: "Hi! I keep your family's record. Talk to me in your family group 🙂",
+  notInGroup: 'Hi! I talk only with the members of the family group. Ask your family to add you to the group, then tap the button again 🙂',
   // the scam shield: Anchor never says that a message is certainly a scam or certainly safe
   scam: {
     warning: (name?: string, hidden = false) =>
       `⚠️ ${name ? `${hidden ? "I can't see that this message came from" : 'This message did not come from'} ${name}'s Telegram account. ` : ''}` +
       `A message that asks for money, a code, or bank details in a hurry is a common scam. Before you answer, call ${name ?? 'the person'} on the number you know.`,
-    fromAccount: (name: string) => `This message came from ${name}'s own Telegram account 🙂 If it asks for something unusual, call ${name} on the number you know.`,
+    fromAccount: (name: string) => `This message came from ${name}'s own Telegram account. If it asks for something unusual, call ${name} on the number you know.`,
     neutral: 'Thanks for showing me 🙂 If a message ever asks for money, a code, or a password, call the person on the number you know before you answer.',
     nameUsed: (sender: string) =>
       `${sender} got a message in your name that asked for money or a code. If you didn't send it, someone may be pretending to be you. A call to ${sender} would help 💛`,
     told: (name: string) => `Done, I told ${name} 💛`,
     notTold: (name: string) => `I couldn't reach ${name} just now. Please call ${name} on the number you know.`,
   },
-  askAnswer: (title: string, date: string, names: string[]) =>
-    `${title} · ${date} 💛${names.length ? `\nStories from ${names.join(', ')}` : ''}`,
-  notFound: "I couldn't find that in the family record yet.",
-  pointer: "Hi! I keep your family's record. Talk to me in your family group 🙂",
-  notInGroup: 'Hi! I talk only with the members of the family group. Ask your family to add you to the group, then tap the button again 🙂',
   forgetWhich: 'This post shows two moments. Which one should I forget?',
   quietWhich: 'This post shows two moments. Which one should I stop bringing back?',
   whichMoment: (moment: Moment) => clip(`${moment.by.name}: ${moment.title}`, 40),

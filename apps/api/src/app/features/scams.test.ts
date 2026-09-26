@@ -73,6 +73,15 @@ test('a forwarded message without a request gets the neutral answer', async () =
   expect(sent()).toEqual([{ chatId: '1', text: lines.scam.neutral }]);
 });
 
+test('a forward without words gets the neutral answer without a model call, and a forwarded album gets one answer', async () => {
+  await scams.handle?.(forwarded({ text: undefined, voice: { id: 'v1' } }), family, ctx);
+  answer(true, '2');
+  await scams.handle?.(forwarded({ photo: { id: 'a1' }, albumId: 'album-1' }), family, ctx);
+  expect(await scams.handle?.(forwarded({ text: undefined, photo: { id: 'a2' }, albumId: 'album-1' }), family, ctx)).toBe(true);
+  expect(sent().map((message) => message.text)).toEqual([lines.scam.neutral, lines.scam.warning('Eleni')]);
+  expect(model.ask).toHaveBeenCalledTimes(1);
+});
+
 test('a failed model call gets the neutral answer and never a warning', async () => {
   vi.mocked(model.ask).mockRejectedValue(new Error('timeout'));
   await scams.handle?.(forwarded(), family, ctx);
@@ -102,7 +111,8 @@ test('the fast model sees the forwarded words and the other members, never the f
 });
 
 test('a "Tell Eleni" tap sends Eleni a private note that the name of Eleni was used in a message to Sofia', async () => {
-  expect(await scams.handle?.(fromSofia({ button: 'scm:2' }), family, ctx)).toBe(true);
+  expect(await scams.handle?.(fromSofia({ button: 'scm:2', messageId: 'w1' }), family, ctx)).toBe(true);
+  expect(transport.edits).toEqual([{ chatId: '1', messageId: 'w1', change: { buttons: [] } }]);
   expect(sent()).toEqual([
     { chatId: '2', text: lines.scam.nameUsed('Sofia') },
     { chatId: '1', text: lines.scam.told('Eleni') },

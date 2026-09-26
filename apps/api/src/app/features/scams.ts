@@ -51,12 +51,22 @@ async function check(event: Incoming, family: Family, member: Member, ctx: Conte
   }
 }
 
-async function tellClaimed(id: string, family: Family, member: Member, ctx: Context) {
+// the button goes before the note, so a second tap after the note finds no button
+async function tellClaimed(id: string, event: Incoming, family: Family, member: Member, ctx: Context) {
   const claimed = family.members.find((other) => other.id === id && other.id !== member.id);
   if (!claimed) return;
+  try {
+    await ctx.transport(family.id).edit(member.id, event.messageId, { buttons: [] });
+  } catch (error) {
+    logger.warn(`The "Tell" button of member ${member.id} failed to go: ${error}`);
+  }
   const told = await tell(family, claimed, { text: lines.scam.nameUsed(member.name) }, ctx);
   await tell(family, member, { text: told ? lines.scam.told(claimed.name) : lines.scam.notTold(claimed.name) }, ctx);
 }
+
+// a forwarded album arrives one item per update, and the caption rides on the first item, so only the first item gets an answer
+// ponytail: one album at a time across members; key it by member when two members forward albums at the same second
+let lastAlbum: string | undefined;
 
 // Anchor reads only what a member forwards to it in private
 export const scams: Feature = {
@@ -66,9 +76,13 @@ export const scams: Feature = {
     const member = family.members.find((other) => other.id === event.sender.id);
     if (!member) return false;
     const tapped = event.button?.match(TAP);
-    if (tapped) await tellClaimed(tapped[1], family, member, ctx);
-    else if (event.forwarded) await check(event, family, member, ctx);
-    else return false;
+    if (tapped) {
+      await tellClaimed(tapped[1], event, family, member, ctx);
+      return true;
+    }
+    if (!event.forwarded) return false;
+    if (event.albumId === undefined || event.albumId !== lastAlbum) await check(event, family, member, ctx);
+    lastAlbum = event.albumId;
     return true;
   },
 };
